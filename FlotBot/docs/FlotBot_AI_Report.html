@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FlotBot AI System Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+  @page { margin: 20mm 18mm; size: A4; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #fff; color: #1a1a2e; font-size: 11.5px; line-height: 1.6; }
+
+  /* Cover */
+  .cover { background: linear-gradient(135deg, #0d1117 0%, #161b2e 60%, #1a2744 100%); color: #fff; padding: 60px 50px 50px; min-height: 220px; position: relative; border-radius: 0 0 20px 20px; margin-bottom: 32px; }
+  .cover-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  .cover-icon { width: 52px; height: 52px; background: linear-gradient(135deg, #3b82f6, #06b6d4); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .cover h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .cover h1 span { color: #06b6d4; }
+  .cover-sub { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+  .cover-meta { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+  .cover-meta-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 16px; }
+  .cover-meta-item .label { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+  .cover-meta-item .val { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+  .cover-badge { position: absolute; top: 30px; right: 40px; background: #22c55e; color: #fff; font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px; }
+
+  /* Sections */
+  .section { margin: 0 40px 28px; }
+  .section-title { font-size: 15px; font-weight: 700; color: #0f172a; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-title .icon { font-size: 16px; }
+
+  /* Cards grid */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; background: #f8fafc; }
+  .card.blue  { border-color: #bfdbfe; background: #eff6ff; }
+  .card.green { border-color: #bbf7d0; background: #f0fdf4; }
+  .card.purple{ border-color: #ddd6fe; background: #faf5ff; }
+  .card.orange{ border-color: #fed7aa; background: #fff7ed; }
+  .card.red   { border-color: #fecaca; background: #fef2f2; }
+  .card.cyan  { border-color: #a5f3fc; background: #ecfeff; }
+  .card h4 { font-size: 12px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .card p  { font-size: 10.5px; color: #475569; line-height: 1.55; }
+  .card ul { padding-left: 14px; margin-top: 6px; }
+  .card ul li { font-size: 10.5px; color: #475569; margin-bottom: 3px; }
+
+  /* AI Model Table */
+  table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  th { background: #1e293b; color: #e2e8f0; padding: 9px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-green  { background: #dcfce7; color: #166534; }
+  .badge-gray   { background: #f1f5f9; color: #475569; }
+  .badge-orange { background: #ffedd5; color: #9a3412; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: stretch; gap: 0; margin: 8px 0; }
+  .flow-step { flex: 1; text-align: center; padding: 10px 6px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 10px; font-weight: 600; position: relative; }
+  .flow-step:not(:last-child)::after { content: '→'; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); font-size: 14px; color: #3b82f6; z-index: 1; }
+  .flow-step .step-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+  .flow-step.active { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+  /* Stats row */
+  .stats { display: flex; gap: 12px; margin-bottom: 12px; }
+  .stat { flex: 1; background: #0f172a; color: #fff; border-radius: 10px; padding: 14px 16px; text-align: center; }
+  .stat .num { font-size: 22px; font-weight: 800; color: #38bdf8; }
+  .stat .lbl { font-size: 9.5px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Capability list */
+  .cap-list { list-style: none; }
+  .cap-list li { padding: 7px 12px; border-left: 3px solid #3b82f6; margin-bottom: 6px; background: #f8fafc; border-radius: 0 6px 6px 0; font-size: 10.5px; }
+  .cap-list li strong { color: #1d4ed8; }
+
+  /* Page break */
+  .page-break { page-break-before: always; height: 20px; }
+
+  /* Footer */
+  .footer { margin: 30px 40px 0; padding: 12px 0; border-top: 1px solid #e2e8f0; font-size: 9.5px; color: #94a3b8; display: flex; justify-content: space-between; }
+
+  /* Print button */
+  .print-btn { position: fixed; bottom: 30px; right: 30px; background: #3b82f6; color: #fff; border: none; border-radius: 50px; padding: 12px 24px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 8px 24px rgba(59,130,246,0.5); font-family: inherit; }
+  .print-btn:hover { background: #2563eb; }
+  @media print { .print-btn { display: none; } }
+</style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">🖨️ Save as PDF</button>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-badge">🟢 ACTIVE</div>
+  <div class="cover-logo">
+    <div class="cover-icon">🛡️</div>
+    <div>
+      <div style="font-size:22px;font-weight:800;">Flot<span style="color:#06b6d4;">Bot</span></div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px;">Endpoint Security Monitoring System</div>
+    </div>
+  </div>
+  <h1>AI System <span>Capability</span> Report</h1>
+  <div class="cover-sub">Comprehensive overview of AI models, capabilities, and architecture</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="label">Version</div><div class="val">2.0 — AI Upgraded</div></div>
+    <div class="cover-meta-item"><div class="label">AI Engine</div><div class="val">Dual-Provider (Cloud + Local)</div></div>
+    <div class="cover-meta-item"><div class="label">Platform</div><div class="val">Electron (Linux / Windows)</div></div>
+    <div class="cover-meta-item"><div class="label">Date</div><div class="val">August 2026</div></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="section">
+  <div class="stats">
+    <div class="stat"><div class="num">2</div><div class="lbl">AI Providers</div></div>
+    <div class="stat"><div class="num">5</div><div class="lbl">Monitor Modules</div></div>
+    <div class="stat"><div class="num">20+</div><div class="lbl">Threat Rules</div></div>
+    <div class="stat"><div class="num">100%</div><div class="lbl">Offline Capable</div></div>
+    <div class="stat"><div class="num">5s</div><div class="lbl">Scan Cycle</div></div>
+  </div>
+</div>
+
+<!-- WHAT IS FLOTBOT AI -->
+<div class="section">
+  <div class="section-title"><span class="icon">🤖</span> What Is FlotBot AI?</div>
+  <div style="font-size:11px;color:#334155;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px 18px;line-height:1.7;">
+    FlotBot is an <strong>AI-powered desktop security monitoring tool</strong> that runs 24/7 on your machine.
+    It combines two AI engines — one cloud (Gemini) and one local (Ollama) — to monitor your system in real-time,
+    detect threats automatically, explain alerts in plain English, and guide you through security decisions.
+    It works <strong>even without internet</strong> using local AI models.
+  </div>
+</div>
+
+<!-- AI MODELS TABLE -->
+<div class="section">
+  <div class="section-title"><span class="icon">🧠</span> AI Models Used</div>
+  <table>
+    <tr>
+      <th>Model</th><th>Provider</th><th>Where It Runs</th><th>Used For</th><th>Internet?</th><th>Status</th>
+    </tr>
+    <tr>
+      <td><strong>Gemini 2.0 Flash</strong></td>
+      <td>Google DeepMind</td>
+      <td>☁️ Google Cloud</td>
+      <td>Chat conversations, alert explanations, security questions</td>
+      <td>✅ Required</td>
+      <td><span class="badge badge-blue">Cloud AI</span></td>
+    </tr>
+    <tr>
+      <td><strong>Llama 3.1 / Mistral</strong></td>
+      <td>Ollama (Local)</td>
+      <td>💻 Your Machine</td>
+      <td>Threat analysis, background scanning, privacy-mode chat</td>
+      <td>❌ Not needed</td>
+      <td><span class="badge badge-green">Local AI</span></td>
+    </tr>
+    <tr>
+      <td><strong>MockProvider</strong></td>
+      <td>Built-in FlotBot</td>
+      <td>💻 Your Machine</td>
+      <td>Offline keyword fallback when both providers are unavailable</td>
+      <td>❌ Not needed</td>
+      <td><span class="badge badge-gray">Fallback</span></td>
+    </tr>
+  </table>
+  <p style="font-size:10px;color:#64748b;margin-top:8px;">
+    ⚡ <strong>Smart Auto-Selection:</strong> FlotBot automatically picks the best available model.
+    If no Gemini API key is set, it silently switches to Ollama. If Ollama is offline, MockProvider takes over.
+    The app never crashes regardless of provider state.
+  </p>
+</div>
+
+<!-- HOW AI ROUTING WORKS -->
+<div class="section">
+  <div class="section-title"><span class="icon">⚡</span> How AI Routing Works (Smart Hybrid Engine)</div>
+  <div class="flow">
+    <div class="flow-step active"><span class="step-icon">💬</span>User Message</div>
+    <div class="flow-step"><span class="step-icon">🔀</span>Intent Router</div>
+    <div class="flow-step active"><span class="step-icon">☁️</span>Gemini<br><small>Chat / Explain</small></div>
+    <div class="flow-step"><span class="step-icon">OR</span></div>
+    <div class="flow-step active"><span class="step-icon">🖥️</span>Ollama<br><small>Analysis</small></div>
+    <div class="flow-step"><span class="step-icon">📤</span>Streaming Reply</div>
+  </div>
+  <div class="grid" style="margin-top:10px;">
+    <div class="card blue">
+      <h4>☁️ Routes to Gemini When...</h4>
+      <ul>
+        <li>User asks a conversational security question</li>
+        <li>Explaining what an alert means</li>
+        <li>"What is this malware?" / "Am I safe?"</li>
+        <li>Privacy Mode is OFF + API key is set</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <h4>🖥️ Routes to Ollama When...</h4>
+      <ul>
+        <li>Background threat analysis of active alerts</li>
+        <li>Heavy analysis queries ("scan all processes")</li>
+        <li>Privacy Mode is ON (all data stays local)</li>
+        <li>No Gemini API key configured</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- WHAT AI CAN DO -->
+<div class="section" style="margin-top:20px;">
+  <div class="section-title"><span class="icon">✅</span> What The AI Can Do</div>
+  <div class="grid">
+
+    <div class="card blue">
+      <h4>🔍 Explain Security Alerts</h4>
+      <p>When a threat is detected, click <strong>"🔍 Explain"</strong> and the AI explains it in plain English using everyday analogies — no technical jargon.</p>
+      <ul>
+        <li>3-sentence beginner-friendly explanation</li>
+        <li>Tells you exactly what to do</li>
+        <li>Results cached for instant repeat access</li>
+        <li>Streams word-by-word (ChatGPT-style)</li>
+      </ul>
+    </div>
+
+    <div class="card green">
+      <h4>💬 Real-Time Laptop & Security Analysis</h4>
+      <p>Ask FlotBot anything about your laptop, OS, specs, or security in natural language.</p>
+      <ul>
+        <li>"What OS am I using and is my laptop safe?"</li>
+        <li>"What security tools and firewall do I have?"</li>
+        <li>"Check my CPU, RAM, and running processes"</li>
+        <li>"What apps are open on my machine?"</li>
+        <li>Real-time OS, kernel, firewall & RAM telemetry</li>
+      </ul>
+    </div>
+
+    <div class="card purple">
+      <h4>📊 Threat Analysis Engine</h4>
+      <p>Runs automatically every 5 seconds in the background. Uses Ollama to analyze all active alerts.</p>
+      <ul>
+        <li>Generates a 0–100 threat score</li>
+        <li>Summarizes the threat landscape</li>
+        <li>Provides top 3 recommended actions</li>
+        <li>Only fires when alert state changes (efficient)</li>
+      </ul>
+    </div>
+
+    <div class="card orange">
+      <h4>🛡️ Real-Time Alert Detection</h4>
+      <p>Rule-based engine + AI augmentation detects threats before you notice them.</p>
+      <ul>
+        <li>Suspicious process execution (PowerShell, cmd)</li>
+        <li>Network beaconing and C2 communication</li>
+        <li>File system mass modification (ransomware)</li>
+        <li>Persistence in autostart / cron / services</li>
+      </ul>
+    </div>
+
+    <div class="card cyan">
+      <h4>⚡ Streaming Responses</h4>
+      <p>AI responses appear word-by-word in real-time — no waiting for the full reply.</p>
+      <ul>
+        <li>Tokens pushed via IPC events</li>
+        <li>Blinking cursor shows active generation</li>
+        <li>Abort old request when new one sent</li>
+        <li>Cache replays instantly for repeat queries</li>
+      </ul>
+    </div>
+
+    <div class="card red">
+      <h4>🔒 Emergency Actions (UI Buttons)</h4>
+      <p>High-impact security actions are performed via dedicated buttons — never via chat text (for safety).</p>
+      <ul>
+        <li>🚫 <strong>Terminate Process</strong> by PID</li>
+        <li>🔒 <strong>Block IP</strong> via firewall</li>
+        <li>✅ <strong>Dismiss Alert</strong> after review</li>
+        <li>⚙️ Admin Console (whitelist / privacy toggle)</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- MONITORING MODULES -->
+<div class="section">
+  <div class="section-title"><span class="icon">📡</span> What FlotBot Monitors (5 Modules)</div>
+  <table>
+    <tr><th>Module</th><th>What It Watches</th><th>Linux Commands Used</th><th>Example Threats Caught</th></tr>
+    <tr>
+      <td><strong>🖥️ System / Process</strong></td>
+      <td>All running processes — PID, CPU, memory, command line, parent process</td>
+      <td><code>ps -eo pid,ppid,pcpu,pmem,rss,comm,args</code></td>
+      <td>Cryptominer, reverse shell, suspicious PowerShell</td>
+    </tr>
+    <tr>
+      <td><strong>🌐 Network</strong></td>
+      <td>All active TCP/UDP connections — remote IPs, ports, states</td>
+      <td><code>ss -tunp</code> / <code>/proc/net/tcp</code></td>
+      <td>C2 beaconing, data exfiltration, port scanning</td>
+    </tr>
+    <tr>
+      <td><strong>📂 File System</strong></td>
+      <td>Downloads, Desktop, Documents, /tmp — file creation/modification</td>
+      <td>Node.js <code>fs.watch</code> + <code>fs.statSync</code></td>
+      <td>Ransomware mass-encryption, executable drops</td>
+    </tr>
+    <tr>
+      <td><strong>🗂️ Registry / Persistence</strong></td>
+      <td>Linux: XDG autostart, systemd services, cron, shell RC files</td>
+      <td><code>~/.config/autostart</code>, <code>/etc/systemd</code>, <code>crontab</code></td>
+      <td>Backdoor persistence, malicious autostart entries</td>
+    </tr>
+    <tr>
+      <td><strong>🦠 Malware Correlation</strong></td>
+      <td>Cross-module behavior analysis — correlates process + network + file events</td>
+      <td>Internal rule engine (no external tool)</td>
+      <td>APT patterns, multi-stage attacks, lateral movement</td>
+    </tr>
+  </table>
+</div>
+
+<div class="page-break"></div>
+
+<!-- PRIVACY & MODES -->
+<div class="section" style="margin-top:20px;">
+  <div class="section-title"><span class="icon">🔐</span> Privacy Modes & AI Behaviour</div>
+  <div class="grid">
+    <div class="card green">
+      <h4>🟢 Online Mode (Default)</h4>
+      <ul>
+        <li><strong>Chat:</strong> Gemini 2.0 Flash (cloud)</li>
+        <li><strong>Analysis:</strong> Ollama (local, always)</li>
+        <li>Requires: GEMINI_API_KEY in .env</li>
+        <li>Best response quality for chat</li>
+        <li>Threat data never leaves machine</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h4>🔒 Privacy Mode (Admin Toggle)</h4>
+      <ul>
+        <li><strong>Chat:</strong> Ollama (fully local)</li>
+        <li><strong>Analysis:</strong> Ollama (fully local)</li>
+        <li>Zero cloud data — 100% offline</li>
+        <li>Toggle from Admin Console → no restart</li>
+        <li>Setting persists across app restarts</li>
+      </ul>
+    </div>
+    <div class="card orange">
+      <h4>⚡ Auto-Fallback Mode</h4>
+      <ul>
+        <li>No Gemini key → auto-uses Ollama for chat</li>
+        <li>Ollama offline → uses MockProvider</li>
+        <li>App never crashes, always responds</li>
+        <li>Status badge shows current mode in UI</li>
+        <li>Latency pill shows response time (ms)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- PERFORMANCE -->
+<div class="section">
+  <div class="section-title"><span class="icon">📈</span> AI Performance Improvements (v2.0)</div>
+  <ul class="cap-list">
+    <li><strong>Streaming tokens:</strong> First word appears in ~300ms — feels instant vs waiting 3–8s for full reply</li>
+    <li><strong>Response caching:</strong> Repeated alert explanations served instantly from 2-min cache</li>
+    <li><strong>Abort control:</strong> Sending a new message cancels the previous in-flight request immediately</li>
+    <li><strong>Warm-up ping:</strong> Ollama model pre-loaded on startup — first real query has no cold-start delay</li>
+    <li><strong>Parallel init:</strong> Both providers initialize simultaneously — startup is faster</li>
+    <li><strong>Smart debounce:</strong> Background threat analysis only fires when alert state actually changes</li>
+    <li><strong>Auto model selection:</strong> If configured model not installed, picks best available (qwen2.5, llama3, etc.)</li>
+    <li><strong>Adaptive timeouts:</strong> Short chat = 12s timeout · Heavy analysis = 40s timeout</li>
+  </ul>
+</div>
+
+<!-- QUICK SETUP -->
+<div class="section">
+  <div class="section-title"><span class="icon">🚀</span> Quick Setup Guide</div>
+  <div class="grid grid-3">
+    <div class="card blue">
+      <h4>Step 1 — Prerequisites</h4>
+      <ul>
+        <li>Node.js v18+ installed</li>
+        <li>Ollama installed (<a href="https://ollama.com">ollama.com</a>)</li>
+        <li>Run: <code>ollama pull llama3.1</code></li>
+        <li>Or use existing: qwen2.5:3b</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <h4>Step 2 — Configure</h4>
+      <ul>
+        <li>Copy <code>.env.example</code> → <code>.env</code></li>
+        <li>Add <code>GEMINI_API_KEY=...</code> (optional)</li>
+        <li>Get key free at aistudio.google.com</li>
+        <li>Without key: Ollama handles everything</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h4>Step 3 — Run</h4>
+      <ul>
+        <li>Open terminal in project folder</li>
+        <li>Run: <code>npm start</code></li>
+        <li>Floating shield bubble appears</li>
+        <li>Click bubble → chat panel opens</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span>FlotBot AI Security System — Confidential Technical Report</span>
+  <span>Generated: August 2026 | Version 2.0</span>
+</div>
+
+</body>
+</html>

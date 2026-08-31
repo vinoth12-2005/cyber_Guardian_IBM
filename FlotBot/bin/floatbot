@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+
+const { runDoctor } = require("../scripts/doctor");
+const path = require("path");
+const { spawn } = require("child_process");
+
+const args = process.argv.slice(2);
+const command = args[0] || "start";
+
+async function main() {
+    if (command === "doctor") {
+        await runDoctor();
+    } else if (command === "start" || command === "launch") {
+        const rootDir = path.resolve(__dirname, "..");
+        const electronApp = spawn("npx", ["electron", "."], { cwd: rootDir, stdio: "inherit", shell: true });
+        electronApp.on("exit", (code) => {
+            process.exit(code || 0);
+        });
+    } else if (command === "help" || command === "--help" || command === "-h") {
+        console.log(`
+FloatBot AI ─ Endpoint Detection & Response CLI
+
+Usage:
+  floatbot doctor      Run full system diagnostics, sensor audit & permission check
+  floatbot start       Launch the FloatBot Desktop Protection Console
+  floatbot help        Show this help message
+`);
+    } else {
+        console.error(`Unknown command: ${command}. Use 'floatbot --help' for available commands.`);
+        process.exit(1);
+    }
+}
+
+main().catch(err => {
+    console.error("CLI error:", err);
+    process.exit(1);
+});

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlotBot Floating Assistant</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/floating.css">
+</head>
+<body>
+
+    <!-- 1. COLLAPSED BUBBLE STATE -->
+    <div id="floating-bubble" class="visible">
+        <!-- Outer orbit ring wrapper -->
+        <div class="bubble-ring">
+            <div class="bubble-inner">
+                <!-- Scan line sweep -->
+                <div class="bubble-scan"></div>
+                <!-- Shield Icon -->
+                <svg class="shield-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 12.2c-2.7 0-5.06-1.66-6.07-4.04C7.14 13.9 9.4 13 12 13s4.86.9 6.07 2.16c-1.01 2.38-3.37 4.04-6.07 4.04z" />
+                </svg>
+                <!-- Alert count badge -->
+                <span class="badge" id="bubble-badge">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. EXPANDED CHAT PANEL STATE -->
+    <div id="floating-chat-panel" class="hidden">
+
+        <!-- Titlebar & Window Drag Handle -->
+        <div class="floating-header" id="drag-handle">
+            <div class="header-logo">
+                <!-- Small avatar with shield -->
+                <div class="header-avatar">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                </div>
+                <div class="header-titles">
+                    <span class="logo-title">FlotBot</span>
+                    <span class="logo-subtitle" id="provider-subtitle">AI Security Analyst</span>
+                </div>
+            </div>
+            <!-- AI Provider Status & 1-Click Mode Switcher Badge -->
+            <div id="ai-provider-badge" class="ai-badge ai-badge--loading" title="Click to Switch AI Mode (Online / Offline / Auto)">
+                <span class="ai-badge-dot"></span>
+                <span class="ai-badge-text" id="ai-badge-label">Connecting...</span>
+            </div>
+            <div class="header-controls">
+                <button id="btn-dock" title="Dock to Side">◧</button>
+                <button id="btn-fullscreen" title="Toggle Fullscreen">⛶</button>
+                <button id="btn-minimize" title="Minimize to Bubble">─</button>
+                <button id="btn-collapse" title="Close Widget">✕</button>
+            </div>
+        </div>
+
+        <!-- Real-time Alerts Stream -->
+        <div id="alerts-banner" class="alerts-banner-hidden">
+            <div class="banner-content">
+                <div class="banner-text"><strong>Active Threat Detected!</strong></div>
+                <div class="banner-actions">
+                    <button class="btn btn-tiny btn-danger" id="btn-banner-block">Block</button>
+                    <button class="btn btn-tiny btn-secondary" id="btn-banner-explain">Explain</button>
+                    <button class="btn-close-tiny" id="btn-banner-dismiss">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Body -->
+        <div class="floating-body">
+
+            <!-- Status Card -->
+            <div id="status-card" class="status-card secure">
+                <div class="status-icon">🛡️</div>
+                <div class="status-info">
+                    <div class="status-header">
+                        <span id="status-indicator">●</span>
+                        <span id="status-text">SYSTEM SECURE</span>
+                    </div>
+                    <div class="status-desc" id="status-desc">No active malware or behavioral threats flagged.</div>
+                </div>
+                <!-- Latency pill — shows last AI response time -->
+                <div id="latency-pill" class="latency-pill" title="Last AI response time"></div>
+            </div>
+
+            <!-- Messages Thread -->
+            <div id="chat-messages" class="messages-container">
+                <div class="message bot">
+                    <div class="bubble">
+                        👋 Hello! I'm <strong>FlotBot</strong>, your dual-engine AI cybersecurity assistant.<br><br>
+                        ⚡ <strong>Online (Gemini)</strong> & 🔒 <strong>Offline (Ollama)</strong> intelligence ready. Click the badge above to switch modes anytime!
+                    </div>
+                    <span class="time">Just now</span>
+                </div>
+
+                <!-- Sleek & Small AI Thinking Loader -->
+                <div id="typing-loader" class="typing-loader-hidden">
+                    <div class="micro-pulse-dots">
+                        <span class="mp-dot"></span>
+                        <span class="mp-dot"></span>
+                        <span class="mp-dot"></span>
+                    </div>
+                    <span class="typing-provider-label" id="typing-provider-label">FlotBot is analyzing...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Commands Row -->
+        <div class="quick-commands">
+            <button class="cmd-chip" id="btn-chip-screen" data-action="screen">📸 Screen Analysis</button>
+            <button class="cmd-chip" id="btn-chip-threads" data-action="threads">🧵 Thread Audit</button>
+            <button class="cmd-chip" id="btn-chip-malware" data-action="malware">🦠 Malware File Scanner</button>
+            <button class="cmd-chip" id="btn-chip-deepscan" data-action="deepscan">🔍 Deep Scan</button>
+            <button class="cmd-chip" data-cmd="Analyze active alerts">🚨 Alerts</button>
+            <button class="cmd-chip" data-cmd="Check running processes">⚙️ Processes</button>
+        </div>
+
+        <!-- Screen Capture Permission Consent Modal -->
+        <div id="modal-screen-consent" class="consent-modal-overlay" style="display:none;">
+            <div class="consent-modal-card">
+                <div class="consent-header">
+                    <span class="consent-icon">📸</span>
+                    <h3>Screen Analysis Consent</h3>
+                </div>
+                <p class="consent-body">
+                    FlotBot Shield requests permission to inspect your current screen contents to answer your query.
+                    <br><br>
+                    <strong>Privacy Guarantee:</strong> All credentials, API keys, and passwords will be automatically redacted locally before AI processing. No visual data leaves your device.
+                </p>
+                <div class="consent-actions">
+                    <button id="btn-consent-allow" class="btn btn-primary-cyber">ALLOW SCREEN ANALYSIS</button>
+                    <button id="btn-consent-deny" class="btn btn-secondary-cyber">DENY</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <div class="floating-footer">
+            <textarea id="chat-input" placeholder="Ask about threats, processes, network..." rows="1"></textarea>
+            <button id="btn-send-chat" disabled>
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script src="floating.js"></script>
+</body>
+</html>

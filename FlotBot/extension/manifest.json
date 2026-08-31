@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "FlotBot AI Security Assistant",
+  "version": "1.0.0",
+  "description": "Cross-platform browser security companion for FlotBot local AI security assistant.",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:41738/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "FlotBot Security Companion"
+  }
+}

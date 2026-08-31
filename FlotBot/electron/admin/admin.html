@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlotBot — Admin Console</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --c-bg:           #060b16;
+            --c-surface:      rgba(10, 15, 30, 0.7);
+            --c-surface-2:    rgba(20, 26, 45, 0.85);
+            --c-border:       rgba(59, 130, 246, 0.2);
+            --c-border-hover: rgba(6, 182, 212, 0.45);
+            --c-blue:         #3b82f6;
+            --c-cyan:         #06b6d4;
+            --c-green:        #22c55e;
+            --c-red:          #ef4444;
+            --c-orange:       #f59e0b;
+            --c-text:         #f0f4ff;
+            --c-muted:        #64748b;
+            --c-muted-2:      #94a3b8;
+            --grad-primary:   linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+            --grad-danger:    linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+            --grad-header:    linear-gradient(180deg, #090f1f 0%, #060b15 100%);
+            --shadow-glow:    0 0 20px rgba(6, 182, 212, 0.15);
+            --radius-lg:      12px;
+            --radius-md:      8px;
+            --radius-sm:      6px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--c-bg);
+            background-image: radial-gradient(circle at 50% 50%, #0c142c 0%, var(--c-bg) 100%);
+            color: var(--c-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Scanline grid overlay */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            z-index: 9999;
+            background-size: 100% 4px;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* ── Header ── */
+        #admin-header {
+            background: var(--grad-header);
+            border-bottom: 1px solid var(--c-border);
+            padding: 16px 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        #admin-header::after {
+            content: "";
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--grad-primary);
+            opacity: 0.5;
+        }
+        #admin-header .shield {
+            font-size: 24px;
+            filter: drop-shadow(0 0 8px var(--c-blue));
+            animation: shield-float 3s ease-in-out infinite;
+        }
+        #admin-header h1 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(59,130,246,0.3);
+        }
+        #admin-header .subtitle {
+            font-size: 11px;
+            color: var(--c-muted-2);
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #admin-header .badge-privacy {
+            margin-left: auto;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--c-green);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.1);
+            transition: all 0.3s ease;
+        }
+        #admin-header .badge-privacy.offline {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--c-orange);
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.1);
+        }
+
+        /* ── Login Gate ── */
+        #login-gate {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+            padding: 40px;
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 10;
+        }
+        .login-card {
+            background: var(--c-surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            max-width: 440px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 40px rgba(59,130,246,0.1);
+            transition: transform 0.3s ease;
+        }
+        .login-card:hover {
+            border-color: var(--c-border-hover);
+        }
+        .login-card .lock-icon {
+            font-size: 44px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 10px rgba(6,182,212,0.4));
+            animation: lock-pulse 2s ease-in-out infinite;
+        }
+        .login-card h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+        }
+        .login-card p {
+            font-size: 13px;
+            color: var(--c-muted-2);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        .login-card .note {
+            font-size: 11px;
+            color: var(--c-muted);
+            margin-top: 20px;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--c-border);
+            line-height: 1.5;
+        }
+
+        #passcode-input:focus {
+            border-color: var(--c-cyan) !important;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+        }
+
+        /* ── Tabs ── */
+        #admin-body {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.98);
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #admin-body.unlocked {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+        }
+        #tab-bar {
+            background: rgba(9, 15, 30, 0.8);
+            border-bottom: 1px solid var(--c-border);
+            display: flex;
+            padding: 0 28px;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            padding: 14px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--c-muted-2);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: color 0.2s, border-color 0.2s, text-shadow 0.2s;
+        }
+        .tab-btn:hover {
+            color: #ffffff;
+        }
+        .tab-btn.active {
+            color: var(--c-cyan);
+            border-bottom-color: var(--c-cyan);
+            text-shadow: 0 0 10px rgba(6,182,212,0.4);
+        }
+
+        /* ── Tab Content ── */
+        #tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--c-border);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--c-surface);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            border-color: var(--c-border-hover);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25), var(--shadow-glow);
+        }
+        .card h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .card p {
+            font-size: 12.5px;
+            color: var(--c-muted-2);
+            line-height: 1.65;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 8px 18px;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-primary {
+            background: var(--grad-primary);
+            color: #fff;
+            border: none;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.5);
+            color: var(--c-text);
+            border-color: var(--c-border);
+        }
+        .btn-secondary:hover {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: var(--c-border-hover);
+        }
+        .btn-danger {
+            background: var(--grad-danger);
+            color: #fff;
+            border: none;
+        }
+        .btn-danger:hover {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, var(--c-orange) 0%, #d97706 100%);
+            color: #fff;
+            border: none;
+        }
+        .btn-warning:hover {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
+        /* ── Toggle Switch ── */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-label { font-size: 13.5px; font-weight: 600; color: #ffffff; }
+        .toggle-desc { font-size: 11.5px; color: var(--c-muted-2); margin-top: 4px; line-height: 1.4; }
+        .toggle-switch {
+            position: relative;
+            width: 46px; height: 24px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--c-border);
+            border-radius: 24px;
+            transition: all 0.25s ease;
+        }
+        .toggle-slider:before {
+            content: ""; position: absolute;
+            height: 16px; width: 16px;
+            left: 3px; bottom: 3px;
+            background: var(--c-muted-2); border-radius: 50%;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        input:checked + .toggle-slider {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+            background: var(--c-green);
+            box-shadow: 0 0 8px var(--c-green);
+        }
+
+        /* ── Table ── */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table th {
+            text-align: left; padding: 12px 16px;
+            background: rgba(10,15,30,0.8); color: var(--c-muted-2);
+            border-bottom: 1px solid var(--c-border); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            vertical-align: middle;
+            color: var(--c-text);
+        }
+        .data-table tr {
+            transition: background 0.15s ease;
+        }
+        .data-table tr:hover td {
+            background: rgba(30, 41, 59, 0.25);
+            color: #ffffff;
+        }
+        .data-table .action-cell { display: flex; gap: 8px; }
+        .pill {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 12px; font-size: 10px; font-weight: 700;
+            text-transform: uppercase;
+        }
+        .pill-approved { background: rgba(34, 197, 94, 0.15); color: var(--c-green); border: 1px solid rgba(34, 197, 94, 0.3); }
+        .pill-pending  { background: rgba(245, 158, 11, 0.15); color: var(--c-orange); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .pill-critical { background: rgba(239, 68, 68, 0.15); color: var(--c-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .pill-high     { background: rgba(245, 158, 11, 0.15); color: var(--c-orange); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        /* ── Empty State ── */
+        .empty-state {
+            text-align: center;
+            padding: 56px 28px;
+            color: var(--c-muted-2);
+            font-size: 13px;
+        }
+        .empty-state .empty-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));
+        }
+
+        /* ── Spinner ── */
+        .spinner {
+            font-size: 12.5px;
+            color: var(--c-muted-2);
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .spinner::before {
+            content: "";
+            width: 14px; height: 14px;
+            border: 2px solid var(--c-muted);
+            border-top-color: var(--c-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* ── Alert Transcript ── */
+        .transcript-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-size: 11px;
+            color: var(--c-muted-2);
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            line-height: 1.5;
+        }
+
+        /* ── KEYFRAME ANIMATIONS ── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes shield-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        @keyframes lock-pulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(6,182,212,0.4)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(6,182,212,0.7)); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div id="admin-header">
+        <span class="shield">🛡️</span>
+        <div>
+            <h1>FlotBot Admin Console</h1>
+            <div class="subtitle">Security Operations Management</div>
+        </div>
+        <span id="privacy-badge" class="badge-privacy">☁️ Cloud AI Mode</span>
+    </div>
+
+    <!-- Login Gate (shown first) -->
+    <div id="login-gate">
+        <div class="login-card" id="login-card">
+            <div class="lock-icon">🔐</div>
+            <h2>Admin Access Required</h2>
+            <p>This console provides privileged access to FlotBot's security controls including baseline approval, IP blocking, whitelist management, and AI configuration.</p>
+            
+            <div style="margin: 20px 0; text-align: left;">
+                <label for="passcode-input" style="display:block; font-size:11px; color:var(--c-cyan); font-weight:600; margin-bottom:6px; text-transform:uppercase; letter-spacing:1.5px;">Admin Passcode</label>
+                <input type="password" id="passcode-input" placeholder="••••••••" style="width:100%; padding:11px 14px; background:rgba(10,15,30,0.6); border:1px solid var(--c-border); border-radius:6px; color:#ffffff; font-size:14px; text-align:center; letter-spacing:4px; outline:none; transition:all 0.2s;">
+                <div id="login-error" style="color:var(--c-red); font-size:11px; margin-top:8px; text-align:center; display:none;">❌ Invalid passcode. Access denied.</div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-continue" style="width:100%; height:38px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">Authenticate</button>
+            <div class="note">
+                🔒 Secure Portal. Use default passcode <code style="color:var(--c-cyan); background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:3px; font-family:monospace; font-size:10px;">flotbot2026</code> to access the admin controls.
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Body (shown after login) -->
+    <div id="admin-body">
+
+        <!-- Tab Bar -->
+        <div id="tab-bar">
+            <button class="tab-btn active" data-tab="tab-baseline">📊 Baseline Review</button>
+            <button class="tab-btn" data-tab="tab-history">📋 Alert History</button>
+            <button class="tab-btn" data-tab="tab-whitelist">✅ Whitelist</button>
+            <button class="tab-btn" data-tab="tab-blocklist">🚫 Blocked IPs</button>
+            <button class="tab-btn" data-tab="tab-ai">🤖 AI Settings</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tab-content">
+
+            <!-- Tab: Baseline Review -->
+            <div id="tab-baseline" class="tab-panel active">
+                <div class="section-title">Learning Mode Baseline Review</div>
+                <div class="card">
+                    <h3>About Learning Mode</h3>
+                    <p>During the learning window, FlotBot passively records process names, remote IPs, and DNS queries observed on this endpoint. Review and approve entries below to allow suppression of alerts for known-good items. Only approved entries suppress alerts — nothing is auto-approved.</p>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:16px;">
+                    <button class="btn btn-primary" id="btn-approve-all-baseline">✅ Approve All</button>
+                    <button class="btn btn-warning" id="btn-reset-learning">🔄 Reset Learning Window</button>
+                    <button class="btn btn-secondary" id="btn-refresh-baseline">↻ Refresh</button>
+                </div>
+                <div id="baseline-container"><div class="spinner">Loading baseline records...</div></div>
+            </div>
+
+            <!-- Tab: Alert History -->
+            <div id="tab-history" class="tab-panel">
+                <div class="section-title">Alert History & Transcripts</div>
+                <div style="margin-bottom:16px;">
+                    <button class="btn btn-secondary" id="btn-refresh-history">↻ Refresh</button>
+                </div>
+                <div id="history-container"><div class="spinner">Loading alert history...</div></div>
+            </div>
+
+            <!-- Tab: Whitelist -->
+            <div id="tab-whitelist" class="tab-panel">
+                <div class="section-title">Process / Path Whitelist</div>
+                <div class="card">
+                    <p>Whitelisted processes and paths will not trigger alerts. Add entries from Alert History or manually below.</p>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+                    <input id="whitelist-input" type="text" placeholder="Process name or path..." style="flex:1;padding:7px 10px;background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6edf3;font-size:12px;">
+                    <select id="whitelist-type" style="padding:7px 10px;background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6edf3;font-size:12px;">
+                        <option value="process">Process</option>
+                        <option value="path">Path</option>
+                        <option value="hash">Hash</option>
+                    </select>
+                    <button class="btn btn-primary" id="btn-add-whitelist">+ Add</button>
+                    <button class="btn btn-secondary" id="btn-refresh-whitelist">↻</button>
+                </div>
+                <div id="whitelist-container"><div class="spinner">Loading whitelist...</div></div>
+            </div>
+
+            <!-- Tab: Blocked IPs -->
+            <div id="tab-blocklist" class="tab-panel">
+                <div class="section-title">Global IP Blocklist</div>
+                <div class="card">
+                    <p>Blocked IPs are auto-escalated to CRITICAL when detected in network connections. Add IPs manually or from Alert History one-click controls.</p>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+                    <input id="blocklist-input" type="text" placeholder="IP address..." style="flex:1;padding:7px 10px;background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6edf3;font-size:12px;">
+                    <input id="blocklist-note" type="text" placeholder="Note (optional)..." style="flex:1;padding:7px 10px;background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6edf3;font-size:12px;">
+                    <button class="btn btn-danger" id="btn-add-block-ip">🚫 Block IP</button>
+                    <button class="btn btn-secondary" id="btn-refresh-blocklist">↻</button>
+                </div>
+                <div id="blocklist-container"><div class="spinner">Loading blocked IPs...</div></div>
+            </div>
+
+            <!-- Tab: AI Settings -->
+            <div id="tab-ai" class="tab-panel">
+                <div class="section-title">AI Provider Configuration</div>
+                <div class="card">
+                    <h3>Privacy Mode</h3>
+                    <p style="margin-bottom:16px;">Controls which AI provider handles chat and alert explanations. Changing this takes effect immediately without restarting FlotBot.</p>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">🔒 Offline-Only Mode (Ollama)</div>
+                            <div class="toggle-desc">All AI tasks use local Ollama — no data sent to cloud. Requires Ollama running locally.</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-privacy-mode">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <div>
+                            <div class="toggle-label">☁️ Cloud Mode (Gemini)</div>
+                            <div class="toggle-desc">Chat and explain use Google Gemini 2.0 Flash. Analysis always uses local Ollama.</div>
+                        </div>
+                        <div id="cloud-mode-indicator" style="font-size:12px;color:#56d364;">Active when privacy OFF</div>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <button class="btn btn-primary" id="btn-save-ai-mode">Save AI Mode</button>
+                        <span id="ai-mode-status" style="font-size:12px;color:#8b949e;margin-left:12px;"></span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>⚙️ Endpoint Network Isolation</h3>
+                    <p style="margin-bottom:12px;">When enabled, the network module will block all outbound connections. Use in emergency containment scenarios only.</p>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-danger" id="btn-isolate">🔌 Isolate Endpoint</button>
+                        <button class="btn btn-secondary" id="btn-deisolate">✅ Remove Isolation</button>
+                        <span id="isolation-status" style="font-size:12px;color:#8b949e;margin-left:4px;align-self:center;"></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

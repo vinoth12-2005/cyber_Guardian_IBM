@@ -1,0 +1,95 @@
+// ============================================================
+// CyberGuard Academy - Achievement Definitions
+// ============================================================
+import type { Achievement } from '@/types';
+
+export const achievementsData: Achievement[] = [
+  {
+    id: 'first-steps',
+    title: 'First Steps',
+    description: 'Complete your first simulation',
+    icon: 'Footprints',
+    simulationsRequired: 1,
+    unlocked: false,
+  },
+  {
+    id: 'email-detective',
+    title: 'Email Detective',
+    description: 'Complete the Phishing simulation',
+    icon: 'Mail',
+    simulationId: 1,
+    unlocked: false,
+  },
+  {
+    id: 'phishing-hunter',
+    title: 'Phishing Hunter',
+    description: 'Complete 3 social engineering simulations',
+    icon: 'Search',
+    simulationsRequired: 3,
+    unlocked: false,
+  },
+  {
+    id: 'cookie-defender',
+    title: 'Cookie Defender',
+    description: 'Complete the Cookie Theft simulation',
+    icon: 'Cookie',
+    simulationId: 3,
+    unlocked: false,
+  },
+  {
+    id: 'browser-protector',
+    title: 'Browser Protector',
+    description: 'Complete the Browser Extension Scam simulation',
+    icon: 'Shield',
+    simulationId: 7,
+    unlocked: false,
+  },
+  {
+    id: 'sql-defender',
+    title: 'SQL Defender',
+    description: 'Complete the SQL Injection Awareness simulation',
+    icon: 'Database',
+    simulationId: 9,
+    unlocked: false,
+  },
+  {
+    id: 'xss-expert',
+    title: 'XSS Expert',
+    description: 'Complete the XSS Awareness simulation',
+    icon: 'Code',
+    simulationId: 8,
+    unlocked: false,
+  },
+  {
+    id: 'social-shield',
+    title: 'Social Shield',
+    description: 'Complete the Social Media Scam simulation',
+    icon: 'Users',
+    simulationId: 2,
+    unlocked: false,
+  },
+  {
+    id: 'cyber-explorer',
+    title: 'Cyber Explorer',
+    description: 'Complete 10 simulations',
+    icon: 'Compass',
+    simulationsRequired: 10,
+    unlocked: false,
+  },
+  {
+    id: 'cyber-champion',
+    title: 'Cyber Champion',
+    description: 'Earn 1500 XP',
+    icon: 'Trophy',
+    xpRequired: 1500,
+    unlocked: false,
+  },
+  {
+    id: 'master-defender',
+    title: 'Master Defender',
+    description: 'Complete all 40 simulations',
+    icon: 'ShieldAlert',
+    simulationsRequired: 40,
+    unlocked: false,
+  },
+];

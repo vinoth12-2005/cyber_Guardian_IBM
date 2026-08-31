@@ -1,0 +1,77 @@
+/* ==========================================================================
+   FlotBot Transition & Keyframe Animations
+   ========================================================================== */
+
+/* Page transition fade */
+.page-content {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Pulsing red badge for CRITICAL / HIGH alerts */
+.badge-sec.critical, .status-badge.critical {
+    animation: alertPulse 2s infinite alternate;
+}
+
+@keyframes alertPulse {
+    0% {
+        box-shadow: 0 0 2px rgba(239, 68, 68, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    }
+}
+
+/* Typing indicator for AI Copilot */
+.typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 14px;
+    background-color: var(--border-color);
+    border-radius: 8px;
+    align-self: flex-start;
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    background-color: var(--text-secondary);
+    border-radius: 50%;
+    display: inline-block;
+    animation: dotBounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes dotBounce {
+    0%, 80%, 100% { 
+        transform: scale(0);
+    } 
+    40% { 
+        transform: scale(1.0);
+    }
+}
+
+/* Button loading/scan hover spinner animation */
+.btn-primary:hover .icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}

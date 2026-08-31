@@ -1,0 +1,3378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head><script>console.log("HELLO FROM IFRAME");</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuardian AI — Training Courses</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg: #0B1120;
+            --bg-secondary: #111827;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --primary: #3B82F6;
+            --primary-soft: rgba(59, 130, 246, 0.15);
+            --accent: #06B6D4;
+            --accent-soft: rgba(6, 182, 212, 0.15);
+            --success: #22C55E;
+            --success-soft: rgba(34, 197, 94, 0.15);
+            --warning: #F59E0B;
+            --warning-soft: rgba(245, 158, 11, 0.15);
+            --danger: #EF4444;
+            --danger-soft: rgba(239, 68, 68, 0.15);
+            --text: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --radius-md: 16px;
+            --radius-lg: 22px;
+            --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.35);
+            --shadow-glow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 8px 40px rgba(59, 130, 246, 0.12);
+            --font: 'Inter', sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .ambient {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .ambient::before,
+        .ambient::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(130px);
+            opacity: .16;
+        }
+
+        .ambient::before {
+            width: 620px;
+            height: 620px;
+            background: var(--primary);
+            top: -220px;
+            left: -160px;
+            animation: drift1 22s ease-in-out infinite alternate;
+        }
+
+        .ambient::after {
+            width: 560px;
+            height: 560px;
+            background: var(--accent);
+            bottom: -200px;
+            right: -140px;
+            animation: drift2 26s ease-in-out infinite alternate;
+        }
+
+        @keyframes drift1 {
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(60px, 40px);
+            }
+        }
+
+        @keyframes drift2 {
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(-50px, -30px);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, .12);
+            border-radius: 10px;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: .001ms !important;
+                transition-duration: .001ms !important;
+            }
+        }
+
+        .glass {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .glass-hover {
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+        }
+
+        .glass-hover:hover {
+            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, .35);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 26px 28px 90px;
+        }
+
+        @media(max-width:640px) {
+            .wrap {
+                padding: 18px 16px 90px;
+            }
+        }
+
+        /* topbar */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 22px rgba(59, 130, 246, .55);
+            flex-shrink: 0;
+        }
+
+        .brand-name {
+            font-weight: 800;
+            font-size: 15.5px;
+            line-height: 1.15;
+        }
+
+        .brand-name span {
+            display: block;
+            font-weight: 500;
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: .04em;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .streak-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 100px;
+            background: linear-gradient(90deg, rgba(245, 158, 11, .18), rgba(239, 68, 68, .08));
+            border: 1px solid rgba(245, 158, 11, .3);
+        }
+
+        .streak-pill svg {
+            width: 17px;
+            height: 17px;
+            color: var(--warning);
+        }
+
+        .streak-pill .n {
+            font-weight: 800;
+            font-size: 14px;
+        }
+
+        .streak-pill .l {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+        }
+
+        .xp-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 100px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+        }
+
+        .xp-pill svg {
+            width: 16px;
+            height: 16px;
+            color: var(--accent);
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            color: #fff;
+        }
+
+        /* nav tabs */
+        .tabbar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            font-size: 13.4px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all .2s ease;
+        }
+
+        .tab-btn svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(90deg, rgba(59, 130, 246, .22), rgba(6, 182, 212, .1));
+            border-color: rgba(59, 130, 246, .4);
+            color: #fff;
+        }
+
+        .view {
+            display: none;
+            animation: fadeUp .4s ease;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .page-head h1 {
+            font-size: 23px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+
+        .page-head p {
+            color: var(--text-secondary);
+            font-size: 13.4px;
+            margin-top: 5px;
+        }
+
+        .eyebrow {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 11px;
+            font-size: 13.4px;
+            font-weight: 650;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-family: var(--font);
+            transition: all .2s ease;
+        }
+
+        .btn svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: #fff;
+            box-shadow: 0 6px 24px rgba(59, 130, 246, .35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 28px rgba(59, 130, 246, .5);
+        }
+
+        .btn-ghost {
+            background: var(--glass);
+            border-color: var(--glass-border);
+            color: var(--text);
+        }
+
+        .btn-ghost:hover {
+            border-color: rgba(59, 130, 246, .35);
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* stat strip */
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .g-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .g-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        @media(max-width:900px) {
+            .g-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .g-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:560px) {
+
+            .g-4,
+            .g-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-card {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon svg {
+            width: 17px;
+            height: 17px;
+        }
+
+        .stat-num {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+
+        .stat-lbl {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* filters */
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .chip {
+            padding: 8px 15px;
+            border-radius: 100px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            font-size: 12.4px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .chip.active,
+        .chip:hover {
+            color: var(--text);
+            border-color: rgba(59, 130, 246, .4);
+        }
+
+        .chip.active {
+            background: rgba(59, 130, 246, .18);
+        }
+
+        .search-mini {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 11px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            margin-left: auto;
+            min-width: 220px;
+        }
+
+        .search-mini svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+        }
+
+        .search-mini input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-size: 13px;
+            font-family: var(--font);
+        }
+
+        /* course grid */
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        @media(max-width:980px) {
+            .course-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:620px) {
+            .course-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .course-card {
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .course-banner {
+            height: 132px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .course-banner svg {
+            width: 38px;
+            height: 38px;
+            color: rgba(255, 255, 255, .92);
+            position: relative;
+            z-index: 2;
+        }
+
+        .course-banner .bg-pattern {
+            position: absolute;
+            inset: 0;
+            opacity: .5;
+        }
+
+        .course-banner .lvl-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 3;
+        }
+
+        .course-banner .lock-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 3;
+            width: 28px;
+            height: 28px;
+            border-radius: 9px;
+            background: rgba(11, 17, 32, .55);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .course-banner .lock-badge svg {
+            width: 13px;
+            height: 13px;
+            color: #fff;
+        }
+
+        .course-banner .cert-flag {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 3;
+            width: 28px;
+            height: 28px;
+            border-radius: 9px;
+            background: rgba(11, 17, 32, .55);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .course-banner .cert-flag svg {
+            width: 14px;
+            height: 14px;
+            color: var(--warning);
+        }
+
+        .course-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            flex: 1;
+        }
+
+        .course-body .cat {
+            font-size: 10.4px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .course-body h3 {
+            font-size: 14.4px;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .course-body .desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .course-meta {
+            display: flex;
+            gap: 14px;
+            font-size: 11.2px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .course-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .course-meta svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .pbar-track {
+            height: 7px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .07);
+            overflow: hidden;
+        }
+
+        .pbar-fill {
+            height: 100%;
+            border-radius: 8px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            width: 0%;
+            transition: width 1s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .pbar-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10.8px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .badge {
+            font-size: 10.4px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-success {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: var(--warning-soft);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .badge-primary {
+            background: var(--primary-soft);
+            color: #93c5fd;
+        }
+
+        .badge-neutral {
+            background: rgba(255, 255, 255, .08);
+            color: var(--text-secondary);
+        }
+
+        /* ===== course detail ===== */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        .back-link svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .detail-hero {
+            padding: 0;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .detail-banner {
+            height: 180px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            padding: 22px;
+        }
+
+        .detail-banner svg.icon-big {
+            position: absolute;
+            top: 20px;
+            right: 26px;
+            width: 64px;
+            height: 64px;
+            color: rgba(255, 255, 255, .25);
+        }
+
+        .detail-banner .cat {
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            background: rgba(0, 0, 0, .25);
+            padding: 4px 10px;
+            border-radius: 100px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .detail-banner h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, .3);
+        }
+
+        .detail-info {
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .detail-info .im {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.6px;
+            color: var(--text-secondary);
+        }
+
+        .detail-info .im svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media(max-width:900px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .module {
+            margin-bottom: 12px;
+        }
+
+        .module:last-child {
+            margin-bottom: 0;
+        }
+
+        .module-head {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            gap: 10px;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--glass-border);
+            border-radius: 13px;
+            cursor: pointer;
+        }
+
+        .module-head .num {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background: var(--primary-soft);
+            color: #93c5fd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11.5px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .module-head .t {
+            flex: 1;
+            font-size: 13.4px;
+            font-weight: 700;
+        }
+
+        .module-head .s {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .module-head svg.chev {
+            width: 16px;
+            height: 16px;
+            color: var(--text-secondary);
+            transition: transform .25s ease;
+            flex-shrink: 0;
+        }
+
+        .module-head.open svg.chev {
+            transform: rotate(90deg);
+        }
+
+        .module-lessons {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .35s ease;
+        }
+
+        .module-lessons.open {
+            max-height: 600px;
+        }
+
+        .lesson-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px 12px 20px;
+            border-left: 2px solid rgba(255, 255, 255, .08);
+            margin-left: 13px;
+            cursor: pointer;
+            transition: background .2s;
+        }
+
+        .lesson-row:hover {
+            background: rgba(255, 255, 255, .03);
+        }
+
+        .lesson-row.done {
+            border-left-color: var(--success);
+        }
+
+        .lesson-check {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all .2s;
+        }
+
+        .lesson-check.done {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .lesson-check svg {
+            width: 12px;
+            height: 12px;
+            color: #fff;
+        }
+
+        .lesson-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .lesson-icon svg {
+            width: 13px;
+            height: 13px;
+            color: var(--accent);
+        }
+
+        .lesson-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .lesson-main .t {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .lesson-main .s {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .lesson-dur {
+            font-size: 11px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .lesson-row .goto {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .lesson-row .goto svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .lesson-content {
+            display: none;
+            padding: 16px 18px 18px 20px;
+            margin-left: 13px;
+            border-left: 2px solid rgba(255, 255, 255, .08);
+        }
+
+        .lesson-content.show {
+            display: block;
+            animation: fadeUp .3s ease;
+        }
+
+        .lesson-content .video-mock {
+            height: 150px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, .25), rgba(6, 182, 212, .15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .lesson-content .video-mock .play-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .15);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, .3);
+        }
+
+        .lesson-content .video-mock .play-btn svg {
+            width: 18px;
+            height: 18px;
+            color: #fff;
+            margin-left: 2px;
+        }
+
+        .lesson-content p {
+            font-size: 13px;
+            line-height: 1.65;
+            color: #dbe4f3;
+            margin-bottom: 12px;
+        }
+
+        .lesson-content ul {
+            margin: 0 0 12px 18px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #dbe4f3;
+        }
+
+        /* ===== lesson page (standalone) ===== */
+        .lesson-page-crumb {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .lesson-page-crumb span {
+            color: var(--accent);
+        }
+
+        .lesson-page-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .lesson-page-head h2 {
+            font-size: 21px;
+            font-weight: 800;
+            letter-spacing: -.01em;
+            margin-bottom: 6px;
+        }
+
+        .lesson-page-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .lesson-page-nav {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .lesson-page-nav .side {
+            flex: 1;
+            max-width: 46%;
+        }
+
+        .lesson-page-nav .side.right {
+            text-align: right;
+        }
+
+        .lesson-page-nav .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* sidebar progress card */
+        .progress-ring-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 4px auto 8px;
+        }
+
+        .progress-ring-wrap svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring-wrap .bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, .07);
+            stroke-width: 9;
+        }
+
+        .progress-ring-wrap .fg {
+            fill: none;
+            stroke-width: 9;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.1s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .progress-ring-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-ring-center .n {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .progress-ring-center .l {
+            font-size: 9.5px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        /* ===== quiz ===== */
+        .quiz-progress-bar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-progress-bar .seg {
+            flex: 1;
+            height: 5px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, .08);
+        }
+
+        .quiz-progress-bar .seg.done {
+            background: var(--accent);
+        }
+
+        .quiz-progress-bar .seg.current {
+            background: var(--primary);
+        }
+
+        .quiz-q-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 8px;
+        }
+
+        .quiz-question {
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .quiz-opt {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 13px;
+            background: rgba(255, 255, 255, .04);
+            border: 1.5px solid var(--glass-border);
+            cursor: pointer;
+            font-size: 13.6px;
+            transition: all .2s ease;
+        }
+
+        .quiz-opt:hover {
+            border-color: rgba(59, 130, 246, .4);
+        }
+
+        .quiz-opt .letter {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .quiz-opt.selected {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, .12);
+        }
+
+        .quiz-opt.selected .letter {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        /* correct answer always goes green */
+        .quiz-opt.correct-ans {
+            border-color: var(--success) !important;
+            background: var(--success-soft) !important;
+        }
+
+        .quiz-opt.correct-ans .letter {
+            background: var(--success) !important;
+            color: #fff !important;
+        }
+
+        /* user's wrong selection goes red */
+        .quiz-opt.wrong-sel {
+            border-color: var(--danger) !important;
+            background: var(--danger-soft) !important;
+        }
+
+        .quiz-opt.wrong-sel .letter {
+            background: var(--danger) !important;
+            color: #fff !important;
+        }
+
+        /* old names kept for backward compat */
+        .quiz-opt.correct {
+            border-color: var(--success);
+            background: var(--success-soft);
+        }
+
+        .quiz-opt.correct .letter {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .quiz-opt.incorrect {
+            border-color: var(--danger);
+            background: var(--danger-soft);
+        }
+
+        .quiz-opt.incorrect .letter {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .quiz-feedback {
+            font-size: 12.6px;
+            padding: 12px 14px;
+            border-radius: 11px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .quiz-feedback.show {
+            display: block;
+        }
+
+        .quiz-feedback.correct-fb {
+            background: var(--success-soft);
+            color: #86efac;
+        }
+
+        .quiz-feedback.incorrect-fb {
+            background: var(--danger-soft);
+            color: #fca5a5;
+        }
+
+        /* explanation panel shown after answering */
+        .quiz-explanation {
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            font-size: 12.8px;
+            line-height: 1.7;
+            display: none;
+            border-left: 3px solid transparent;
+        }
+
+        .quiz-explanation.show {
+            display: block;
+            animation: fadeUp .3s ease;
+        }
+
+        .quiz-explanation.exp-correct {
+            background: rgba(34, 197, 94, .1);
+            border-left-color: var(--success);
+            color: #86efac;
+        }
+
+        .quiz-explanation.exp-wrong {
+            background: rgba(239, 68, 68, .1);
+            border-left-color: var(--danger);
+            color: #fca5a5;
+        }
+
+        .quiz-explanation .exp-head {
+            font-weight: 700;
+            font-size: 12.4px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quiz-explanation .exp-body {
+            font-size: 12.4px;
+            color: #dbe4f3;
+            line-height: 1.65;
+        }
+
+        .quiz-explanation .exp-correct-label {
+            font-size: 11.4px;
+            font-weight: 600;
+            margin-top: 6px;
+            color: #86efac;
+        }
+
+        .quiz-nav {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .quiz-result {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .quiz-result .score-circle {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 18px;
+            position: relative;
+        }
+
+        .quiz-result .score-circle svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .quiz-result .score-num {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quiz-result .score-num .n {
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        .quiz-result .score-num .l {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .quiz-result h3 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .quiz-result p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .quiz-result .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ===== certificate ===== */
+        .cert-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .certificate {
+            width: 100%;
+            max-width: 760px;
+            aspect-ratio: 1.42/1;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(160deg, #0d1526, #111f36 60%, #0b1120);
+            border: 1px solid rgba(59, 130, 246, .3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .04) inset;
+            padding: 42px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .certificate::before {
+            content: '';
+            position: absolute;
+            inset: 14px;
+            border: 1.5px solid rgba(59, 130, 246, .35);
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .certificate::after {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6, 182, 212, .18), transparent 70%);
+        }
+
+        .cert-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cert-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cert-brand .mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cert-brand .mark svg {
+            width: 16px;
+            height: 16px;
+            color: #fff;
+        }
+
+        .cert-brand .name {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .cert-seal {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--warning), #fbbf24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, .4);
+        }
+
+        .cert-seal svg {
+            width: 26px;
+            height: 26px;
+            color: #1a1305;
+        }
+
+        .cert-mid {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cert-mid .eyebrow2 {
+            font-size: 11px;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        .cert-mid .uname {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            font-family: var(--mono);
+            letter-spacing: -.01em;
+            background: linear-gradient(90deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .cert-mid .desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            max-width: 480px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .cert-mid .cname {
+            font-size: 17px;
+            font-weight: 700;
+            margin-top: 10px;
+            color: var(--text);
+        }
+
+        .cert-bottom {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cert-bottom .item {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .cert-bottom .item .v {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text);
+            font-family: var(--mono);
+        }
+
+        .cert-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        /* ===== streak / my learning ===== */
+        .streak-hero {
+            padding: 26px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .streak-hero::after {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245, 158, 11, .2), transparent 70%);
+        }
+
+        .flame-big {
+            width: 76px;
+            height: 76px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--warning), var(--danger));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 10px 30px rgba(245, 158, 11, .35);
+            position: relative;
+            z-index: 1;
+        }
+
+        .flame-big svg {
+            width: 38px;
+            height: 38px;
+            color: #fff;
+        }
+
+        .streak-hero .num {
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .streak-hero .lbl {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .week-strip {
+            display: flex;
+            gap: 8px;
+            margin-top: 18px;
+        }
+
+        .week-day {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .week-day .dow {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .week-day .dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid var(--glass-border);
+        }
+
+        .week-day .dot.active {
+            background: linear-gradient(135deg, var(--warning), var(--danger));
+            border-color: transparent;
+        }
+
+        .week-day .dot.active svg {
+            width: 15px;
+            height: 15px;
+            color: #fff;
+        }
+
+        .week-day .dot.today {
+            border-color: var(--accent);
+        }
+
+        /* toast */
+        .toast-wrap {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 13px 18px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            animation: toastIn .35s ease;
+            min-width: 240px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .toast svg {
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .1) 37%, rgba(255, 255, 255, .05) 63%);
+            background-size: 400% 100%;
+            animation: shimmer 1.6s ease infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 100% 0;
+            }
+
+            100% {
+                background-position: -100% 0;
+            }
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 14px;
+            opacity: .5;
+        }
+
+        .empty-state .t {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(11, 17, 32, 0.75);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 440px;
+            padding: 26px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            font-size: 19px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .modal-content p {
+            font-size: 12.8px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            font-size: 14px;
+            font-family: var(--font);
+            outline: none;
+            text-align: center;
+        }
+
+        /* Dropdown style */
+        select.name-input {
+            background: #1E293B;
+            color: #F8FAFC;
+            border: 1px solid #3B82F6;
+            cursor: pointer;
+        }
+
+        /* Dropdown list */
+        select.name-input option {
+            background: #111827;
+            color: #F8FAFC;
+        }
+
+        /* Selected option */
+        select.name-input option:checked {
+            background: #3B82F6;
+            color: #FFFFFF;
+        }
+
+        .name-input:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* ===== print: show only certificate card ===== */
+        @media print {
+            body>*:not(#printArea) {
+                display: none !important;
+            }
+
+            #printArea {
+                position: fixed;
+                inset: 0;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                background: #fff;
+                z-index: 99999;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient"></div>
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- Name Input Modal -->
+    <div id="nameModal" class="modal-backdrop">
+        <div class="glass modal-content">
+            <h3>🎓 Claim Your Certificate</h3>
+            <p>Please enter your full name as you would like it to appear on your official certificate of completion.
+            </p>
+            <input type="text" id="certNameInput" class="name-input" placeholder="e.g. Arjun Kapoor" maxlength="40">
+            <div style="display: flex; gap: 10px; justify-content: flex-end; width:100%; margin-top: 10px;">
+                <button class="btn btn-ghost" id="cancelNameBtn">Cancel</button>
+                <button class="btn btn-primary" id="confirmNameBtn"><span data-icon="trophy"></span>Generate</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wrap">
+
+        <!-- ============ TOPBAR ============ -->
+        <div class="topbar">
+            <div class="brand">
+                <div class="brand-mark" id="brandIcon"></div>
+                <div class="brand-name">CyberGuardian AI</div>
+            </div>
+            <div class="topbar-right">
+                <div class="streak-pill"><span data-icon="flame"></span><span class="n" id="streakTop">6</span><span
+                        class="l">day streak</span></div>
+                <div class="xp-pill"><span data-icon="star"></span><span class="n" id="xpTop"
+                        style="font-weight:800;font-size:13px;">1,240 XP</span></div>
+                <div class="avatar">AK</div>
+            </div>
+        </div>
+
+        <!-- ============ TABS ============ -->
+        <div class="tabbar">
+            <div class="tab-btn active" data-view="catalog"><span data-icon="grid"></span>All Courses</div>
+            <div class="tab-btn" data-view="mylearning"><span data-icon="activity"></span>My Learning</div>
+            <div class="tab-btn" data-view="certificates"><span data-icon="trophy"></span>Certificates</div>
+            <div class="tab-btn" data-view="streaks"><span data-icon="flame"></span>Streaks</div>
+            <div class="tab-btn" data-view="admin"><span data-icon="shield"></span>Admin</div>
+        </div>
+
+        <!-- ============ CATALOG VIEW ============ -->
+        <section class="view active" id="view-catalog">
+            <div class="page-head">
+                <div><span class="eyebrow">Learning Center</span>
+                    <h1>Training Courses</h1>
+                    <p>Interactive courses with quizzes and certification — track every step.</p>
+                </div>
+            </div>
+
+            <div class="grid g-4" style="margin-bottom:22px;">
+                <div class="glass stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--primary-soft);"><span data-icon="book"
+                                style="color:var(--primary);"></span></div>
+                    </div>
+                    <div class="stat-num" id="statCourses">2/6</div>
+                    <div class="stat-lbl">Courses Completed</div>
+                </div>
+                <div class="glass stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--accent-soft);"><span data-icon="clock"
+                                style="color:var(--accent);"></span></div>
+                    </div>
+                    <div class="stat-num">4.2h</div>
+                    <div class="stat-lbl">Time Learned</div>
+                </div>
+                <div class="glass stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--warning-soft);"><span data-icon="quiz"
+                                style="color:var(--warning);"></span></div>
+                    </div>
+                    <div class="stat-num">86%</div>
+                    <div class="stat-lbl">Avg Quiz Score</div>
+                </div>
+                <div class="glass stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon" style="background:var(--success-soft);"><span data-icon="trophy"
+                                style="color:var(--success);"></span></div>
+                    </div>
+                    <div class="stat-num" id="statCerts">2</div>
+                    <div class="stat-lbl">Certificates Earned</div>
+                </div>
+            </div>
+
+            <div class="filter-row">
+                <div class="chip active" data-filter="All">All</div>
+                <div class="chip" data-filter="Phishing">Phishing</div>
+                <div class="chip" data-filter="Passwords">Passwords</div>
+                <div class="chip" data-filter="Social Engineering">Social Engineering</div>
+                <div class="chip" data-filter="Network">Network Safety</div>
+                <div class="search-mini"><span data-icon="search"></span><input id="courseSearch"
+                        placeholder="Search courses..."></div>
+            </div>
+
+            <div class="course-grid" id="courseGrid"></div>
+        </section>
+
+        <!-- ============ COURSE DETAIL VIEW (dashboard for the selected course) ============ -->
+        <section class="view" id="view-detail">
+            <div class="back-link" id="backToCatalog"><span data-icon="arrowleft"></span>Back to all courses</div>
+            <div class="glass detail-hero">
+                <div class="detail-banner" id="detailBanner"></div>
+                <div class="detail-info" id="detailInfo"></div>
+            </div>
+            <div class="detail-grid">
+                <div>
+                    <div class="glass" style="padding:18px;">
+                        <div
+                            style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+                            <span data-icon="layers" style="color:var(--accent);width:16px;height:16px;"></span>Course
+                            Content
+                        </div>
+                        <div id="moduleList"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="glass" style="padding:20px;margin-bottom:16px;">
+                        <div style="font-size:13px;font-weight:700;text-align:center;margin-bottom:4px;">Your Progress
+                        </div>
+                        <div class="progress-ring-wrap">
+                            <svg viewBox="0 0 120 120">
+                                <defs>
+                                    <linearGradient id="detailGaugeGrad" x1="0" y1="0" x2="1" y2="1">
+                                        <stop offset="0%" stop-color="#3B82F6" />
+                                        <stop offset="100%" stop-color="#06B6D4" />
+                                    </linearGradient>
+                                </defs>
+                                <circle class="bg" cx="60" cy="60" r="52"></circle>
+                                <circle class="fg" id="detailRing" cx="60" cy="60" r="52" stroke="url(#detailGaugeGrad)"
+                                    stroke-dasharray="326.7" stroke-dashoffset="326.7"></circle>
+                            </svg>
+                            <div class="progress-ring-center">
+                                <div class="n" id="detailRingPct">0%</div>
+                                <div class="l">Complete</div>
+                            </div>
+                        </div>
+                        <div id="detailProgressLabel"
+                            style="text-align:center;font-size:11.8px;color:var(--text-secondary);margin-bottom:14px;">0
+                            of 0 lessons
+                            done</div>
+                        <button class="btn btn-primary btn-block" id="detailQuizBtn"><span data-icon="quiz"></span>Take
+                            Final
+                            Quiz</button>
+                    </div>
+                    <div class="glass" style="padding:18px;">
+                        <div
+                            style="font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                            <span data-icon="target" style="color:var(--accent);width:15px;height:15px;"></span>What
+                            you'll learn
+                        </div>
+                        <ul id="detailObjectives"
+                            style="font-size:12.4px;line-height:1.9;color:#dbe4f3;padding-left:18px;"></ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ LESSON PAGE VIEW (opens on its own page/screen) ============ -->
+        <section class="view" id="view-lesson">
+            <div class="back-link" id="backToDetailFromLesson"><span data-icon="arrowleft"></span>Back to course</div>
+            <div class="glass" style="padding:26px;max-width:760px;margin:0 auto;">
+                <div id="lessonPageArea"></div>
+            </div>
+        </section>
+
+        <!-- ============ QUIZ VIEW ============ -->
+        <section class="view" id="view-quiz">
+            <div class="back-link" id="backToDetail"><span data-icon="arrowleft"></span>Back to course</div>
+            <div class="glass" style="padding:28px;max-width:640px;margin:0 auto;">
+                <div id="quizArea"></div>
+            </div>
+        </section>
+
+        <!-- ============ CERTIFICATE VIEW ============ -->
+        <section class="view" id="view-certificate">
+            <div class="back-link" id="backFromCert"><span data-icon="arrowleft"></span>Back to course</div>
+            <div class="cert-page">
+                <div class="certificate" id="certificateEl"></div>
+                <div class="cert-actions">
+                    <button class="btn btn-primary" id="downloadCertBtn"><span data-icon="download"></span>Download
+                        Certificate</button>
+                    <button class="btn btn-ghost" onclick="showToast('success','Share link copied')"><span
+                            data-icon="share"></span>Share</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ MY LEARNING VIEW ============ -->
+        <section class="view" id="view-mylearning">
+            <div class="page-head">
+                <div><span class="eyebrow">Progress</span>
+                    <h1>My Learning</h1>
+                    <p>Everything you're currently working through.</p>
+                </div>
+            </div>
+            <div id="myLearningList" class="grid g-3"></div>
+        </section>
+
+        <!-- ============ CERTIFICATES VIEW ============ -->
+        <section class="view" id="view-certificates">
+            <div class="page-head">
+                <div><span class="eyebrow">Achievements</span>
+                    <h1>Certificates</h1>
+                    <p>Every course you've completed and verified.</p>
+                </div>
+            </div>
+            <div id="certGrid" class="grid g-3"></div>
+        </section>
+
+        <!-- ============ STREAKS VIEW ============ -->
+        <section class="view" id="view-streaks">
+            <div class="page-head">
+                <div><span class="eyebrow">Consistency</span>
+                    <h1>Learning Streaks</h1>
+                    <p>Come back daily to keep the flame alive.</p>
+                </div>
+            </div>
+            <div class="glass streak-hero" style="margin-bottom:18px;">
+                <div class="flame-big"><span data-icon="flame"></span></div>
+                <div>
+                    <div class="num" id="streakBig">6</div>
+                    <div class="lbl">day streak — your best is 14 days</div>
+                    <div class="week-strip" id="weekStrip"></div>
+                </div>
+            </div>
+            <div class="grid g-4" id="streakMilestones"></div>
+        </section>
+
+        <!-- ============ ADMIN VIEW ============ -->
+        <section class="view" id="view-admin">
+            <div class="page-head">
+                <div><span class="eyebrow">Management</span>
+                    <h1>Admin Panel</h1>
+                    <p>Add new courses, lessons, media, and quiz questions.</p>
+                </div>
+            </div>
+
+            <!-- Login gate -->
+            <div class="glass" id="adminLoginBox" style="padding:24px;max-width:380px;">
+                <div style="font-weight:700;margin-bottom:10px;">Admin Login</div>
+                <input type="password" id="adminPass" class="name-input" placeholder="Enter admin password"
+                    style="text-align:left;margin-bottom:10px;">
+                <button class="btn btn-primary btn-block" id="adminLoginBtn">Login</button>
+            </div>
+
+            <!-- Admin dashboard (hidden until logged in) -->
+            <div id="adminDashboard" style="display:none;">
+
+                <!-- Existing courses / quick actions -->
+                <div class="glass" style="padding:18px;margin-bottom:18px;">
+                    <div style="font-weight:700;margin-bottom:12px;">Existing Courses</div>
+                    <div id="adminCourseList"></div>
+                </div>
+
+                <!-- New Course Form -->
+                <div class="glass" style="padding:20px;margin-bottom:18px;">
+                    <div style="font-weight:700;margin-bottom:14px;">Add New Course</div>
+                    <div class="grid g-3" style="margin-bottom:10px;">
+                        <input id="ac_title" class="name-input" placeholder="Course title">
+                        <input id="ac_cat" class="name-input" placeholder="Category (e.g. Phishing)">
+                        <select id="ac_level" class="name-input">
+                            <option>Beginner</option>
+                            <option>Intermediate</option>
+                            <option>Advanced</option>
+                        </select>
+                    </div>
+                    <textarea id="ac_desc" class="name-input" style="margin-bottom:10px;height:60px;"
+                        placeholder="Short description"></textarea>
+                    <div class="grid g-3" style="margin-bottom:10px;">
+                        <input id="ac_color1" type="color" class="name-input" value="#3B82F6">
+                        <input id="ac_color2" type="color" class="name-input" value="#06B6D4">
+                        <select id="ac_icon" class="name-input">
+                            <option value="shield">shield</option>
+                            <option value="mail">mail</option>
+                            <option value="key">key</option>
+                            <option value="users">users</option>
+                            <option value="wifi">wifi</option>
+                            <option value="file">file</option>
+                            <option value="lock2">lock2</option>
+                            <option value="bot">bot</option>
+                        </select>
+                    </div>
+
+                    <!-- Banner image / video -->
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:12px;color:var(--text-secondary);">Banner image (optional)</label>
+                        <input type="file" id="ac_image" accept="image/*" class="name-input">
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12px;color:var(--text-secondary);">Intro video URL (optional,
+                            YouTube/mp4 link)</label>
+                        <input id="ac_video" class="name-input" placeholder="https://...">
+                    </div>
+
+                    <!-- Objectives -->
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12px;color:var(--text-secondary);">Learning objectives (one per
+                            line)</label>
+                        <textarea id="ac_objectives" class="name-input" style="height:60px;"
+                            placeholder="Identify phishing red flags&#10;Spot lookalike domains"></textarea>
+                    </div>
+
+                    <!-- Modules / Lessons builder -->
+                    <div style="font-weight:700;margin:16px 0 10px;">Modules & Lessons</div>
+                    <div id="ac_modules"></div>
+                    <button class="btn btn-ghost" id="ac_addModule" style="margin-bottom:14px;">+ Add Module</button>
+
+                    <!-- Quiz via Excel -->
+                    <div style="font-weight:700;margin:16px 0 8px;">Final Quiz (Excel Upload)</div>
+                    <p style="font-size:11.5px;color:var(--text-secondary);margin-bottom:8px;">
+                        Excel format — Column 1: Question, Columns 2–5: Option A–D, Column 6: Correct option number
+                        (1–4). No header row needed.
+                    </p>
+                    <input type="file" id="ac_quizFile" accept=".xlsx,.xls,.csv" class="name-input"
+                        style="margin-bottom:10px;">
+                    <div id="ac_quizPreview" style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="ac_submitCourse"><span data-icon="check"></span>Save
+                        Course</button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        /* ============ ICONS ============ */
+        const ICONS = {
+            home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/>',
+            search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+            book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z"/>',
+            bot: '<rect x="4" y="9" width="16" height="11" rx="3"/><path d="M12 9V5"/><circle cx="12" cy="3.5" r="1.5"/><circle cx="9" cy="14.5" r="1.2"/><circle cx="15" cy="14.5" r="1.2"/>',
+            chart: '<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12.5" y="8" width="3" height="10" rx="1"/><rect x="18" y="5" width="3" height="13" rx="1"/>',
+            trophy: '<path d="M8 21h8M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4a3 3 0 0 0 3 5.5M17 5h3a3 3 0 0 1-3 5.5"/>',
+            shield: '<path d="M12 3 4.5 6v6c0 4.5 3.2 7.7 7.5 9 4.3-1.3 7.5-4.5 7.5-9V6L12 3Z"/>',
+            bulb: '<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2.3h6c0-1.1.4-1.8 1-2.3A7 7 0 0 0 12 2Z"/>',
+            clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+            quiz: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.2 2-2.5 3.5"/><path d="M12 16.5h.01"/>',
+            mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+            key: '<circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16.5 6.5l2 2M14 9l2 2"/>',
+            users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 4.5a3.5 3.5 0 0 1 0 7"/><path d="M15.5 13.5A6.5 6.5 0 0 1 21.5 20"/>',
+            wifi: '<path d="M2 8.5a16 16 0 0 1 20 0"/><path d="M5 12.3a11.5 11.5 0 0 1 14 0"/><path d="M8.5 16a7 7 0 0 1 7 0"/><path d="M12 20h.01"/>',
+            lock: '<rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+            play: '<path d="M6 4v16l14-8-14-8Z"/>',
+            file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"/><path d="M14 2v6h6"/>',
+            layers: '<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
+            chevron: '<path d="m9 18 6-6-6-6"/>',
+            check: '<path d="M20 6 9 17l-5-5"/>',
+            arrowleft: '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+            arrowright: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+            target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+            flame: '<path d="M12 2s-6 5.5-6 11a6 6 0 0 0 12 0c0-1.5-.5-2.5-1-3.5.2 2-1 3-1 3 .5-3-1.5-5-2-7-.3 1.3-1 2-2 3.2-.7.8-1 1.7-1 2.8a2 2 0 0 0 4 0"/>',
+            star: '<path d="m12 3 2.7 5.9 6.3.6-4.8 4.3 1.4 6.2-5.6-3.3-5.6 3.3 1.4-6.2-4.8-4.3 6.3-.6L12 3Z"/>',
+            grid: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/>',
+            activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+            download: '<path d="M12 3v13"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/>',
+            share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-3.9M8.6 13.5l6.8 3.9"/>',
+            x: '<path d="M18 6 6 18M6 6l12 12"/>',
+            lock2: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+            award: '<circle cx="12" cy="8" r="6"/><path d="M8.5 13.5 7 22l5-3 5 3-1.5-8.5"/>',
+        };
+        function iconSvg(name, extra = '') { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${extra}>${ICONS[name] || ''}</svg>`; }
+        function renderIcons(root = document) {
+            root.querySelectorAll('[data-icon]').forEach(el => {
+                const name = el.getAttribute('data-icon');
+                el.innerHTML = iconSvg(name);
+            });
+        }
+        document.getElementById('brandIcon').innerHTML = iconSvg('shield', 'style="width:20px;height:20px;color:#fff;"');
+
+        function showToast(type, msg) {
+            const icon = type === 'success' ? 'check' : type === 'danger' ? 'x' : 'star';
+            const color = type === 'success' ? 'var(--success)' : type === 'danger' ? 'var(--danger)' : 'var(--warning)';
+            const el = document.createElement('div');
+            el.className = 'toast';
+            el.innerHTML = `<span style="color:${color};display:flex;">${iconSvg(icon)}</span><span>${msg}</span>`;
+            document.getElementById('toastWrap').appendChild(el);
+            setTimeout(() => { el.style.transition = 'opacity .3s,transform .3s'; el.style.opacity = '0'; el.style.transform = 'translateX(30px)'; setTimeout(() => el.remove(), 300); }, 3000);
+        }
+
+        /* ============================================================
+           USER IDENTITY — persisted across sessions via localStorage
+        ============================================================ */
+        const userId = (() => {
+            let id = localStorage.getItem('cga_uid');
+            if (!id) { id = 'user-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem('cga_uid', id); }
+            return id;
+        })();
+        const API = window.location.origin.startsWith('http') ? '/api' : 'http://localhost:3000/api';
+        async function apiPost(path, body) {
+            try { const r = await fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return await r.json(); } catch (e) { console.warn('API offline, running locally'); return null; }
+        }
+        async function apiGet(path) {
+            try { const r = await fetch(API + path); return await r.json(); } catch (e) { return null; }
+        }
+        async function loadCoursesFromServer() {
+            const res = await apiGet('/courses');
+            if (res && res.success && res.courses) {
+                COURSES = res.courses;
+                renderCatalog();
+            }
+        }
+        async function loadProgressFromServer() {
+            const res = await apiGet('/progress/' + userId);
+            if (!res || !res.user) return;
+            Object.entries(res.user.courses || {}).forEach(([courseId, data]) => {
+                if (!state.progress[courseId]) return;
+                state.progress[courseId].done = new Set(data.done || []);
+                state.progress[courseId].quizPassed = data.quizPassed;
+                state.progress[courseId].quizScore = data.quizScore;
+                state.progress[courseId].certified = data.certified;
+            });
+            renderCatalog();
+        }
+
+        /* ============================================================
+           COURSE PATTERN TEMPLATE
+           Follow this exact structure when adding new courses.
+           All top-level fields are required.
+        ============================================================
+        COURSE PATTERN:
+        {
+          id: 'unique-kebab-id',     // must be unique; also add to state.progress
+          title: 'Course Title',
+          cat: 'Category',           // Phishing | Passwords | Social Engineering | Network | Malware | Mobile
+          icon: 'icon-name',         // from ICONS set: shield, mail, key, users, wifi, file, lock2, bulb, bot
+          color1: '#HEX',            // banner gradient start
+          color2: '#HEX',            // banner gradient end
+          level: 'Beginner',         // Beginner | Intermediate | Advanced
+          desc: 'Short description.',
+          objectives: [              // 3-5 bullet learning outcomes
+            'Outcome one',
+          ],
+          modules: [                 // 1-4 modules
+            {
+              title: 'Module Name',
+              lessons: [             // 2+ lessons; last lesson in module can be type 'quiz'
+                { title: 'Lesson Title', type: 'reading', dur: '5 min',
+                  body: 'Main paragraph.', points: ['Bullet 1', 'Bullet 2'] },
+                { title: 'Quiz: Module check', type: 'quiz', dur: '3 min',
+                  body: 'Test what you learned.', points: [] },
+              ],
+            },
+          ],
+          quiz: [                    // 3-7 final quiz questions
+            { q: 'Question?',
+              options: ['A','B','C','D'],
+              answer: 1,             // 0-indexed correct option
+              explanation: 'Why this answer is correct, shown after submission.' },
+          ],
+        }
+        // ✅ NO changes needed to state.progress — it is auto-built from the COURSES array.
+        // Every new course object added above is automatically tracked and persisted.
+        ============================================================ */
+
+        /* ============ COURSE DATA ============ */
+        let COURSES = [
+            {
+                id: 'phish-fund', title: 'Phishing Fundamentals', cat: 'Phishing', icon: 'mail', color1: '#3B82F6', color2: '#06B6D4', level: 'Beginner',
+                desc: 'Learn to spot the red flags in fake emails, texts, and links before they cost you.',
+                objectives: ['Identify the 5 most common phishing tactics', 'Spot lookalike domains and spoofed senders', 'Know what to do when you suspect phishing'],
+                modules: [
+                    {
+                        title: 'Introduction to Phishing', lessons: [
+                            { title: 'What is phishing?', type: 'reading', dur: '6 min', body: 'Phishing is a social-engineering attack in which a threat actor impersonates a trusted entity — a bank, a colleague, a government agency — to deceive victims into revealing credentials, transferring money, or installing malware. The name is a deliberate misspelling of "fishing": attackers cast wide nets hoping someone bites. It remains the single most common initial attack vector in data breaches because it targets human psychology rather than technical controls.', points: ['Attackers exploit trust, urgency, and fear to override critical thinking', 'Phishing arrives via email, SMS (smishing), voice calls (vishing), and chat apps', 'It is the #1 cause of data breaches globally — accounting for over 36% of incidents', 'Even security-conscious people can be fooled by well-crafted, personalised messages', 'The cost of a single successful phishing attack averages $4.9 million in total damages', 'Phishing attacks increased by 61% in 2023 compared to the previous year', 'Attackers often purchase expired domains that look like legitimate brands', 'HTTPS alone does not make a site safe — phishing sites routinely use HTTPS certificates', 'You can report phishing emails in Outlook using the built-in "Report Phishing" button'] },
+                            { title: 'Types of phishing attacks', type: 'reading', dur: '7 min', body: 'Phishing is not one-size-fits-all. Attackers tailor their techniques depending on the target, channel, and goal. Understanding each variant helps you recognise an attack even when it arrives in an unexpected form. The sophistication ranges from mass spray-and-pray campaigns to meticulously researched attacks on single individuals.', points: ['Spear phishing — targeted at a specific person using their name, role, and personal details', 'Whaling — spear phishing aimed at C-suite executives and board members', 'Smishing — phishing via SMS, often impersonating delivery companies or banks', 'Vishing — voice-based phishing; attackers call pretending to be IT support or government agencies', 'Clone phishing — a real email is duplicated with malicious links swapped in', 'Business Email Compromise (BEC) — impersonating executives to authorise fraudulent wire transfers', 'Angler phishing — attackers create fake social media customer service accounts to intercept complaints', 'Brand impersonation accounts for 57% of all phishing attacks — Microsoft, PayPal, and Amazon top the list', 'Seasonal phishing spikes occur around tax season, Black Friday, and crisis events (e.g. pandemics)'] },
+                        ]
+                    },
+                    {
+                        title: 'Spotting the Signs', lessons: [
+                            { title: 'Anatomy of a fake email', type: 'reading', dur: '8 min', body: 'Most phishing emails share a predictable structure that, once you know how to look, reveals itself quickly. Attackers rely on you glancing rather than inspecting. Slowing down for just 30 seconds before clicking any link or opening any attachment is the single most effective defensive habit you can build.', points: ['Check the actual sender address — the display name can say anything, the domain in angle brackets is what matters', 'Hover over links before clicking to preview the real destination URL in your status bar', 'Watch for urgency language: "Your account will be suspended in 24 hours", "Act now"', 'Legitimate organisations never ask for passwords, PINs, or full card numbers by email', 'Generic greetings like "Dear Customer" instead of your real name are a red flag', 'Look for subtle misspellings in domain names: paypa1.com, micros0ft.com, arnazon.com', 'Unexpected attachments — especially .docm, .xlsm, .zip, or .exe files — should never be opened without verification', 'Mismatched branding — wrong fonts, colours, or low-resolution logos — is a classic tell', 'The "Reply-To" address in a phishing email is often different from the "From" address', 'AI-generated phishing emails now have near-perfect grammar — never rely on typos alone as a red flag'] },
+                            { title: 'Quiz: Spot the phish', type: 'quiz', dur: '5 min', body: 'A short practice quiz to test what you just learned.', points: [] },
+                        ]
+                    },
+                ],
+                quiz: [
+                    { q: 'Which of these is the strongest sign of a phishing email?', options: ['A company logo in the header', 'Urgent language demanding immediate action', 'A greeting with your first name', 'An email sent during business hours'], answer: 1, explanation: 'Urgency is the attacker\'s most effective tool — it shuts down careful thinking and pushes victims to act before they can verify anything.' },
+                    { q: 'What should you do before clicking a link in an unexpected email?', options: ['Click it to see where it goes', 'Hover over it to preview the real destination', 'Forward it to a friend first', 'Reply asking if it is legitimate'], answer: 1, explanation: 'Hovering (or long-pressing on mobile) previews the real URL destination without triggering it, so you can spot mismatches before clicking.' },
+                    { q: 'A lookalike domain like "paypa1.com" is an example of:', options: ['Typosquatting', 'A CDN redirect', 'A verified merchant', 'A DNS cache issue'], answer: 0, explanation: 'Typosquatting registers domains with deliberate misspellings or character substitutions (like 1 instead of l) to deceive users at a glance.' },
+                    { q: 'Spear phishing differs from regular phishing because it is:', options: ['Sent to millions of random users', 'Targeted at a specific person using personal details', 'Only delivered by SMS', 'Always from a government domain'], answer: 1, explanation: 'Spear phishing uses personal details gathered from social media or prior breaches to craft highly convincing, personalised messages aimed at one specific target.' },
+                    { q: 'If you suspect an email is phishing, the best first step is to:', options: ['Reply and ask them to stop', 'Click "unsubscribe"', 'Report it and delete without clicking anything', 'Forward your password to verify'], answer: 2, explanation: 'Reporting before deleting gives your security team a sample to block future attempts. Clicking anything — even unsubscribe — confirms your address and may execute malicious code.' },
+                ],
+            },
+            {
+                id: 'pwd-hygiene', title: 'Password Hygiene Mastery', cat: 'Passwords', icon: 'key', color1: '#F59E0B', color2: '#EF4444', level: 'Beginner',
+                desc: 'Build password habits that actually hold up against real-world attacks.',
+                objectives: ['Create passwords that resist cracking and guessing', 'Understand why password reuse is dangerous', 'Set up a password manager and MFA'],
+                modules: [
+                    {
+                        title: 'Why Passwords Fail', lessons: [
+                            { title: 'The password reuse problem', type: 'reading', dur: '6 min', body: 'When a website stores your password and that site gets breached, attackers obtain a list of email-and-password pairs. They then run automated tools — called credential stuffers — that try those exact combinations on hundreds of other sites within minutes. If you used the same password on Gmail, your bank, and a small forum that just got hacked, all three accounts are instantly at risk.', points: ['Over 24 billion stolen credentials are actively circulating on criminal forums right now', 'Credential stuffing tools attempt thousands of logins per second across multiple sites', 'A breach on one low-value site can cascade into your email, banking, and work accounts', 'Unique passwords per site completely contain the blast radius — a breach on one site affects only that site', 'Use HaveIBeenPwned.com to check if your email appears in known data breaches', '80% of hacking-related breaches involve stolen or weak passwords according to Verizon DBIR', 'Attackers use "password spraying" — one common password tried against thousands of accounts', 'Even if you changed a reused password last year, if the breach was old it may already be for sale', 'Corporate SSO (Single Sign-On) systems are prime targets because one credential unlocks everything'] },
+                            { title: 'Strength vs. length', type: 'reading', dur: '5 min', body: 'Counter-intuitively, a long, simple passphrase is far harder for a computer to crack than a short, complex string. Password cracking tools are optimised to try common substitutions like "@" for "a" and "0" for "o" — so "P@ssw0rd" is effectively as weak as "password". Length, however, exponentially expands the search space. A 6-word random passphrase has more possible combinations than a 10-character complex password.', points: ['A 16-character passphrase beats an 8-character complex one in brute-force resistance', 'Avoid predictable substitutions: "P@ssw0rd", "S3cur1ty", "Adm1n" are all trivially cracked', 'Random word combinations are both statistically strong and human-memorable', 'NIST now recommends focusing on password length over mandatory complexity rules', 'Entropy is what matters — randomness, not just mixing character types', 'Never use personal info: birthdays, pet names, or street addresses are guessable from social media', 'A modern GPU can crack an 8-character complex password in under 1 hour using brute force', 'Passphrase example: "Maple-Torch-River-42" is far stronger than "P@ssw0rd!" and easier to remember', 'Mandatory 90-day password rotation is now discouraged by NIST — it leads to weaker, predictable passwords'] },
+                        ]
+                    },
+                    {
+                        title: 'Building Better Habits', lessons: [
+                            { title: 'Password managers explained', type: 'reading', dur: '7 min', body: 'A password manager is software that generates truly random, unique passwords for every site and stores them in an encrypted vault protected by a single master password. You only need to remember one strong passphrase — the manager handles everything else. Most managers also auto-fill login forms, which adds a layer of protection against phishing.', points: ['Generates cryptographically random passwords — e.g. "X8#mK2!qR5@vL9" — that are impossible to guess', 'Auto-fill works only on the correct domain, blocking lookalike phishing pages automatically', 'Syncs securely across all your devices with end-to-end encryption', 'Leading options: Bitwarden (free, open-source), 1Password, Dashlane, Apple Keychain', 'Your master password is never stored by the provider — if you forget it, no one can recover it', 'Enable biometric unlock (fingerprint/Face ID) for quick, secure daily access', 'Password managers also warn you when a saved password appears in known data breaches', 'Business/team password managers allow secure sharing of credentials without emailing passwords', 'Browser-built-in password managers are better than nothing, but dedicated managers offer more security features'] },
+                            { title: 'Quiz: Password strength check', type: 'quiz', dur: '5 min', body: 'Test your instincts on what makes a password strong.', points: [] },
+                        ]
+                    },
+                ],
+                quiz: [
+                    { q: 'Why is reusing the same password across sites risky?', options: ['It slows down your typing', 'One leaked password can unlock every account that shares it', 'Browsers block reused passwords', 'It has no real risk'], answer: 1, explanation: 'Attackers use credential-stuffing tools that automatically try leaked username/password pairs across thousands of sites within minutes of a breach going public.' },
+                    { q: 'Which password is generally strongest?', options: ['Summer2024!', 'correct-horse-battery-staple-42', 'P@ssword1', 'qwerty123'], answer: 1, explanation: 'Length beats complexity. A multi-word passphrase has a huge search space for brute-force attacks and is far easier to remember than a short symbol-heavy string.' },
+                    { q: 'What is the main benefit of a password manager?', options: ['It makes passwords shorter', 'It generates and stores unique strong passwords for you', 'It removes the need for MFA', 'It shares your passwords with friends'], answer: 1, explanation: 'Password managers generate truly random, unique credentials per site and store them encrypted, so a breach on one site never cascades to others.' },
+                    { q: 'Multi-factor authentication (MFA) protects you by:', options: ['Replacing your password entirely', 'Requiring a second proof of identity beyond your password', 'Making your password visible to support staff', 'Slowing down login on purpose'], answer: 1, explanation: 'MFA means a stolen password alone is not enough — the attacker also needs to compromise your physical device or intercept a one-time code.' },
+                    { q: 'Which is the safest place to store your passwords?', options: ['A sticky note on your monitor', 'A plain text file named "passwords"', 'A reputable password manager', 'Your email drafts folder'], answer: 2, explanation: 'Reputable password managers encrypt your vault locally before syncing, so even if the provider is breached the content is unreadable without your master password.' },
+                ],
+            },
+            {
+                id: 'social-eng', title: 'Social Engineering: Human Hacking', cat: 'Social Engineering', icon: 'users', color1: '#EF4444', color2: '#F59E0B', level: 'Intermediate',
+                desc: 'Understand the psychological tricks attackers use to manipulate people, not systems.',
+                objectives: ['Recognise pretexting, baiting, and tailgating', 'Understand why urgency and authority are exploited', 'Build a habit of verifying before trusting'],
+                modules: [
+                    {
+                        title: 'The Psychology of Manipulation', lessons: [
+                            { title: 'Why humans are the weakest link', type: 'reading', dur: '7 min', body: 'No matter how strong an organisation\'s technical defences are, attackers frequently find it faster and easier to manipulate a human employee than to break through those controls. Social engineering attacks succeed not by tricking stupid people but by exploiting the predictable psychological responses of normal, capable people.', points: ['Authority — people comply with requests from perceived authority figures (IT, management, government)', 'Urgency — "Your account will be locked in 10 minutes" bypasses careful thinking', 'Social proof — "Everyone else has already done this" pressures compliance', 'Reciprocity — a small favour makes people feel obligated to return it', 'Liking — we are more likely to comply with requests from people we like or relate to', 'Attackers research targets on LinkedIn, social media, and company websites before striking', 'Even highly security-aware people are susceptible when caught off-guard or under pressure', 'The average dwell time before a social engineering breach is detected is 197 days', 'Insider threat is closely related — employees coerced through personal pressure or blackmail', 'Security culture matters: organisations that run regular awareness training have 70% fewer incidents'] },
+                            { title: 'Common tactics: pretexting & baiting', type: 'reading', dur: '6 min', body: 'Pretexting is when an attacker invents a fictional scenario to justify why they need information or access. Baiting lures victims with something enticing, like a "found" USB drive labelled "Salary Data 2024" left in a car park. Both tactics work by establishing a compelling reason for the victim to lower their guard and act without verification.', points: ['Classic pretext: "Hi, this is IT support — we detected unusual activity and need your login to fix it"', 'Baiting with USB drives: 45% of people plug in drives they find, according to security research', 'Invoice fraud pretext: attacker poses as a known supplier with updated bank details', 'Tailgating exploits politeness — most people hold doors open for someone carrying boxes', 'Shoulder surfing: watching someone type their PIN or password in a public space', 'Dumpster diving: searching discarded documents and hardware for sensitive information', 'Always verify identity through a known, independent channel before acting on any unusual request', 'Watering hole attacks target websites frequently visited by the intended victims', 'Fake IT helpdesk calls are the single most common enterprise social engineering attack vector', 'Vishing success rates are high because voice communications create a stronger sense of trust than email'] },
+                        ]
+                    },
+                    {
+                        title: 'Defence in Practice', lessons: [
+                            { title: 'Verify before you trust', type: 'reading', dur: '6 min', body: 'The most powerful defence against social engineering is a simple habit: pause and verify through a separate, trusted channel before acting on any unusual or high-stakes request. This breaks the attacker\'s narrative and defeats nearly every pretext attack.', points: ['Always call back on a number from the company directory — never use contact info provided by the requestor', 'Slow down: deliberately pause when a request feels urgent — urgency is a manipulation tactic', 'It is professionally acceptable to say "I need to verify this first before I proceed"', 'Challenge anyone entering a secure area without a visible badge — even if they seem legitimate', 'Follow the clear-desk policy: lock your screen when stepping away, shred sensitive documents', 'Report suspicious contacts to your security team — even if you did not fall for it', 'Assume that any out-of-the-ordinary request, however polite, could be a social engineering attempt', 'Use a code word system with your finance team for approving large transfers over the phone', 'When in doubt, escalate to your manager before taking irreversible action', 'Periodic simulation exercises — like fake phishing tests — dramatically build real-world resistance'] },
+                            { title: 'Quiz: Spot the manipulation', type: 'quiz', dur: '5 min', body: 'Practice recognising manipulation tactics in short scenarios.', points: [] },
+                        ]
+                    },
+                ],
+                quiz: [
+                    { q: 'Pretexting is best described as:', options: ['Sending malware attachments', 'Inventing a false scenario to extract information', 'A type of firewall', 'A password cracking tool'], answer: 1, explanation: 'Pretexting creates a believable false context — impersonating IT support, a new colleague, or a delivery service — to earn enough trust that the victim voluntarily hands over information.' },
+                    { q: 'What is the best defence against an urgent phone request for credentials?', options: ['Comply immediately to avoid trouble', 'Hang up and call back on a known, trusted number', 'Give a fake password instead', 'Ask a coworker to answer instead'], answer: 1, explanation: 'Calling back on a number you already trust (not one the caller provides) breaks the attacker\'s script and verifies identity through an independent channel.' },
+                    { q: 'Tailgating refers to:', options: ['Following someone through a secure door without badging in', 'A type of email spoofing', 'A slow network attack', 'A password reset trick'], answer: 0, explanation: 'Tailgating exploits social politeness — most people hold doors open for others — to gain physical access to a controlled area without authorisation.' },
+                    { q: 'Why do attackers research targets on social media?', options: ['To find shared interests only', 'To craft convincing, personalised pretexts', 'It is required by law', 'To slow down their attacks'], answer: 1, explanation: 'Personal details like employer, job title, colleagues\' names, and recent events let attackers construct highly believable pretexts that feel familiar and legitimate.' },
+                    { q: 'Which emotion do social engineers exploit most often?', options: ['Boredom', 'Urgency and fear', 'Curiosity about weather', 'Satisfaction'], answer: 1, explanation: 'Urgency and fear override analytical thinking — a message claiming your account will be locked in 10 minutes short-circuits careful verification.' },
+                ],
+            },
+            {
+                id: 'wifi-safety', title: 'Securing Your Home & Public WiFi', cat: 'Network', icon: 'wifi', color1: '#06B6D4', color2: '#3B82F6', level: 'Beginner',
+                desc: 'Lock down your home network and stay safe when connecting on the go.',
+                objectives: ['Configure a secure home router', 'Recognise risky public WiFi behaviour', 'Understand what a VPN actually protects'],
+                modules: [
+                    {
+                        title: 'Home Network Basics', lessons: [
+                            { title: 'Router hardening checklist', type: 'reading', dur: '7 min', body: 'Your home router is the gateway between your devices and the internet, yet most people never change a single setting after the ISP installs it. Default admin credentials are published online; attackers actively scan for routers using them. Hardening your router takes less than 15 minutes and removes the most common attack vectors.', points: ['Change the default admin username and password immediately — defaults are publicly listed online', 'Set your WiFi encryption to WPA3 if supported; WPA2-AES as a minimum — never WEP or open', 'Disable WPS (Wi-Fi Protected Setup) — it has a known brute-force vulnerability', 'Enable automatic firmware updates or check for updates monthly', 'Change the default SSID (network name) to something that does not reveal your ISP or router model', 'Create a separate guest network for visitors and IoT devices to isolate them from your main network', 'Disable remote management unless you specifically need it — it creates an external attack surface', 'Enable the router\'s built-in firewall and disable UPnP (Universal Plug and Play) which is often exploited', 'Check which devices are connected to your router monthly — an unknown device could be an intruder', 'Place your router centrally in your home to reduce signal leakage outside your property', 'Consider enabling DNS-over-HTTPS (DoH) on your router to prevent DNS snooping by ISPs'] },
+                        ]
+                    },
+                    {
+                        title: 'Staying Safe on the Go', lessons: [
+                            { title: 'Public WiFi risks', type: 'reading', dur: '6 min', body: 'Open WiFi networks in cafes, airports, hotels, and shopping centres carry inherent risks. Because anyone can join, attackers can set up rogue access points that look legitimate but route all your traffic through their device. While HTTPS encrypts individual website connections, other data, metadata, and DNS queries may still be visible.', points: ['Avoid logging into banking, email, or work accounts on open public WiFi', 'Verify the exact network name with staff before connecting — rogue hotspots often have similar names', 'Look for HTTPS (padlock icon) before entering any credentials on a website', 'Use a reputable VPN to encrypt all your traffic on untrusted networks — this hides even DNS queries', 'Disable automatic WiFi connection to prevent your phone from joining rogue networks silently', 'Turn off file sharing and AirDrop when on public networks', 'Mobile data (4G/5G) is significantly safer than public WiFi for sensitive activities', 'Evil twin attacks involve creating a duplicate of a legitimate AP with a stronger signal to hijack connections', 'Free airport/hotel WiFi often does not use enterprise-grade security — treat it as hostile', 'Use two-factor authentication on all critical accounts so a stolen password alone isn\'t enough for an attacker'] },
+                            { title: 'Quiz: Network safety basics', type: 'quiz', dur: '4 min', body: 'Test what you know about safe network habits.', points: [] },
+                        ]
+                    },
+                ],
+                quiz: [
+                    { q: 'What is the first thing you should change on a new router?', options: ['The WiFi name only', 'The default admin password', 'Nothing, defaults are safe', 'The router\'s colour settings'], answer: 1, explanation: 'Router manufacturers use the same default credentials across thousands of units. Attackers scan for these well-known defaults to gain full admin access and redirect your traffic.' },
+                    { q: 'Which encryption should your home WiFi use at minimum?', options: ['WEP', 'Open (no password)', 'WPA2 or WPA3', 'No encryption needed'], answer: 2, explanation: 'WEP was cracked decades ago and provides no real protection. WPA2 is the minimum acceptable standard; WPA3 is preferred where supported.' },
+                    { q: 'On public WiFi, a VPN mainly helps by:', options: ['Making your internet faster', 'Encrypting your traffic from nearby snoopers', 'Removing the need for passwords', 'Blocking all websites'], answer: 1, explanation: 'A VPN creates an encrypted tunnel between your device and the VPN server, preventing anyone on the local network from reading your traffic even on an open hotspot.' },
+                    { q: 'Before entering sensitive data on a website, you should check for:', options: ['A colourful design', 'HTTPS and a valid certificate', 'Pop-up ads', 'Fast loading speed'], answer: 1, explanation: 'HTTPS ensures the connection is encrypted. Check the domain name itself too — the padlock alone doesn\'t prove the site is legitimate, only that the connection is encrypted.' },
+                    { q: 'Keeping router firmware updated helps because it:', options: ['Changes the WiFi name automatically', 'Patches known security vulnerabilities', 'Increases your internet speed', 'Is required by your ISP monthly'], answer: 1, explanation: 'Firmware updates patch security flaws that attackers actively exploit. An unpatched router can be compromised and used to redirect or log all your network traffic.' },
+                ],
+            },
+            {
+                id: 'doc-security', title: 'Document & File Security', cat: 'Network', icon: 'file', color1: '#22C55E', color2: '#06B6D4', level: 'Intermediate',
+                desc: 'Spot malicious attachments and macros before they compromise your device.',
+                objectives: ['Recognise risky file types and macros', 'Understand sandboxing and safe previewing', 'Know when to isolate a suspicious file'],
+                modules: [
+                    {
+                        title: 'Malicious Documents 101', lessons: [
+                            { title: 'How macros deliver malware', type: 'reading', dur: '7 min', body: 'Microsoft Office documents support an embedded scripting language called VBA. Macros are mini-programs inside a document. When an attacker embeds a malicious macro and emails it, the attack depends on the victim clicking "Enable Content". Once enabled, macros can silently download ransomware, create backdoors, or exfiltrate data without any further interaction.', points: ['The "Enable Content" or "Enable Macros" prompt is a deliberate social engineering trigger — treat it as a red flag', 'Legitimate business documents almost never require enabling macros to view their content', 'Macro-enabled file types: .docm, .xlsm, .pptm — the "m" suffix indicates macros are present', 'Attackers often disguise macros as invoices, delivery notices, or HR documents to create urgency', 'PDFs can also carry malicious JavaScript or embedded links to phishing pages', 'Even image files (.jpg, .png) have historically been used to exploit unpatched image parsers', 'Compressed files (.zip, .rar) are used to bypass email filters that scan attachments', 'Microsoft now disables macros by default in files downloaded from the internet (Mark-of-the-Web block)', 'Attackers tell victims to copy the file to a trusted location to bypass this protection — never do this', 'DDE (Dynamic Data Exchange) and XLM macros are alternative code-execution paths in Office documents', 'Report any document that asks you to enable content to your IT security team immediately'] },
+                            { title: 'Quiz: File safety habits', type: 'quiz', dur: '4 min', body: 'Check your instincts on document safety.', points: [] },
+                        ]
+                    },
+                ],
+                quiz: [
+                    { q: 'What should you do if a document asks you to "Enable Content" or "Enable Macros"?', options: ['Always click enable to see the content', 'Be suspicious, especially from unknown senders', 'Forward it to everyone first', 'Rename the file'], answer: 1, explanation: 'The "Enable Content" prompt is a classic delivery mechanism. Legitimate professional documents almost never require this; treat any such prompt from an unknown sender as a red flag.' },
+                    { q: 'Which file types are more commonly used to deliver malware?', options: ['.txt files', '.docm / macro-enabled Office files', '.png images', '.mp3 audio files'], answer: 1, explanation: '.docm and .xlsm files support embedded VBA macros. When enabled, these can download and execute malware in the background without any further user interaction.' },
+                    { q: 'A safe way to inspect a suspicious file is to:', options: ['Open it directly on your main computer', 'Use a sandboxed viewer or ask IT/security to review it', 'Email it to a personal account', 'Rename it to .safe'], answer: 1, explanation: 'A sandbox isolates the file from the rest of your system. Online sandboxes like VirusTotal or in-browser previews analyse the file without allowing it to affect your device.' },
+                ],
+            },
+            {
+                id: 'qr-vigilance', title: 'QR Code Vigilance', cat: 'Phishing', icon: 'lock2', color1: '#8B5CF6', color2: '#06B6D4', level: 'Beginner',
+                desc: 'QR codes are the newest phishing vector — learn to scan smart.',
+                objectives: ['Understand "quishing" (QR phishing)', 'Preview a QR destination before opening it', 'Spot tampered QR codes in the physical world'],
+                modules: [
+                    {
+                        title: 'QR Code Risks', lessons: [
+                            { title: 'What is quishing?', type: 'reading', dur: '6 min', body: 'Quishing (QR code phishing) is a rapidly growing attack technique that uses malicious QR codes to redirect victims to phishing websites, payment-harvesting pages, or malware downloads. QR codes are particularly dangerous because they bypass the link-preview habits people have built for email.', points: ['QR codes on physical surfaces (meters, posters, stickers) can be tampered with — a fake sticker placed over the real one', 'In emails, QR codes bypass corporate email security filters that scan text links', 'Attackers use QR codes specifically because victims have lower suspicion than with email links', 'Always preview the URL your phone shows before tapping through — check the domain carefully', 'Parking meter fraud is a common real-world quishing attack — always verify payment sites', 'If a QR code in an email demands urgent action, treat it exactly as you would a phishing link', 'Report any suspicious physical QR stickers to the venue or your security team', 'QR code attacks surged 587% in Q3 2023 as attackers discovered they evade traditional email filters', 'Some QR codes use URL shorteners (bit.ly, tinyurl) to hide the final malicious destination', 'Dedicated QR scanner apps with built-in URL preview and safety ratings offer better protection than camera apps', 'Never scan a QR code on a screen at an unsolicited pop-up, unexpected alert, or untrusted website'] },
+                            { title: 'Quiz: QR code safety', type: 'quiz', dur: '3 min', body: 'A quick check on spotting QR scams.', points: [] },
+                        ]
+                    },
+                ],
+                quiz: [
+                    { q: '"Quishing" refers to phishing delivered via:', options: ['Voice calls', 'QR codes', 'Fax machines', 'Bluetooth'], answer: 1, explanation: 'QR codes bypass the link-preview habits people use for email — you can\'t hover over a QR code — making them an effective phishing vector that is still largely unfamiliar to most users.' },
+                    { q: 'A sticker QR code pasted over a parking meter\'s real code is an example of:', options: ['A safe promotional offer', 'Physical tampering used for phishing', 'A firmware update', 'A loyalty programme'], answer: 1, explanation: 'Attackers print and paste fake QR stickers over real ones in high-traffic public locations. The replacement code redirects to a payment-harvesting or credential-stealing site.' },
+                    { q: 'Before opening a link from a scanned QR code, you should:', options: ['Enter your password immediately', 'Preview the URL destination first', 'Ignore it, QR codes are always safe', 'Scan it twice to confirm'], answer: 1, explanation: 'Most phone camera apps show the URL before opening it. Make it a habit to read that URL and confirm the domain is exactly what you expect before tapping.' },
+                ],
+            },
+            {
+                id: 'data-privacy', title: 'Data Privacy & GDPR Essentials', cat: 'Network', icon: 'shield', color1: '#22C55E', color2: '#3B82F6', level: 'Intermediate',
+                desc: 'Understand how personal data must be protected, what GDPR requires, and what to do when something goes wrong.',
+                objectives: ['Identify what counts as personal data under GDPR', 'Know your rights and the organisation\'s obligations', 'Respond correctly when a data breach occurs'],
+                modules: [
+                    {
+                        title: 'Understanding Personal Data', lessons: [
+                            { title: 'What is personal data?', type: 'reading', dur: '6 min', body: 'Personal data is any information that can directly or indirectly identify a living individual — names, emails, IP addresses, biometric records, and more. Under GDPR, organisations must have a lawful basis for every piece of data they collect.', points: ['Names, phone numbers, and emails are obvious personal data', 'IP addresses, location data, and cookies also count', 'You must document WHY you hold each category of data'] },
+                            { title: 'Sensitive data categories', type: 'reading', dur: '5 min', body: 'Some categories receive extra protection: health data, biometrics used for identification, racial or ethnic origin, political opinions, and sexual orientation. Processing these requires explicit consent or another specific legal basis.', points: ['Health and biometric data carry the highest risk', 'Always seek legal advice before processing special categories', 'Data minimisation — collect only what you truly need'] },
+                            { title: 'Quiz: Personal data basics', type: 'quiz', dur: '4 min', body: 'Quick check on what qualifies as personal data and why it matters.', points: [] },
+                        ]
+                    },
+                    {
+                        title: 'Rights, Obligations & Breaches', lessons: [
+                            { title: 'Individual rights under GDPR', type: 'reading', dur: '7 min', body: 'Data subjects have eight key rights including the right to access their data, the right to rectification, and the right to erasure ("right to be forgotten"). Organisations must be able to fulfil these within set timeframes.', points: ['Subject Access Requests (SARs) must be fulfilled within 30 days', 'Right to erasure does not apply in all circumstances — legal holds exist', 'Document every request and your response'] },
+                            { title: 'Handling a data breach', type: 'reading', dur: '6 min', body: 'A personal data breach — whether accidental or malicious — must be reported to your supervisory authority within 72 hours if it poses a risk to individuals. High-risk breaches also require direct notification to the affected people.', points: ['72-hour clock starts from when you become aware of the breach', 'Keep a written record of every breach regardless of severity', 'Contain first, then assess risk, then notify as required'] },
+                            { title: 'Quiz: GDPR obligations', type: 'quiz', dur: '5 min', body: 'Test your knowledge of rights, timelines, and breach response.', points: [] },
+                        ]
+                    },
+                ],
+                quiz: [
+                    { q: 'Which of the following is considered personal data under GDPR?', options: ['A company\'s registration number', 'An IP address linked to a device', 'Publicly available news articles', 'Aggregated, anonymised statistics'], answer: 1, explanation: 'An IP address can identify a specific device and often its user, making it personal data under GDPR. Company registration numbers identify legal entities, not individuals.' },
+                    { q: 'What is the maximum time allowed to respond to a Subject Access Request?', options: ['7 days', '14 days', '30 days', '90 days'], answer: 2, explanation: 'GDPR Article 12 requires organisations to respond to Subject Access Requests without undue delay and within one calendar month (approximately 30 days).' },
+                    { q: 'A personal data breach that poses a risk to individuals must be reported to the supervisory authority within:', options: ['24 hours', '48 hours', '72 hours', '7 days'], answer: 2, explanation: 'GDPR Article 33 mandates notification to the supervisory authority within 72 hours of becoming aware of a breach that is likely to result in risk to individuals\' rights and freedoms.' },
+                    { q: 'Which of the following is a special category of data under GDPR requiring extra protection?', options: ['Job title', 'Email address', 'Biometric data used for identification', 'Postal address'], answer: 2, explanation: 'Article 9 lists special categories including health, biometric, genetic, racial/ethnic origin, and political opinion data. These require explicit consent or a specific legal basis to process.' },
+                    { q: 'The principle of data minimisation means:', options: ['Collect all data possible and decide later', 'Only collect data that is necessary for the stated purpose', 'Delete data after one year automatically', 'Share data freely within your organisation'], answer: 1, explanation: 'Data minimisation (Article 5) requires that personal data be adequate, relevant, and limited to what is necessary for the specific purpose it was collected for.' },
+                ],
+            },
+            {
+                id: 'malware-def', title: 'Malware Awareness & Defense', cat: 'Network', icon: 'bot', color1: '#EF4444', color2: '#8B5CF6', level: 'Intermediate',
+                desc: 'Understand how malware infiltrates systems, recognise the warning signs, and build layered defences to protect your devices and data.',
+                objectives: ['Identify common malware types and how they spread', 'Recognise early symptoms of a malware infection', 'Implement endpoint protection strategies and incident response steps', 'Understand ransomware attack chains and how to defend against them'],
+                modules: [
+                    {
+                        title: 'Understanding Malware', lessons: [
+                            { title: 'What is malware?', type: 'reading', dur: '6 min', body: 'Malware — short for malicious software — is any program or code intentionally designed to damage systems, steal data, or gain unauthorised access. It ranges from simple adware to sophisticated state-sponsored tools capable of crippling critical infrastructure. Understanding the landscape is the first step to building effective defences.', points: ['Malware is an umbrella term covering viruses, worms, trojans, ransomware, spyware, adware, and rootkits', 'Over 560,000 new malware samples are detected every single day by security vendors', 'Malware can be delivered via email attachments, malicious websites, USB drives, software downloads, or supply chain attacks', 'The goal varies: data theft, ransom payments, espionage, sabotage, or building botnets for further attacks', 'Modern malware is often polymorphic — it changes its code to evade signature-based detection', 'Fileless malware lives entirely in memory and leaves no files on disk, making it extremely hard to detect', 'Malware-as-a-Service (MaaS) lets unskilled attackers rent professional malware kits on the dark web', 'The average cost of a malware attack on a company is $2.6 million according to Accenture research', 'Mobile malware is surging — Android devices are especially targeted through sideloaded apps'] },
+                            { title: 'Types of malware explained', type: 'reading', dur: '8 min', body: 'Each malware family has a distinct behaviour pattern, delivery method, and objective. Recognising these categories sharpens your ability to identify an infection before it causes serious damage.', points: ['Virus — attaches to legitimate files and spreads when those files are shared or executed', 'Worm — self-replicating; spreads automatically across networks without human interaction (e.g. WannaCry)', 'Trojan — disguised as legitimate software; once installed, creates backdoors for remote access', 'Ransomware — encrypts files and demands payment for the decryption key; variants include Lockbit, Conti, and REvil', 'Spyware — silently monitors activity: keystrokes, browser history, clipboard data, and webcam/microphone', 'Adware — injects unwanted advertisements; often bundled with free software installers', 'Rootkit — deeply embedded in the OS kernel; hides its presence from antivirus and system logs', 'Keylogger — records every keystroke; captures passwords, credit cards, and private messages', 'Botnet agent — turns your device into a "zombie" controlled remotely as part of a distributed attack network', 'RAT (Remote Access Trojan) — gives attackers full remote control of your device as if they were sitting in front of it'] },
+                            { title: 'Quiz: Malware basics', type: 'quiz', dur: '4 min', body: 'Test your understanding of malware categories and delivery methods.', points: [] },
+                        ]
+                    },
+                    {
+                        title: 'How Malware Spreads', lessons: [
+                            { title: 'Infection vectors', type: 'reading', dur: '7 min', body: 'Understanding how malware enters your system is critical to blocking it. Attackers use multiple vectors — often chaining them together — to bypass defences and establish persistence.', points: ['Email attachments remain the #1 delivery vector — especially Office documents with malicious macros', 'Drive-by downloads silently install malware when you visit a compromised or malicious website', 'Software supply chain attacks inject malware into legitimate updates (e.g. the SolarWinds breach)', 'USB drop attacks plant infected drives in public places hoping curious employees plug them in', 'Malvertising embeds malware into legitimate ad networks so even trusted websites can serve it', 'Pirated software and cracked apps are a major source of trojans and cryptocurrency miners', 'Exploit kits automatically scan visitors for unpatched browser or plugin vulnerabilities', 'Watering hole attacks compromise websites frequently visited by the target group', 'Social media DMs and chat apps are increasingly used to deliver malware-laden links and files'] },
+                            { title: 'Recognising infection symptoms', type: 'reading', dur: '6 min', body: 'Early detection dramatically reduces damage. Many malware infections show subtle warning signs before escalating. Training yourself to spot these patterns buys critical response time.', points: ['Sudden system slowdowns, excessive fan noise, or CPU usage spikes when idle', 'Unfamiliar programs, browser toolbars, or extensions appearing without installation', 'Antivirus or Windows Defender being disabled or unable to update', 'Web browser homepage or default search engine changed without your action', 'Unexpected pop-ups, redirections, or ads appearing even outside the browser', 'Files encrypted or renamed with strange extensions (.locked, .crypt, .ryuk)', 'Outbound network traffic spikes — malware calling home to a command-and-control server', 'New admin accounts created, passwords changed, or security settings altered', 'Crash loops, blue screens, or applications failing to launch after normal restarts'] },
+                            { title: 'Quiz: Infection vectors', type: 'quiz', dur: '4 min', body: 'Identify how malware gets in and what symptoms to watch for.', points: [] },
+                        ]
+                    },
+                    {
+                        title: 'Ransomware Deep Dive', lessons: [
+                            { title: 'Anatomy of a ransomware attack', type: 'reading', dur: '8 min', body: 'Ransomware has evolved from simple screen-lockers into double and triple extortion schemes that can cripple entire organisations. Understanding the full attack chain — from initial access to payment demand — reveals multiple points where defences can break the chain.', points: ['Initial access: usually a phishing email, exposed RDP port, or exploited VPN vulnerability', 'Lateral movement: attackers spend days or weeks moving through the network before encrypting', 'Privilege escalation: gaining admin credentials to disable backups and security tools', 'Data exfiltration: modern ransomware steals data before encrypting, enabling double extortion', 'Encryption: files are locked with military-grade encryption; decryption key held by the attacker', 'Ransom note: demands payment (usually cryptocurrency) with a countdown timer', 'Double extortion: "Pay or we publish your stolen data online"', 'Triple extortion: threatening to DDoS the victim or contact their customers and partners', 'Average ransom payment in 2023 exceeded $1.5 million; total damages including downtime are far higher', 'The FBI and NCSC advise against paying ransoms — payment funds further attacks and does not guarantee recovery'] },
+                            { title: 'Defending against ransomware', type: 'reading', dur: '7 min', body: 'No single tool stops ransomware. Effective defence requires layered security controls that address each stage of the attack chain — from preventing initial access to ensuring rapid recovery.', points: ['Maintain offline, tested backups following the 3-2-1 rule: 3 copies, 2 media types, 1 offsite', 'Patch operating systems, browsers, and VPN/RDP gateways immediately when updates are available', 'Enforce multi-factor authentication on all remote access points and admin accounts', 'Segment networks so a breach in one area cannot reach critical assets or backup servers', 'Deploy Endpoint Detection and Response (EDR) tools that detect lateral movement and file encryption patterns', 'Limit admin privileges — most users should not have local admin rights on their workstations', 'Disable RDP when not needed; if needed, restrict it to VPN-only access with MFA', 'Run regular tabletop exercises so the incident response team knows exactly what to do', 'Test backup restoration quarterly — a backup you have never tested is a backup you cannot trust', 'Have a communication plan ready: legal, PR, and law enforcement contacts documented before an incident'] },
+                            { title: 'Quiz: Ransomware defense', type: 'quiz', dur: '4 min', body: 'Test your knowledge of ransomware attack chains and defense strategies.', points: [] },
+                        ]
+                    },
+                    {
+                        title: 'Endpoint Protection & Response', lessons: [
+                            { title: 'Building a layered defense', type: 'reading', dur: '7 min', body: 'Endpoint protection has evolved far beyond traditional antivirus. Modern threats require a stack of complementary tools and practices that work together to prevent, detect, and respond to malware in real time.', points: ['Next-generation antivirus (NGAV) uses behavioural analysis, not just signature matching', 'Endpoint Detection and Response (EDR) provides real-time monitoring, alerting, and forensics', 'Host-based firewalls block unexpected inbound and outbound connections at the device level', 'Application whitelisting only allows pre-approved software to execute — everything else is blocked', 'DNS filtering blocks connections to known malicious domains before any data is exchanged', 'Full-disk encryption (BitLocker, FileVault) protects data if a device is physically stolen', 'Automatic OS and software updates close the vulnerabilities that exploit kits target', 'Browser isolation runs web content in a sandboxed container, keeping malware off the endpoint', 'Email gateway filters with sandboxing detonate attachments in a safe environment before delivery', 'Security awareness training is itself a layer — an informed user is the last line of defense'] },
+                            { title: 'Incident response basics', type: 'reading', dur: '6 min', body: 'When malware is detected, the speed and quality of your response determines whether it is a minor incident or a catastrophic breach. A rehearsed incident response plan transforms panic into procedure.', points: ['Step 1 — Isolate: disconnect the infected device from the network immediately (do NOT power off)', 'Step 2 — Alert: notify your IT security team and escalate according to the incident response plan', 'Step 3 — Contain: identify which other systems may be affected; check lateral movement indicators', 'Step 4 — Preserve evidence: take memory dumps and disk images before wiping anything', 'Step 5 — Eradicate: remove the malware, close the entry point, reset compromised credentials', 'Step 6 — Recover: restore from clean backups, verify system integrity, monitor closely for re-infection', 'Step 7 — Report: document the incident timeline, root cause, and remediation for compliance and learning', 'Never try to negotiate with ransomware operators without involving legal and law enforcement', 'Tabletop drills and simulated breaches build muscle memory so the team responds instinctively under pressure', 'Post-incident reviews (blameless retrospectives) are essential to preventing repeat incidents'] },
+                            { title: 'Quiz: Incident response', type: 'quiz', dur: '4 min', body: 'Test your knowledge of endpoint protection layers and incident response steps.', points: [] },
+                        ]
+                    },
+                ],
+                quiz: [
+                    { q: 'Which type of malware encrypts your files and demands payment for their return?', options: ['Spyware', 'Ransomware', 'Adware', 'Rootkit'], answer: 1, explanation: 'Ransomware encrypts the victim\'s files using strong encryption and demands a ransom payment (typically in cryptocurrency) in exchange for the decryption key. Modern variants also steal data before encrypting.' },
+                    { q: 'A worm differs from a virus because it:', options: ['Requires user interaction to spread', 'Can only infect mobile devices', 'Self-replicates and spreads without human interaction', 'Is always harmless'], answer: 2, explanation: 'Worms are self-replicating — they spread automatically across networks by exploiting vulnerabilities, without needing a user to open a file or click a link. The WannaCry worm infected 230,000 computers in 150 countries within hours.' },
+                    { q: 'What is the recommended first action when you suspect a malware infection?', options: ['Immediately power off the computer', 'Disconnect from the network but keep the device on', 'Try to delete the suspicious files manually', 'Continue working and report it later'], answer: 1, explanation: 'Disconnecting from the network prevents the malware from spreading laterally or communicating with its command-and-control server. Keeping the device powered on preserves volatile memory evidence that forensic investigators may need.' },
+                    { q: 'The 3-2-1 backup rule means:', options: ['Back up every 3 hours to 2 drives, 1 cloud', '3 copies of data, on 2 different media types, 1 stored offsite', '3 passwords, 2 MFA methods, 1 backup email', 'Use 3 antivirus tools, update 2 times weekly, 1 weekly scan'], answer: 1, explanation: 'The 3-2-1 rule ensures redundancy and geographic separation: 3 total copies of your data, stored on at least 2 different types of media (e.g. SSD + cloud), with 1 copy stored offsite or offline so ransomware cannot reach it.' },
+                    { q: 'Fileless malware is particularly dangerous because it:', options: ['Only targets Linux systems', 'Leaves obvious traces on the hard drive', 'Lives entirely in memory with no files on disk, making detection very difficult', 'Cannot execute without administrator privileges'], answer: 2, explanation: 'Fileless malware resides in system memory (RAM) and leverages legitimate system tools like PowerShell or WMI to execute its payload. Because it writes nothing to disk, traditional file-scanning antivirus cannot detect it.' },
+                    { q: 'Which of the following is NOT typically a sign of malware infection?', options: ['Antivirus software being disabled unexpectedly', 'A routine scheduled system update notification', 'Unknown browser extensions appearing without installation', 'Sudden CPU usage spikes when the computer is idle'], answer: 1, explanation: 'A routine scheduled system update is normal operating system behaviour. The other options — disabled antivirus, unknown browser extensions, and unexplained CPU spikes — are all classic indicators of a malware infection.' },
+                ],
+            },
+        ];
+
+        /* ============ STATE (in-memory) ============ */
+
+        /** Auto-build initial progress slots from COURSES — no manual registration needed.
+         *  Any new course added to the COURSES array is automatically tracked. */
+        function buildInitialProgress() {
+            const saved = (() => { try { return JSON.parse(localStorage.getItem('cga_progress') || '{}'); } catch (e) { return {}; } })();
+            const progress = {};
+            COURSES.forEach(c => {
+                const s = saved[c.id] || {};
+                progress[c.id] = {
+                    done: new Set(Array.isArray(s.done) ? s.done : []),
+                    quizPassed: s.quizPassed || false,
+                    quizScore: s.quizScore ?? null,
+                    certified: s.certified || false
+                };
+            });
+            return progress;
+        }
+
+        function saveProgress() {
+            const serializable = {};
+            Object.entries(state.progress).forEach(([id, p]) => {
+                serializable[id] = {
+                    done: [...p.done],
+                    quizPassed: p.quizPassed,
+                    quizScore: p.quizScore,
+                    certified: p.certified
+                };
+            });
+            localStorage.setItem('cga_progress', JSON.stringify(serializable));
+        }
+
+        const state = {
+            progress: buildInitialProgress(),
+            streak: { current: 6, best: 14, week: [1, 1, 1, 0, 1, 1, 0] },
+            currentCourse: null,
+            currentLesson: null, // { mi, li }
+            currentQuiz: { index: 0, answers: [], score: 0 },
+        };
+
+        function lessonCount(course) { return course.modules.reduce((n, m) => n + m.lessons.length, 0); }
+        function doneCount(course) { return state.progress[course.id].done.size; }
+        function pct(course) { const t = lessonCount(course); return t ? Math.round(doneCount(course) / t * 100) : 0; }
+
+        /* Lessons of type 'quiz' are quiz checkpoints that launch the course's final quiz.
+           They should only unlock once every *other* (non-quiz) lesson has been completed —
+           this is what gates the "Take Final Quiz" action across the whole app. */
+        function nonQuizLessonKeys(course) {
+            const keys = [];
+            course.modules.forEach(m => m.lessons.forEach(l => {
+                if (l.type !== 'quiz') keys.push(m.title + '__' + l.title);
+            }));
+            return keys;
+        }
+        function nonQuizLessonCount(course) { return nonQuizLessonKeys(course).length; }
+        function doneNonQuizCount(course) {
+            return nonQuizLessonKeys(course).filter(k => state.progress[course.id].done.has(k)).length;
+        }
+        function allNonQuizDone(course) {
+            const keys = nonQuizLessonKeys(course);
+            if (keys.length === 0) return true;
+            return keys.every(k => state.progress[course.id].done.has(k));
+        }
+
+        /* Flatten a course's modules/lessons into a single ordered list, used for
+           Previous/Next navigation on the standalone lesson page. */
+        function flatLessons(course) {
+            const list = [];
+            course.modules.forEach((m, mi) => m.lessons.forEach((l, li) => list.push({ mi, li, m, l })));
+            return list;
+        }
+
+        /* ============ ICON HELPERS ============ */
+        const lessonTypeIcon = { video: 'file', reading: 'file', quiz: 'quiz' };
+        function typeBadgeColor(cat) {
+            return { Phishing: 'primary', Passwords: 'warning', 'Social Engineering': 'danger', Network: 'success' }[cat] || 'primary';
+        }
+
+        /* ============ RENDER: CATALOG ============ */
+        let activeFilter = 'All';
+        function renderCatalog() {
+            const q = (document.getElementById('courseSearch').value || '').toLowerCase();
+            const list = COURSES.filter(c => (activeFilter === 'All' || c.cat === activeFilter) && (c.title.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)));
+            document.getElementById('courseGrid').innerHTML = list.map(c => {
+                const p = pct(c); const cert = state.progress[c.id].certified;
+                const bannerBg = c.bannerImage ? `background:url('${c.bannerImage}') center/cover;` : `background:linear-gradient(135deg, ${c.color1}, ${c.color2});`;
+                return `
+    <div class="glass glass-hover course-card" onclick="openCourse('${c.id}')">
+      <div class="course-banner" style="${bannerBg}">
+        <span class="lvl-badge badge badge-neutral" style="background:rgba(11,17,32,.5);color:#fff;">${c.level}</span>
+        ${cert ? `<div class="cert-flag">${iconSvg('trophy')}</div>` : ''}
+        ${c.bannerImage ? '' : iconSvg(c.icon)}
+      </div>
+      <div class="course-body">
+        <span class="cat">${c.cat}</span>
+        <h3>${c.title}</h3>
+        <p class="desc">${c.desc}</p>
+        <div class="course-meta"><span>${iconSvg('layers')}${c.modules.length} modules</span><span>${iconSvg('clock')}${lessonCount(c)} lessons</span></div>
+        <div>
+          <div class="pbar-row"><span>${p === 100 ? 'Completed' : 'Progress'}</span><span>${p}%</span></div>
+          <div class="pbar-track"><div class="pbar-fill" style="width:${p}%;${p === 100 ? 'background:linear-gradient(90deg,var(--success),var(--accent));' : ''}"></div></div>
+        </div>
+      </div>
+    </div>`;
+            }).join('') || `<div class="empty-state" style="grid-column:1/-1;">${iconSvg('search')}<div class="t">No courses found</div></div>`;
+        }
+        document.querySelectorAll('.chip[data-filter]').forEach(ch => {
+            ch.addEventListener('click', () => {
+                document.querySelectorAll('.chip[data-filter]').forEach(c => c.classList.remove('active'));
+                ch.classList.add('active'); activeFilter = ch.dataset.filter; renderCatalog();
+            });
+        });
+        document.getElementById('courseSearch').addEventListener('input', renderCatalog);
+
+        /* ============ RENDER: COURSE DETAIL (dashboard) ============ */
+        function openCourse(id) {
+            state.currentCourse = id;
+            const c = COURSES.find(x => x.id === id);
+            const bannerBg = c.bannerImage ? `background:url('${c.bannerImage}') center/cover;` : `background:linear-gradient(135deg, ${c.color1}, ${c.color2});`;
+            document.getElementById('detailBanner').style.cssText = bannerBg;
+            document.getElementById('detailBanner').innerHTML = `
+    <div>${c.bannerImage ? '' : iconSvg(c.icon, 'class="icon-big"')}<span class="cat">${c.cat} · ${c.level}</span><h2>${c.title}</h2></div>`;
+            document.getElementById('detailInfo').innerHTML = `
+    <div class="im">${iconSvg('layers')}${c.modules.length} modules</div>
+    <div class="im">${iconSvg('clock')}${lessonCount(c)} lessons</div>
+    <div class="im">${iconSvg('quiz')}${c.quiz.length}-question final quiz</div>
+    <div class="im">${iconSvg('trophy')}Certificate on completion</div>
+    ${c.introVideo ? `<div class="im"><a href="${c.introVideo}" target="_blank" style="color:var(--accent);">${iconSvg('play')}Intro video</a></div>` : ''}`;
+            document.getElementById('detailObjectives').innerHTML = (c.objectives || []).map(o => `<li>${o}</li>`).join('');
+            renderModules(c);
+            updateDetailProgress(c);
+            switchView('detail');
+        }
+
+        /* Dashboard: lists modules + lesson rows. Clicking a lesson row now navigates
+           to its own standalone page instead of expanding inline. */
+        function renderModules(c) {
+            document.getElementById('moduleList').innerHTML = c.modules.map((m, mi) => {
+                const doneInMod = m.lessons.filter(l => state.progress[c.id].done.has(m.title + '__' + l.title)).length;
+                return `
+    <div class="module">
+      <div class="module-head" data-mi="${mi}">
+        <div class="num">${mi + 1}</div>
+        <div style="flex:1;">
+          <div class="t">${m.title}</div>
+          <div class="s">${doneInMod}/${m.lessons.length} lessons complete</div>
+        </div>
+        <span class="chev">${iconSvg('chevron')}</span>
+      </div>
+      <div class="module-lessons ${mi === 0 ? 'open' : ''}" id="mod-lessons-${mi}">
+        ${m.lessons.map((l, li) => {
+                    const key = m.title + '__' + l.title;
+                    const done = state.progress[c.id].done.has(key);
+                    return `
+          <div class="lesson-row ${done ? 'done' : ''}" data-mi="${mi}" data-li="${li}">
+            <div class="lesson-check ${done ? 'done' : ''}">${done ? iconSvg('check') : ''}</div>
+            <div class="lesson-icon">${iconSvg(lessonTypeIcon[l.type])}</div>
+            <div class="lesson-main"><div class="t">${l.title}</div><div class="s">${l.type === 'quiz' ? 'Quiz' : l.type === 'video' ? 'Video' : 'Reading'}</div></div>
+            <div class="lesson-dur">${l.dur}</div>
+            <div class="goto">${iconSvg('arrowright')}</div>
+          </div>`;
+                }).join('')}
+      </div>
+    </div>`;
+            }).join('');
+            renderIcons(document.getElementById('moduleList'));
+
+            document.querySelectorAll('.module-head').forEach(h => h.addEventListener('click', () => {
+                const mi = h.dataset.mi;
+                h.classList.toggle('open');
+                document.getElementById('mod-lessons-' + mi).classList.toggle('open');
+            }));
+            document.querySelectorAll('.lesson-row').forEach(row => row.addEventListener('click', () => {
+                const mi = Number(row.dataset.mi), li = Number(row.dataset.li);
+                openLessonPage(mi, li);
+            }));
+        }
+        function updateDetailProgress(c) {
+            const p = pct(c); const circumference = 2 * Math.PI * 52;
+            const offset = circumference - (p / 100) * circumference;
+            const ring = document.getElementById('detailRing');
+            ring.setAttribute('stroke-dasharray', circumference);
+            setTimeout(() => ring.style.strokeDashoffset = offset, 60);
+            document.getElementById('detailRingPct').textContent = p + '%';
+            document.getElementById('detailProgressLabel').textContent = `${doneCount(c)} of ${lessonCount(c)} lessons done`;
+
+            const btn = document.getElementById('detailQuizBtn');
+            const certified = state.progress[c.id].certified;
+            const unlocked = allNonQuizDone(c);
+
+            btn.classList.remove('btn-primary', 'btn-ghost');
+            btn.style.opacity = '1';
+
+            if (certified) {
+                btn.classList.add('btn-primary');
+                btn.innerHTML = `${iconSvg('trophy')}View Certificate`;
+                btn.onclick = () => triggerNameModal(c.id);
+            } else if (unlocked) {
+                btn.classList.add('btn-primary');
+                btn.innerHTML = `${iconSvg('quiz')}Take Final Quiz`;
+                btn.onclick = startQuiz;
+            } else {
+                btn.classList.add('btn-ghost');
+                btn.style.opacity = '.75';
+                btn.innerHTML = `${iconSvg('lock')}Complete all lessons to unlock`;
+                btn.onclick = () => showToast('warning', `Finish all lessons first (${doneNonQuizCount(c)}/${nonQuizLessonCount(c)} done) to unlock the final quiz`);
+            }
+        }
+        document.getElementById('backToCatalog').addEventListener('click', () => switchView('catalog'));
+        document.getElementById('backToDetail').addEventListener('click', () => switchView('detail'));
+        document.getElementById('backFromCert').addEventListener('click', () => switchView('detail'));
+        document.getElementById('backToDetailFromLesson').addEventListener('click', () => {
+            const c = COURSES.find(x => x.id === state.currentCourse);
+            renderModules(c); updateDetailProgress(c);
+            switchView('detail');
+        });
+
+        /* ============ LESSON PAGE (standalone page for a single lesson) ============ */
+        function openLessonPage(mi, li) {
+            state.currentLesson = { mi, li };
+            switchView('lesson');
+            renderLessonPage();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderLessonPage() {
+            const c = COURSES.find(x => x.id === state.currentCourse);
+            const { mi, li } = state.currentLesson;
+            const m = c.modules[mi];
+            const l = m.lessons[li];
+            const key = m.title + '__' + l.title;
+            const done = state.progress[c.id].done.has(key);
+            const flat = flatLessons(c);
+            const curIdx = flat.findIndex(x => x.mi === mi && x.li === li);
+            const prev = curIdx > 0 ? flat[curIdx - 1] : null;
+            const next = curIdx < flat.length - 1 ? flat[curIdx + 1] : null;
+
+            let bodyHtml = '';
+            if (l.type === 'quiz') {
+                bodyHtml = `<p style="font-size:13.4px;line-height:1.75;color:#dbe4f3;margin-bottom:14px;">${l.body}</p>
+        ${allNonQuizDone(c)
+                        ? `<button class="btn btn-primary" onclick="startQuiz()">${iconSvg('quiz')}Start Quiz</button>`
+                        : `<div style="display:flex;align-items:center;gap:9px;padding:12px 14px;border-radius:11px;background:var(--warning-soft);color:var(--warning);font-size:12.5px;font-weight:600;">${iconSvg('lock')}Complete all other lessons first (${doneNonQuizCount(c)}/${nonQuizLessonCount(c)} done) to unlock this quiz</div>`}`;
+            } else if (l.type === 'video') {
+                bodyHtml = `
+        <div class="video-mock"><a href="${l.body}" target="_blank" class="play-btn">${iconSvg('play')}</a></div>
+        <button class="btn btn-primary" id="lessonMarkBtn">${done ? iconSvg('check') + ' Marked complete' : 'Mark as complete'}</button>`;
+            } else {
+                bodyHtml = `
+        <div style="background:rgba(6,182,212,.06);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:14px;">
+          <div style="font-size:10.5px;font-weight:700;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;">${iconSvg('file', 'style="width:12px;height:12px;display:inline;vertical-align:middle;margin-right:4px;"')}Reading · ${l.dur}</div>
+          <p style="font-size:13.4px;line-height:1.75;color:#dbe4f3;">${l.body}</p>
+        </div>
+        ${l.points && l.points.length ? `<ul style="margin:0 0 14px 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;">${l.points.map(pt => `<li style="display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#dbe4f3;line-height:1.6;"><span style="width:20px;height:20px;border-radius:6px;background:var(--primary-soft);color:#93c5fd;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${iconSvg('check', 'style="width:11px;height:11px;"')}</span><span>${pt}</span></li>`).join('')}</ul>` : ''}
+        <button class="btn btn-primary" id="lessonMarkBtn">${done ? iconSvg('check') + ' Marked complete' : 'Mark as complete'}</button>`;
+            }
+
+            document.getElementById('lessonPageArea').innerHTML = `
+    <div class="lesson-page-crumb">${c.title} <span>›</span> ${m.title}</div>
+    <div class="lesson-page-head">
+      <div>
+        <h2>${l.title}</h2>
+        <div class="lesson-page-meta">
+          <span class="badge ${l.type === 'quiz' ? 'badge-warning' : 'badge-primary'}">${l.type === 'quiz' ? 'Quiz' : l.type === 'video' ? 'Video' : 'Reading'}</span>
+          <span>${iconSvg('clock', 'style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;"')}${l.dur}</span>
+          ${done ? `<span class="badge badge-success">${iconSvg('check', 'style="width:10px;height:10px;"')} Completed</span>` : ''}
+        </div>
+      </div>
+    </div>
+    ${bodyHtml}
+    <div class="lesson-page-nav">
+      <div class="side left">
+        ${prev ? `<button class="btn btn-ghost" id="lessonPrevBtn">${iconSvg('arrowleft')}${prev.l.title}</button>` : ''}
+      </div>
+      <div class="side right">
+        ${next ? `<button class="btn btn-ghost" id="lessonNextBtn">${next.l.title}${iconSvg('arrowright')}</button>` : ''}
+      </div>
+    </div>`;
+            renderIcons(document.getElementById('lessonPageArea'));
+
+            const markBtn = document.getElementById('lessonMarkBtn');
+            if (markBtn) markBtn.addEventListener('click', () => markLessonComplete(mi, li));
+            const prevBtn = document.getElementById('lessonPrevBtn');
+            if (prevBtn) prevBtn.addEventListener('click', () => openLessonPage(prev.mi, prev.li));
+            const nextBtn = document.getElementById('lessonNextBtn');
+            if (nextBtn) nextBtn.addEventListener('click', () => openLessonPage(next.mi, next.li));
+        }
+
+        async function markLessonComplete(mi, li) {
+            const c = COURSES.find(x => x.id === state.currentCourse);
+            const m = c.modules[mi];
+            const l = m.lessons[li];
+            const key = m.title + '__' + l.title;
+            const wasAlreadyDone = state.progress[c.id].done.has(key);
+            state.progress[c.id].done.add(key);
+            saveProgress(); // persist to localStorage
+            if (!wasAlreadyDone) {
+                await apiPost('/progress/lesson', { userId, courseId: c.id, lessonKey: key });
+                showToast('success', 'Lesson marked complete · +20 XP');
+            }
+
+            const flat = flatLessons(c);
+            const curIdx = flat.findIndex(x => x.mi === mi && x.li === li);
+            const next = curIdx < flat.length - 1 ? flat[curIdx + 1] : null;
+
+            renderCatalog();
+
+            if (next) {
+                openLessonPage(next.mi, next.li);
+            } else {
+                renderLessonPage();
+                showToast(allNonQuizDone(c) ? 'success' : 'warning', allNonQuizDone(c) ? 'All lessons done — the final quiz is unlocked!' : 'Great progress — keep going!');
+            }
+        }
+
+        /* ============ QUIZ ENGINE ============ */
+        function startQuiz() {
+            const c = COURSES.find(x => x.id === state.currentCourse);
+            if (!c) return;
+            if (!allNonQuizDone(c)) {
+                showToast('warning', `Please complete all lessons first (${doneNonQuizCount(c)}/${nonQuizLessonCount(c)} done) before taking the final quiz`);
+                return;
+            }
+            state.currentQuiz = { index: 0, answers: [], score: 0, locked: false };
+            switchView('quiz');
+            renderQuizQuestion();
+        }
+        function renderQuizQuestion() {
+            const c = COURSES.find(x => x.id === state.currentCourse);
+            const qi = state.currentQuiz.index;
+            const total = c.quiz.length;
+            if (qi >= total) { renderQuizResult(c); return; }
+            const q = c.quiz[qi];
+            const isLast = qi === total - 1;
+            document.getElementById('quizArea').innerHTML = `
+    <div class="quiz-progress-bar">${c.quiz.map((_, i) => `<div class="seg ${i < qi ? 'done' : i === qi ? 'current' : ''}"></div>`).join('')}</div>
+    <div class="quiz-q-label">Question ${qi + 1} of ${total} &nbsp;·&nbsp; ${c.title}</div>
+    <div class="quiz-question">${q.q}</div>
+    <div class="quiz-options" id="quizOptions">
+      ${q.options.map((o, i) => `<div class="quiz-opt" data-i="${i}"><div class="letter">${String.fromCharCode(65 + i)}</div><div>${o}</div></div>`).join('')}
+    </div>
+    <div class="quiz-explanation" id="quizExplanation"></div>
+    <div class="quiz-nav">
+      <button class="btn btn-ghost" id="quizExit">${iconSvg('arrowleft')}Exit Quiz</button>
+      <button class="btn btn-primary" id="quizNext" disabled>${isLast ? iconSvg('trophy') + 'See Results' : 'Next Question' + iconSvg('chevron')}</button>
+    </div>`;
+            renderIcons(document.getElementById('quizArea'));
+            let selected = null;
+            document.querySelectorAll('#quizOptions .quiz-opt').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    if (selected !== null) return;
+                    selected = Number(opt.dataset.i);
+                    const correct = q.answer;
+                    const isCorrect = selected === correct;
+                    if (isCorrect) state.currentQuiz.score++;
+                    /* colour every option */
+                    document.querySelectorAll('#quizOptions .quiz-opt').forEach(o => {
+                        const oi = Number(o.dataset.i);
+                        if (oi === correct) o.classList.add('correct-ans');
+                        else if (oi === selected && !isCorrect) o.classList.add('wrong-sel');
+                    });
+                    /* show explanation panel */
+                    const exp = document.getElementById('quizExplanation');
+                    exp.classList.add('show', isCorrect ? 'exp-correct' : 'exp-wrong');
+                    const correctLabel = q.options[correct];
+                    exp.innerHTML = `
+                      <div class="exp-head">${isCorrect ? iconSvg('check') + ' Correct — well done!' : iconSvg('x') + ' Incorrect'}</div>
+                      ${!isCorrect ? `<div class="exp-correct-label">✓ Correct answer: ${correctLabel}</div>` : ''}
+                      ${q.explanation ? `<div class="exp-body" style="margin-top:6px;">📖 ${q.explanation}</div>` : ''}
+                    `;
+                    renderIcons(exp);
+                    state.currentQuiz.answers.push(selected);
+                    document.getElementById('quizNext').disabled = false;
+                });
+            });
+            document.getElementById('quizNext').addEventListener('click', () => { state.currentQuiz.index++; renderQuizQuestion(); });
+            document.getElementById('quizExit').addEventListener('click', () => switchView('detail'));
+        }
+        function renderQuizResult(c) {
+            const total = c.quiz.length;
+            const score = Math.round(state.currentQuiz.score / total * 100);
+            const passed = score >= 70;
+            const circumference = 2 * Math.PI * 60;
+            const offset = circumference - (score / 100) * circumference;
+            /* build per-question review */
+            const reviewHtml = c.quiz.map((q, i) => {
+                const chosen = state.currentQuiz.answers[i];
+                const isCorrect = chosen === q.answer;
+                const chosenText = chosen !== undefined ? q.options[chosen] : 'Not answered';
+                return `<div style="border-left:3px solid ${isCorrect ? 'var(--success)' : 'var(--danger)'};padding:10px 14px;margin-bottom:8px;border-radius:0 10px 10px 0;background:rgba(255,255,255,.03)">
+                <div style="font-size:12.4px;font-weight:700;color:${isCorrect ? 'var(--success)' : 'var(--danger)'}">${isCorrect ? '✓' : '✗'} Q${i + 1}: ${q.q}</div>
+                ${!isCorrect ? `<div style="font-size:11.5px;color:#94a3b8;margin-top:4px;">Your answer: ${chosenText} &nbsp;|&nbsp; Correct: ${q.options[q.answer]}</div>` : ''}
+                ${q.explanation ? `<div style="font-size:11.5px;color:#dbe4f3;margin-top:4px;">📖 ${q.explanation}</div>` : ''}
+              </div>`;
+            }).join('');
+            document.getElementById('quizArea').innerHTML = `
+    <div class="quiz-result">
+      <div class="score-circle">
+        <svg viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="10"></circle>
+          <circle id="resultRing" cx="70" cy="70" r="60" fill="none" stroke="${passed ? 'var(--success)' : 'var(--warning)'}" stroke-width="10" stroke-linecap="round" transform="rotate(-90 70 70)" stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}" style="transition:stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1);"></circle>
+        </svg>
+        <div class="score-num"><div class="n">${score}%</div><div class="l">${state.currentQuiz.score}/${total} correct</div></div>
+      </div>
+      <h3>${passed ? 'Quiz Passed! 🎉' : 'Almost there'}</h3>
+      <p>${passed ? 'Great work — you have earned a certificate for this course.' : 'You need 70% to pass. Review the lessons and try again.'}</p>
+      <div class="actions">
+        ${passed ? `<button class="btn btn-primary" id="claimCertBtn">${iconSvg('trophy')}Claim Certificate</button>` : `<button class="btn btn-primary" id="retryQuizBtn">${iconSvg('quiz')}Retry Quiz</button>`}
+        <button class="btn btn-ghost" id="quizBackBtn">${iconSvg('arrowleft')}Back to Course</button>
+      </div>
+      <details style="margin-top:22px;text-align:left;">
+        <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px;">📋 Review all answers</summary>
+        <div style="margin-top:10px;">${reviewHtml}</div>
+      </details>
+    </div>`;
+            renderIcons(document.getElementById('quizArea'));
+            setTimeout(() => { document.getElementById('resultRing').style.strokeDashoffset = offset; }, 80);
+            if (passed) {
+                state.progress[c.id].quizPassed = true;
+                state.progress[c.id].quizScore = score;
+                state.progress[c.id].certified = true;
+                c.modules.forEach(m => m.lessons.forEach(l => state.progress[c.id].done.add(m.title + '__' + l.title)));
+                saveProgress(); // persist to localStorage
+                apiPost('/progress/quiz', { userId, courseId: c.id, score, passed: true });
+                document.getElementById('claimCertBtn').addEventListener('click', () => triggerNameModal(c.id));
+                showToast('success', 'Certificate unlocked · +100 XP');
+            } else {
+                apiPost('/progress/quiz', { userId, courseId: c.id, score, passed: false });
+                document.getElementById('retryQuizBtn').addEventListener('click', startQuiz);
+            }
+            document.getElementById('quizBackBtn').addEventListener('click', () => { renderModules(c); updateDetailProgress(c); switchView('detail'); });
+            renderCatalog();
+        }
+
+        /* ============ CERTIFICATE ============ */
+        function triggerNameModal(courseId) {
+            const modal = document.getElementById('nameModal');
+            const input = document.getElementById('certNameInput');
+            // Pre-fill if already entered before
+            input.value = localStorage.getItem('cga_uname') || '';
+            modal.classList.add('show');
+            // Focus input for convenience
+            setTimeout(() => input.focus(), 100);
+
+            document.getElementById('cancelNameBtn').onclick = () => {
+                modal.classList.remove('show');
+            };
+
+            const submitName = () => {
+                const name = input.value.trim();
+                if (!name) {
+                    showToast('danger', 'Please enter your full name');
+                    input.focus();
+                    return;
+                }
+                localStorage.setItem('cga_uname', name);
+                modal.classList.remove('show');
+                openCertificate(courseId, name);
+            };
+
+            document.getElementById('confirmNameBtn').onclick = submitName;
+            input.onkeydown = (e) => { if (e.key === 'Enter') submitName(); };
+        }
+        document.getElementById('nameModal').onclick = (e) => {
+            if (e.target.id === 'nameModal') {
+                document.getElementById('nameModal').classList.remove('show');
+            }
+        };
+
+        async function openCertificate(id, nameVal) {
+            const c = COURSES.find(x => x.id === id);
+            const p = state.progress[id];
+            // Always require a name — if none provided and none stored, force modal
+            const storedName = localStorage.getItem('cga_uname');
+            if (!nameVal && !storedName) {
+                triggerNameModal(id);
+                return;
+            }
+            const name = nameVal || storedName;
+            const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            let credId = `CGA-${c.id.toUpperCase()}-${new Date().getFullYear()}`;
+            const res = await apiPost('/certificate', {
+                userId, courseId: c.id, courseTitle: c.title,
+                score: p.quizScore, userName: name
+            });
+            if (res && res.certificate) credId = res.certificate.id;
+            // Store cert data for download
+            state.lastCert = { name, courseTitle: c.title, today, score: p.quizScore, credId, courseId: id };
+            document.getElementById('certificateEl').innerHTML = `
+    <div class="cert-top">
+      <div class="cert-brand"><div class="mark">${iconSvg('shield')}</div><div class="name">CyberGuardian AI</div></div>
+      <div class="cert-seal">${iconSvg('award')}</div>
+    </div>
+    <div class="cert-mid">
+      <div class="eyebrow2">Certificate of Completion</div>
+      <div class="uname">${name}</div>
+      <div class="desc">has successfully completed the training course</div>
+      <div class="cname">${c.title}</div>
+    </div>
+    <div class="cert-bottom">
+      <div class="item">Date Issued<br><span class="v">${today}</span></div>
+      <div class="item">Quiz Score<br><span class="v">${p.quizScore}%</span></div>
+      <div class="item">Credential ID<br><span class="v">${credId}</span></div>
+    </div>`;
+            renderIcons(document.getElementById('certificateEl'));
+            switchView('certificate');
+            // Wire up download button
+            document.getElementById('downloadCertBtn').onclick = () => downloadCertificate();
+        }
+
+        async function downloadCertificate() {
+            const certEl = document.getElementById('certificateEl');
+            const d = state.lastCert || {};
+            const btn = document.getElementById('downloadCertBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Generating...';
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+
+            // html2canvas cannot render background-clip:text (gradient text).
+            // Temporarily patch the .uname element to use a solid white color,
+            // capture the screenshot, then restore the original styles.
+            const unameEl = certEl.querySelector('.uname');
+            let savedBg = '', savedBgClip = '', savedWebkitBgClip = '', savedColor = '';
+            if (unameEl) {
+                savedBg = unameEl.style.background;
+                savedBgClip = unameEl.style.backgroundClip;
+                savedWebkitBgClip = unameEl.style.webkitBackgroundClip;
+                savedColor = unameEl.style.color;
+                // Override to solid white — fully visible in the screenshot
+                unameEl.style.background = 'none';
+                unameEl.style.backgroundClip = 'unset';
+                unameEl.style.webkitBackgroundClip = 'unset';
+                unameEl.style.color = '#FFFFFF';
+            }
+
+            try {
+                if (typeof html2canvas === 'undefined') {
+                    throw new Error('Screenshot library not loaded');
+                }
+
+                const canvas = await html2canvas(certEl, {
+                    scale: 3,
+                    backgroundColor: '#0d1526',
+                    logging: false,
+                    useCORS: true
+                });
+
+                const dataUrl = canvas.toDataURL('image/png');
+
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = `${(d.courseTitle || 'CyberGuardian_Course').replace(/\s+/g, '_')}_Certificate.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                showToast('success', 'Certificate downloaded!');
+            } catch (err) {
+                console.error(err);
+                showToast('danger', 'Could not generate certificate image');
+            } finally {
+                // Always restore gradient text
+                if (unameEl) {
+                    unameEl.style.background = savedBg;
+                    unameEl.style.backgroundClip = savedBgClip;
+                    unameEl.style.webkitBackgroundClip = savedWebkitBgClip;
+                    unameEl.style.color = savedColor;
+                }
+                btn.innerHTML = originalText;
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+        }
+
+        /* ============ MY LEARNING ============ */
+        function renderMyLearning() {
+            const inProgress = COURSES.filter(c => pct(c) > 0 && pct(c) < 100);
+            const notStarted = COURSES.filter(c => pct(c) === 0);
+            const list = [...inProgress, ...notStarted];
+            document.getElementById('myLearningList').innerHTML = list.map(c => {
+                const p = pct(c);
+                const bannerBg = c.bannerImage ? `background:url('${c.bannerImage}') center/cover;` : `background:linear-gradient(135deg, ${c.color1}, ${c.color2});`;
+                return `
+    <div class="glass glass-hover course-card" onclick="openCourse('${c.id}')">
+      <div class="course-banner" style="${bannerBg}height:96px;">${c.bannerImage ? '' : iconSvg(c.icon)}</div>
+      <div class="course-body">
+        <span class="cat">${c.cat}</span><h3>${c.title}</h3>
+        <div class="pbar-row"><span>${p === 0 ? 'Not started' : 'In progress'}</span><span>${p}%</span></div>
+        <div class="pbar-track"><div class="pbar-fill" style="width:${p}%;"></div></div>
+      </div>
+    </div>`;
+            }).join('') || `<div class="empty-state" style="grid-column:1/-1;">${iconSvg('activity')}<div class="t">Nothing in progress yet</div></div>`;
+        }
+
+        /* ============ CERTIFICATES GRID ============ */
+        function renderCertGrid() {
+            const earned = COURSES.filter(c => state.progress[c.id] && state.progress[c.id].certified);
+            document.getElementById('certGrid').innerHTML = earned.map(c => `
+    <div class="glass glass-hover" style="padding:20px;text-align:center;cursor:pointer;" onclick="triggerNameModal('${c.id}')">
+      <div style="width:52px;height:52px;border-radius:14px;margin:0 auto 12px;background:linear-gradient(135deg,var(--warning),#fbbf24);display:flex;align-items:center;justify-content:center;">${iconSvg('trophy', 'style="width:24px;height:24px;color:#1a1305;"')}</div>
+      <div style="font-size:13.6px;font-weight:700;margin-bottom:3px;">${c.title}</div>
+      <div style="font-size:11px;color:var(--text-secondary);">Score: ${state.progress[c.id].quizScore}%</div>
+    </div>`).join('') || `<div class="empty-state" style="grid-column:1/-1;">${iconSvg('trophy')}<div class="t">No certificates yet</div><div>Complete a course quiz to earn your first one.</div></div>`;
+        }
+
+        /* ============ STREAKS ============ */
+        function renderStreaks() {
+            document.getElementById('streakBig').textContent = state.streak.current;
+            document.getElementById('streakTop').textContent = state.streak.current;
+            const dow = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+            const todayIdx = (new Date().getDay() + 6) % 7;
+            document.getElementById('weekStrip').innerHTML = dow.map((d, i) => `
+    <div class="week-day">
+      <div class="dow">${d}</div>
+      <div class="dot ${state.streak.week[i] ? 'active' : ''} ${i === todayIdx ? 'today' : ''}">${state.streak.week[i] ? iconSvg('flame') : ''}</div>
+    </div>`).join('');
+            const milestones = [
+                { n: 3, label: '3-Day Spark', icon: 'flame', got: state.streak.best >= 3 },
+                { n: 7, label: 'Weekly Warrior', icon: 'star', got: state.streak.best >= 7 },
+                { n: 14, label: 'Two-Week Titan', icon: 'shield', got: state.streak.best >= 14 },
+                { n: 30, label: 'Monthly Master', icon: 'trophy', got: state.streak.best >= 30 },
+            ];
+            document.getElementById('streakMilestones').innerHTML = milestones.map(m => `
+    <div class="glass stat-card" style="align-items:center;text-align:center;${m.got ? '' : 'opacity:.45;filter:grayscale(1);'}">
+      <div class="stat-icon" style="background:var(--warning-soft);margin:0 auto;">${iconSvg(m.icon, 'style="color:var(--warning);"')}</div>
+      <div class="stat-num" style="font-size:18px;">${m.label}</div>
+      <div class="stat-lbl">${m.n}-day streak</div>
+    </div>`).join('');
+        }
+
+        /* ============ ADMIN PANEL ============ */
+        const ADMIN_PASSWORD = "changeme123"; // ⚠️ client-side only — change this before sharing the file
+        let adminModules = [];
+        let adminQuizQuestions = [];
+        let adminBannerImage = null;
+
+        document.getElementById('adminLoginBtn').addEventListener('click', () => {
+            const val = document.getElementById('adminPass').value;
+            if (val === ADMIN_PASSWORD) {
+                document.getElementById('adminLoginBox').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                renderAdminCourseList();
+                renderAdminModules();
+            } else {
+                showToast('danger', 'Incorrect password');
+            }
+        });
+        document.getElementById('adminPass').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('adminLoginBtn').click();
+        });
+
+        function renderAdminCourseList() {
+            document.getElementById('adminCourseList').innerHTML = COURSES.map(c => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--glass-border);">
+                    <span>${c.title} <span style="color:var(--text-secondary);font-size:11px;">(${c.cat})</span></span>
+                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;" onclick="deleteCourse('${c.id}')">Delete</button>
+                </div>`).join('') || `<div style="color:var(--text-secondary);font-size:12px;">No courses yet.</div>`;
+        }
+        function deleteCourse(id) {
+            COURSES = COURSES.filter(c => c.id !== id);
+            delete state.progress[id];
+            renderAdminCourseList(); renderCatalog();
+            showToast('success', 'Course deleted');
+        }
+
+        // --- Banner image upload -> base64 ---
+        document.getElementById('ac_image').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => { adminBannerImage = ev.target.result; showToast('success', 'Image loaded'); };
+            reader.readAsDataURL(file);
+        });
+
+        // --- Module/Lesson builder ---
+        function addAdminModule() {
+            adminModules.push({ title: '', lessons: [] });
+            renderAdminModules();
+        }
+        function addAdminLesson(mi) {
+            adminModules[mi].lessons.push({ title: '', type: 'reading', dur: '5 min', body: '', points: [] });
+            renderAdminModules();
+        }
+        function removeAdminModule(mi) {
+            adminModules.splice(mi, 1);
+            renderAdminModules();
+        }
+        function removeAdminLesson(mi, li) {
+            adminModules[mi].lessons.splice(li, 1);
+            renderAdminModules();
+        }
+        function renderAdminModules() {
+            document.getElementById('ac_modules').innerHTML = adminModules.map((m, mi) => `
+                <div class="glass" style="padding:12px;margin-bottom:10px;">
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                        <input class="name-input" style="flex:1;" placeholder="Module title"
+                            value="${m.title}" oninput="adminModules[${mi}].title=this.value">
+                        <button class="btn btn-ghost" style="padding:6px 10px;font-size:11px;" onclick="removeAdminModule(${mi})">✕</button>
+                    </div>
+                    ${m.lessons.map((l, li) => `
+                        <div style="border-left:2px solid var(--accent);padding-left:10px;margin-bottom:8px;">
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+                                <input class="name-input" style="flex:1;" placeholder="Lesson title"
+                                    value="${l.title}" oninput="adminModules[${mi}].lessons[${li}].title=this.value">
+                                <button class="btn btn-ghost" style="padding:6px 10px;font-size:11px;" onclick="removeAdminLesson(${mi},${li})">✕</button>
+                            </div>
+                            <select class="name-input" style="margin-bottom:6px;"
+                                onchange="adminModules[${mi}].lessons[${li}].type=this.value">
+                                <option value="reading" ${l.type === 'reading' ? 'selected' : ''}>Reading</option>
+                                <option value="video" ${l.type === 'video' ? 'selected' : ''}>Video</option>
+                                <option value="quiz" ${l.type === 'quiz' ? 'selected' : ''}>Quiz checkpoint</option>
+                            </select>
+                            <textarea class="name-input" style="height:50px;margin-bottom:6px;" placeholder="Lesson content, or video URL if type=Video"
+                                oninput="adminModules[${mi}].lessons[${li}].body=this.value">${l.body}</textarea>
+                        </div>`).join('')}
+                    <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;" onclick="addAdminLesson(${mi})">+ Add Lesson</button>
+                </div>`).join('') || `<div style="color:var(--text-secondary);font-size:12px;margin-bottom:10px;">No modules yet — click "+ Add Module" below.</div>`;
+        }
+        document.getElementById('ac_addModule').addEventListener('click', addAdminModule);
+
+        // --- Excel quiz import ---
+        // Pattern: Column 1 = Question, Columns 2-5 = Option A-D, Column 6 = Correct option number (1-4)
+        document.getElementById('ac_quizFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const data = new Uint8Array(ev.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const sheet = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    adminQuizQuestions = rows.filter(r => r[0] && String(r[0]).trim() !== '').map(r => ({
+                        q: String(r[0]).trim(),
+                        options: [r[1], r[2], r[3], r[4]].map(o => String(o ?? '').trim()),
+                        answer: parseInt(r[5], 10) - 1, // column 6, 1-indexed -> 0-indexed
+                        explanation: r[6] ? String(r[6]).trim() : ''
+                    }));
+                    document.getElementById('ac_quizPreview').innerHTML =
+                        `✅ Loaded ${adminQuizQuestions.length} quiz questions from Excel.`;
+                    showToast('success', `${adminQuizQuestions.length} quiz questions imported`);
+                } catch (err) {
+                    console.error(err);
+                    showToast('danger', 'Could not read Excel file');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // --- Save new course ---
+        document.getElementById('ac_submitCourse').addEventListener('click', () => {
+            const title = document.getElementById('ac_title').value.trim();
+            const cat = document.getElementById('ac_cat').value.trim();
+            if (!title || !cat) { showToast('danger', 'Title and category are required'); return; }
+            if (adminModules.length === 0) { showToast('danger', 'Add at least one module'); return; }
+            if (adminQuizQuestions.length === 0) { showToast('danger', 'Upload a quiz Excel file'); return; }
+
+            const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
+            const objectivesText = document.getElementById('ac_objectives').value.trim();
+            const newCourse = {
+                id, title, cat,
+                icon: document.getElementById('ac_icon').value,
+                color1: document.getElementById('ac_color1').value,
+                color2: document.getElementById('ac_color2').value,
+                level: document.getElementById('ac_level').value,
+                desc: document.getElementById('ac_desc').value.trim(),
+                bannerImage: adminBannerImage,      // base64 image, if uploaded
+                introVideo: document.getElementById('ac_video').value.trim(), // video URL, if provided
+                objectives: objectivesText ? objectivesText.split('\n').map(s => s.trim()).filter(Boolean) : [],
+                modules: adminModules.map(m => ({
+                    title: m.title,
+                    lessons: m.lessons.map(l => ({ ...l, points: [] }))
+                })),
+                quiz: adminQuizQuestions,
+            };
+            COURSES.push(newCourse);
+            state.progress[id] = { done: new Set(), quizPassed: false, quizScore: null, certified: false };
+
+            // reset form
+            adminModules = []; adminQuizQuestions = []; adminBannerImage = null;
+            document.getElementById('ac_title').value = '';
+            document.getElementById('ac_cat').value = '';
+            document.getElementById('ac_desc').value = '';
+            document.getElementById('ac_video').value = '';
+            document.getElementById('ac_objectives').value = '';
+            document.getElementById('ac_image').value = '';
+            document.getElementById('ac_quizFile').value = '';
+            document.getElementById('ac_quizPreview').innerHTML = '';
+            renderAdminModules();
+            renderAdminCourseList();
+            renderCatalog();
+            showToast('success', 'Course added successfully!');
+        });
+
+        /* ============ VIEW SWITCHING ============ */
+        function switchView(view) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + view).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+            if (view === 'mylearning') renderMyLearning();
+            if (view === 'certificates') renderCertGrid();
+            if (view === 'streaks') renderStreaks();
+            if (view === 'admin') renderAdminCourseList();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        document.querySelectorAll('.tab-btn[data-view]').forEach(t => t.addEventListener('click', () => switchView(t.dataset.view)));
+
+        /* ============ INIT ============ */
+        function animateOnLoad() {
+            document.querySelectorAll('.pbar-fill').forEach(el => { const w = el.style.width; el.style.width = '0%'; setTimeout(() => el.style.width = w, 200); });
+        }
+        renderIcons();
+        renderCatalog();
+        renderStreaks();
+        window.addEventListener('load', animateOnLoad);
+        /* Sync progress from backend on load (non-blocking) */
+        loadProgressFromServer();
+        loadCoursesFromServer();
+    </script>
+</body>
+
+</html>

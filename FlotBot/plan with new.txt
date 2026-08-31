@@ -1,0 +1,375 @@
+# FlotBot — 4-Phase Architectural Upgrade Plan
+
+## Overview
+
+This plan covers a 4-phase architectural upgrade to FlotBot covering:
+- **Phase 1:** Zero-Trust AI Engine with configurable privacy mode and time-bound Learning Mode baseline
+- **Phase 2:** Role-Based Access Control — restricted user widget + Admin Console (second Electron BrowserWindow)
+- **Phase 3:** Full telemetry logging with `alert_history` table and admin one-click controls
+- **Phase 4:** WMI process collection upgrade (Authenticode deferred to future roadmap)
+
+Design decisions confirmed:
+- AI provider is **admin-configurable**: Gemini (cloud) or Ollama (offline-only), toggled from Admin Console
+- Admin Console is a **second Electron BrowserWindow**, not an Express server
+- Admin Console has a **placeholder login stub** — full auth in next phase
+- Learning Mode baseline stored in **SQLite**, exposed in Admin Console, requires **manual admin approval** before suppression applies
+- Authenticode signature checking **deferred** — comment roadmap stub left in SystemWatcher
+
+---
+
+## Architecture After Upgrade
+
+```
+FlotBot
+├── Main BrowserWindow (user-facing)
+│   ├── Floating Widget (restricted: explain + terminate only)
+│   └── Main Dashboard (overview, alerts, processes, network, registry, chat)
+│
+├── Admin BrowserWindow (admin-facing, second window)
+│   ├── Placeholder login stub (full auth = next phase)
+│   ├── Alert History & Transcripts
+│   ├── Baseline Review & Approval
+│   ├── Whitelist / Blocklist Management
+│   ├── IP Privilege Tiering (Trust / Neutral / Block)
+│   ├── Rule Sensitivity Controls
+│   ├── AI Provider Toggle (Gemini vs Ollama)
+│   └── One-Click: Whitelist / Block / Network Isolate from log entry
+│
+├── AI Engine (dual-provider, admin-configurable)
+│   ├── chatProvider: Gemini (default) OR Ollama (privacy mode)
+│   └── analysisProvider: Ollama (always local)
+│
+├── Learning Mode (MalwareAnalyzer)
+│   ├── Time-bound: 24-48h from first run
+│   ├── Records: baseline IPs, process patterns, DNS
+│   ├── Stored: SQLite baseline_records table
+│   └── Suppression: only after admin approves in console
+│
+└── Database (SQLite)
+    ├── alerts, process_logs, network_logs, registry_logs, file_logs
+    ├── settings, whitelist
+    ├── alert_history (NEW — full telemetry + transcripts)
+    └── baseline_records (NEW — learning mode data)
+```
+
+---
+
+## Files Involved
+
+| File | Phase | Change Type |
+|---|---|---|
+| `core/ai/AIEngine.js` | 1 | Modify — configurable provider selection |
+| `providers/OllamaProvider.js` | 1 | Modify — enforce privacy mode constraints |
+| `providers/GeminiProvider.js` | 1 | Modify — disable when privacy mode on |
+| `modules/malware/analyzer.js` | 1 | Modify — add Learning Mode orchestration |
+| `modules/malware/BaselineRecorder.js` | 1 | Create — new file |
+| `modules/system/watcher.js` | 1 | Modify — add Authenticode roadmap stub comment |
+| `electron/renderer/floating.html` | 2 | Modify — remove mark-as-safe, add terminate-only |
+| `electron/renderer/floating.js` | 2 | Modify — remove markAlertAsSafe, restrict actions |
+| `electron/main.js` | 2 | Modify — add Admin BrowserWindow creation + IPC |
+| `electron/admin/admin.html` | 2 | Create — new Admin Console HTML |
+| `electron/admin/admin.js` | 2 | Create — new Admin Console renderer logic |
+| `electron/admin/preload-admin.js` | 2 | Create — isolated admin IPC bridge |
+| `database/schema.js` | 3 | Modify — add alert_history + baseline_records tables |
+| `database/repositories/AlertHistoryRepository.js` | 3 | Create — new repository |
+| `database/repositories/BaselineRepository.js` | 3 | Create — new repository |
+| `electron/main.js` | 3 | Modify — add admin IPC handlers for history + controls |
+| `modules/system/collector.js` | 4 | Modify — WMI full command-line args upgrade |
+| `modules/system/rules/PowerShellRule.js` | 4 | Modify — use full cmdLine for detection |
+| `.env.example` | 1 | Modify — add AI_PRIVACY_MODE, LEARNING_MODE vars |
+
+---
+
+## Sub-Tasks
+
+---
+
+### Sub-Task 1 — Configurable AI Privacy Mode
+
+**Status:** `[ ] pending`
+
+**Intent:**
+Allow the admin to toggle between Gemini (cloud AI) and Ollama (fully offline/private) for the chat provider. The analysis provider (Ollama) is always local regardless of this setting. This gives enterprises the ability to enforce a no-cloud-data policy.
+
+**Expected Outcomes:**
+- A new `AI_PRIVACY_MODE=true/false` env var controls default mode
+- When privacy mode is ON: both `chatProvider` and `analysisProvider` use Ollama
+- When privacy mode is OFF: `chatProvider` uses Gemini, `analysisProvider` uses Ollama
+- Admin Console (Phase 2) will expose a toggle that calls a new IPC handler `set-ai-mode` to switch at runtime without restart
+- `AIEngine` reads current mode from settings DB (not just env), so runtime toggle works
+- A log line on startup shows which mode is active
+
+**Todo List:**
+1. Add `AI_PRIVACY_MODE=false` to `.env.example` with clear comment
+2. Add `aiPrivacyMode` key to default settings in `database/schema.js`
+3. In `electron/main.js` `initBackend()`: read `aiPrivacyMode` from settings table at startup, select providers accordingly
+4. Add `ipcMain.handle("set-ai-mode", ...)` handler that updates the settings table and re-initializes `aiEngine` with new providers
+5. In `AIEngine`: add `switchProviders(chatProvider, analysisProvider)` method to allow runtime re-initialization without full restart
+6. Add a comment block at the top of `providers/GeminiProvider.js` noting it must NOT be used when privacy mode is enabled
+
+**Relevant Context:**
+- `electron/main.js` lines 111-121: current provider init block
+- `database/schema.js` default settings block: add `aiPrivacyMode: false`
+- `core/ai/AIEngine.js` constructor: add `switchProviders()` method
+
+---
+
+### Sub-Task 2 — Learning Mode Baseline Recorder
+
+**Status:** `[ ] pending`
+
+**Intent:**
+Implement a time-bound (24–48h configurable) Learning Mode in `MalwareAnalyzer` that passively records the system's normal baseline — local IPs, standard process execution patterns, common DNS queries — without reading personal files. After the learning window expires, the recorded baseline is stored in SQLite and surfaced in the Admin Console for manual review. Admin must approve before any suppression applies.
+
+**Expected Outcomes:**
+- New `baseline_records` SQLite table storing: type (ip/process/dns), value, first_seen, last_seen, count, approved (0/1)
+- New `BaselineRecorder.js` module that accumulates records during the learning window
+- `MalwareAnalyzer.analyze()` feeds observations to `BaselineRecorder` when learning mode is active
+- After learning window expires, recording stops automatically and a flag is written to settings: `learningModeComplete: true`
+- `BehaviorAnalyzer` checks the approved baseline before raising alerts — if a process/IP is in the approved baseline, suppress the alert
+- Learning Mode can be re-triggered from Admin Console via `reset-learning-mode` IPC
+
+**Todo List:**
+1. Add `LEARNING_MODE_HOURS=24` to `.env.example`
+2. Add `learningModeStart` and `learningModeComplete` keys to settings in `database/schema.js`
+3. Add `baseline_records` table to `database/schema.js`:
+   - columns: id, type (ip/process/dns/domain), value, first_seen, last_seen, observation_count, approved
+4. Create `database/repositories/BaselineRepository.js` with: `upsertRecord(type, value)`, `getAll()`, `approve(id)`, `approveAll()`, `reset()`
+5. Create `modules/malware/BaselineRecorder.js`:
+   - Constructor takes `db` and `settings`
+   - `isLearning()` method: checks if `learningModeComplete` is false AND current time is within `learningModeStart + LEARNING_MODE_HOURS`
+   - `record(type, value)` method: calls `BaselineRepository.upsertRecord()` — only runs during learning window
+   - `checkExpiry()` method: called on each scan cycle, sets `learningModeComplete = true` in settings when window closes
+6. In `modules/malware/analyzer.js` `analyze()`: inject `BaselineRecorder` dependency, call `recorder.checkExpiry()`, feed observations: IPs from connections, process images from processes
+7. In `modules/malware/BehaviorAnalyzer.js`: add optional `baselineRepo` dependency, before raising an alert check if the process/IP is in the approved baseline — if yes, skip the alert
+
+**Relevant Context:**
+- `modules/malware/analyzer.js` constructor: add `baselineRecorder` optional param
+- `modules/malware/BehaviorAnalyzer.js` `analyze()`: currently raises alerts at end — add baseline check before pushing
+- `database/schema.js`: add table definition after existing whitelist table
+
+---
+
+### Sub-Task 3 — Restrict Floating Widget (User-Only Mode)
+
+**Status:** `[ ] pending`
+
+**Intent:**
+Remove all privileged actions from the floating widget that regular users should not have: "Mark as Safe", "Whitelist", and configuration access. Users may only view AI explanations, ask follow-up chat questions, and terminate a process. This enforces the principle of least privilege at the UI layer.
+
+**Expected Outcomes:**
+- `floating.html` has no mark-as-safe button, no whitelist button, no settings access
+- `floating.js` has no `markAlertAsSafe()` function
+- Each alert in the chat still shows: "Explain" button and "Terminate Process" button only
+- "Block IP" is retained (emergency network containment is acceptable for users)
+- Quick command chips updated to remove any admin-capability commands
+- A small "Admin Console" link shown in widget footer (opens admin window via IPC)
+
+**Todo List:**
+1. In `floating.html`: remove any mark-as-safe or whitelist buttons from the UI
+2. In `floating.html`: add a small "⚙️ Admin" link in the panel footer
+3. In `floating.js`: delete `markAlertAsSafe()` function entirely
+4. In `floating.js` alert action builder: remove the `safe` type action push, keep `block` (IP) and `explain` actions
+5. In `floating.js`: add click handler for admin link that calls `window.flotbot.openAdminConsole()`
+6. In `preload.js`: add `openAdminConsole: () => ipcRenderer.send("open-admin-console")`
+7. In `electron/main.js`: add `ipcMain.on("open-admin-console", ...)` handler that calls `createAdminWindow()`
+
+**Relevant Context:**
+- `floating.js` lines 300-340: alert action builder — the `safe` type push is here
+- `floating.html` lines 97-103: quick command chips area
+- Alert actions currently include: Block PID, Block IP, Explain — only keep Block IP + Explain for users
+
+---
+
+### Sub-Task 4 — Admin Console BrowserWindow
+
+**Status:** `[ ] pending`
+
+**Intent:**
+Create the Admin Console as a second, isolated Electron `BrowserWindow`. It opens when admin clicks the tray menu item or the widget footer "Admin" link. For now, it shows a placeholder login stub (full authentication is a separate future phase). The window uses its own preload script for an isolated IPC bridge so admin-only channels are not exposed to the user renderer.
+
+**Expected Outcomes:**
+- New `electron/admin/` directory with `admin.html`, `admin.js`, `preload-admin.js`
+- Admin window opens as a separate `BrowserWindow` (800x600, not always-on-top)
+- Shows a login placeholder screen: "Admin access — authentication coming soon. Click Continue to enter."
+- After clicking Continue: shows a tabbed layout placeholder with tabs: Alert History, Baseline Review, Whitelist/Blocklist, IP Tiering, AI Settings
+- Each tab shows "Coming in Phase 3" placeholder except AI Settings tab (which has the privacy mode toggle from Sub-Task 1)
+- Tray menu gets new item: "Open Admin Console"
+- Admin window can only be opened one at a time (guard against multiple instances)
+
+**Todo List:**
+1. Create `electron/admin/` directory
+2. Create `electron/admin/preload-admin.js`: expose only admin-specific IPC channels (not user channels)
+3. Create `electron/admin/admin.html`: glassmorphic style matching main UI, login placeholder screen + tabbed layout
+4. Create `electron/admin/admin.js`: tab switching, login placeholder flow, AI mode toggle wired to `set-ai-mode` IPC
+5. In `electron/main.js`: add `createAdminWindow()` function — creates `BrowserWindow` with `preload-admin.js`, guard with `if (adminWindow) { adminWindow.focus(); return; }`
+6. In `electron/main.js`: add tray menu item "Open Admin Console" that calls `createAdminWindow()`
+7. In `electron/main.js`: add `ipcMain.on("open-admin-console", createAdminWindow)` for widget link
+8. Add `adminWindow` global variable in `main.js` globals block
+
+**Relevant Context:**
+- `electron/main.js` `createTray()` function: add new menu item here
+- `electron/main.js` `createWindow()` function: reference for BrowserWindow options
+- `electron/preload.js`: reference for preload bridge pattern — replicate for admin
+- Existing `electron/renderer/styles/main.css` can be reused for admin styling
+
+---
+
+### Sub-Task 5 — alert_history Table & Telemetry Logging
+
+**Status:** `[ ] pending`
+
+**Intent:**
+Add a full `alert_history` table to SQLite that logs every alert with its threat context, user interaction (what action was taken, response time), and the full chat transcript from the session associated with that alert. This gives the admin a complete forensic record of every incident and the user's response.
+
+**Expected Outcomes:**
+- New `alert_history` table in SQLite with all required columns
+- New `AlertHistoryRepository.js` with insert/query methods
+- Every time a user performs an action (terminate, block IP, dismiss) in `floating.js`, a record is written to `alert_history` via a new IPC handler `log-alert-action`
+- Chat messages in floating widget during an alert session are captured and stored as a transcript JSON blob
+- `alert_history` records include: timestamp, alert_id, rule_triggered, pid, exe_path, remote_ip, action_taken, response_time_ms, chat_transcript
+
+**Todo List:**
+1. Add `alert_history` table to `database/schema.js`:
+   - columns: id, alert_id, timestamp, rule_triggered, pid, exe_path, remote_ip, severity, action_taken, response_time_ms, chat_transcript (TEXT/JSON blob)
+2. Create `database/repositories/AlertHistoryRepository.js`:
+   - `insert(record)`: writes a new history entry
+   - `getAll(limit, offset)`: paginated fetch for admin console
+   - `getByAlertId(alertId)`: fetch specific alert history
+3. In `electron/main.js`: add `ipcMain.handle("log-alert-action", async (event, record) => ...)`
+4. In `preload.js` (user): add `logAlertAction: (record) => ipcRenderer.invoke("log-alert-action", record)`
+5. In `floating.js`:
+   - Track `alertSessionStart` timestamp when an alert fires
+   - Track `sessionChatLog` array of messages during the alert session
+   - When user clicks Terminate or Block or Dismiss, call `window.flotbot.logAlertAction({ alertId, action, responseTimeMs, chatTranscript })`
+6. In `preload-admin.js`: add `getAlertHistory: () => ipcRenderer.invoke("get-alert-history")`
+7. In `electron/main.js`: add `ipcMain.handle("get-alert-history", ...)` returning paginated records from `AlertHistoryRepository`
+
+**Relevant Context:**
+- `database/schema.js`: add table after existing `whitelist` table
+- `floating.js` alert action handlers (blockProcess, blockIp, explainAlert): add `logAlertAction` call here
+- `AlertRepository.js`: reference for repository pattern
+
+---
+
+### Sub-Task 6 — Admin Console: Alert History + One-Click Controls
+
+**Status:** `[ ] pending`
+
+**Intent:**
+Populate the Alert History tab in the Admin Console with real data from the `alert_history` table. Each row shows the alert details, user action taken, response time, and expandable chat transcript. Admin can click one-click actions on each row: Whitelist Process, Block IP, or Isolate Endpoint (sets a flag that network module checks before allowing connections).
+
+**Expected Outcomes:**
+- Alert History tab in admin console shows a paginated table of all `alert_history` records
+- Each row is expandable to show the full chat transcript
+- Three action buttons per row: "Whitelist", "Block IP", "Isolate Endpoint"
+- "Whitelist" adds the exe_path to the `whitelist` table (calls `add-whitelist` IPC)
+- "Block IP" adds the remote_ip to a new `blocked_ips` table (calls `block-ip-global` IPC)
+- "Isolate Endpoint" sets `networkIsolated: true` in settings (calls `isolate-endpoint` IPC)
+- Baseline Review tab shows all `baseline_records` with Approve/Reject buttons per record
+- AI Settings tab has a live toggle: Gemini (cloud) / Ollama (offline), calls `set-ai-mode` IPC
+
+**Todo List:**
+1. Add `blocked_ips` table to `database/schema.js`: id, ip, added_at, added_by, note
+2. In `electron/main.js`: add `ipcMain.handle("add-whitelist", ...)` that inserts to whitelist table
+3. In `electron/main.js`: add `ipcMain.handle("block-ip-global", ...)` that inserts to blocked_ips table
+4. In `electron/main.js`: add `ipcMain.handle("isolate-endpoint", ...)` that sets `networkIsolated` in settings
+5. In `modules/network/analyzer.js`: check `blocked_ips` table — if a remote IP is in blocked_ips, auto-escalate to CRITICAL
+6. In `electron/admin/admin.js`: implement Alert History tab — fetch from `get-alert-history`, render table with expandable transcript rows
+7. In `electron/admin/admin.js`: implement one-click action buttons wired to `add-whitelist`, `block-ip-global`, `isolate-endpoint`
+8. In `electron/admin/admin.js`: implement Baseline Review tab — fetch `get-baseline-records` IPC, render with Approve/Reject per row
+9. In `electron/admin/admin.js`: implement AI Settings tab — show current mode, toggle button calls `set-ai-mode`
+10. In `preload-admin.js`: expose all admin IPC channels: `getAlertHistory`, `getBaselineRecords`, `approveBaseline`, `addWhitelist`, `blockIpGlobal`, `isolateEndpoint`, `setAiMode`
+
+**Relevant Context:**
+- `electron/admin/admin.html` tabs from Sub-Task 4 are already stubbed
+- `database/repositories/AlertHistoryRepository.js` from Sub-Task 5
+- `database/repositories/BaselineRepository.js` from Sub-Task 2
+- `modules/network/analyzer.js`: add blocked_ips check in `analyze()`
+
+---
+
+### Sub-Task 7 — WMI Full Command-Line Upgrade
+
+**Status:** `[ ] pending`
+
+**Intent:**
+Upgrade `SystemCollector` to reliably capture full command-line arguments for every process using WMI/CIM. The existing WMIC call sometimes returns incomplete data or truncated strings. Switching to `Get-CimInstance Win32_Process` via PowerShell gives a more reliable and complete command line, ensuring detection rules like `PowerShellRule` receive the full `-ExecutionPolicy Bypass -enc <payload>` argument string.
+
+**Expected Outcomes:**
+- `SystemCollector` uses `Get-CimInstance Win32_Process` via PowerShell to get CommandLine, ExecutablePath, ParentProcessId
+- Falls back to old `wmic` command if PowerShell fails
+- `PowerShellRule` correctly receives full command-line strings and matches encoded payloads
+- A `// TODO: Authenticode` roadmap comment block is added to `SystemWatcher` noting the future native C++ addon approach
+- All existing tests in `tests/process.test.js` still pass
+
+**Todo List:**
+1. In `modules/system/collector.js`: replace the `wmic process get` command with a PowerShell `Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine | ConvertTo-Json` call
+2. Parse the JSON output instead of CSV — more reliable for long command lines with commas
+3. Add a try/catch fallback: if PowerShell/CimInstance fails, fall back to the original `wmic` CSV command
+4. Add field mapping: ensure output still produces `{ pid, parentPid, exePath, cmdLine }` — same shape as before so all downstream rules work without changes
+5. In `modules/system/watcher.js`: add a comment block:
+   ```
+   // ROADMAP: Authenticode signature verification
+   // Future implementation: Use a native Node.js C++ addon calling WinVerifyTrust()
+   // to check digital signatures on process executables at creation time.
+   // This will suppress alerts for signed Microsoft/Google/trusted vendor binaries.
+   // Do NOT use PowerShell Get-AuthenticodeSignature — it spawns a new process
+   // per binary and causes unacceptable CPU overhead in a real-time EDR agent.
+   ```
+6. Run `npm test` and verify `tests/process.test.js` passes
+
+**Relevant Context:**
+- `modules/system/collector.js` lines 18-70: current dual-command collection approach
+- `modules/system/rules/PowerShellRule.js`: uses `p.cmdLine` for detection — field name must stay the same
+- `tests/process.test.js`: existing test coverage for process collection
+
+---
+
+## Database Schema Changes Summary
+
+| Table | Action | Columns Added |
+|---|---|---|
+| `settings` | Modify | `aiPrivacyMode` (bool), `learningModeStart` (timestamp), `learningModeComplete` (bool), `networkIsolated` (bool) |
+| `baseline_records` | Create | id, type, value, first_seen, last_seen, observation_count, approved |
+| `alert_history` | Create | id, alert_id, timestamp, rule_triggered, pid, exe_path, remote_ip, severity, action_taken, response_time_ms, chat_transcript |
+| `blocked_ips` | Create | id, ip, added_at, added_by, note |
+
+---
+
+## New IPC Channels Summary
+
+| Channel | Direction | Handler | Purpose |
+|---|---|---|---|
+| `set-ai-mode` | renderer→main | main.js | Switch Gemini/Ollama at runtime |
+| `open-admin-console` | renderer→main | main.js | Open admin BrowserWindow |
+| `log-alert-action` | renderer→main | main.js | Write alert history entry |
+| `get-alert-history` | admin→main | main.js | Fetch paginated alert history |
+| `get-baseline-records` | admin→main | main.js | Fetch baseline records for review |
+| `approve-baseline` | admin→main | main.js | Approve a baseline entry |
+| `reset-learning-mode` | admin→main | main.js | Restart 24-48h learning window |
+| `add-whitelist` | admin→main | main.js | Add exe to whitelist table |
+| `block-ip-global` | admin→main | main.js | Add IP to blocked_ips table |
+| `isolate-endpoint` | admin→main | main.js | Set networkIsolated flag in settings |
+
+---
+
+## Implementation Order
+
+Sub-tasks are ordered by dependency:
+
+```
+1 (AI privacy mode)
+    ↓
+2 (Learning Mode + BaselineRecorder)
+    ↓
+3 (Restrict floating widget)
+    ↓
+4 (Admin Console window shell)
+    ↓
+5 (alert_history table + telemetry logging)
+    ↓
+6 (Admin Console populated with real data + one-click controls)
+    ↓
+7 (WMI upgrade — independent, can run anytime)
+```

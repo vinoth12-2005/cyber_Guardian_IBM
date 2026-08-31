@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlotBot – Endpoint Security Dashboard</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/animations.css">
+</head>
+<body>
+
+    <!-- Frame Window Drag Handler (Custom Frameless Windows Titlebar) -->
+    <div id="titlebar">
+        <div id="drag-region">
+            <span class="logo">🛡️ FlotBot</span>
+            <span class="title">Endpoint Protection Console</span>
+        </div>
+        <div id="window-controls">
+            <button id="btn-minimize" class="control-btn">⎯</button>
+            <button id="btn-maximize" class="control-btn">❑</button>
+            <button id="btn-close" class="control-btn hover-danger">✕</button>
+        </div>
+    </div>
+
+    <div id="app-container">
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar">
+            <div class="user-profile">
+                <div class="avatar">FB</div>
+                <div class="info">
+                    <h4>SYSTEM-HOST</h4>
+                    <span class="status-badge secure">SYSTEM SECURE</span>
+                </div>
+            </div>
+
+            <nav>
+                <a href="#dashboard" class="nav-item active" data-target="dashboard-page">
+                    <span class="icon">📊</span> Overview
+                </a>
+                <a href="#alerts" class="nav-item" data-target="alerts-page">
+                    <span class="icon">🚨</span> Alerts <span class="badge" id="alerts-count-badge">0</span>
+                </a>
+                <a href="#processes" class="nav-item" data-target="processes-page">
+                    <span class="icon">⚙️</span> Processes
+                </a>
+                <a href="#network" class="nav-item" data-target="network-page">
+                    <span class="icon">🌐</span> Network
+                </a>
+                <a href="#file-engine" class="nav-item" data-target="file-engine-page">
+                    <span class="icon">🦠</span> File Threat Engine
+                </a>
+                <a href="#replay" class="nav-item" data-target="replay-page">
+                    <span class="icon">⏪</span> Threat Replay
+                </a>
+                <a href="#ai-chat" class="nav-item" data-target="chat-page">
+                    <span class="icon">🤖</span> AI Security Copilot
+                </a>
+                <a href="#settings" class="nav-item" data-target="settings-page">
+                    <span class="icon">🔧</span> Settings
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span>FlotBot Agent v1.0.0</span>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+
+            <!-- 1. DASHBOARD PAGE -->
+            <section id="dashboard-page" class="page-content active">
+                <header class="page-header">
+                    <h1>System Overview</h1>
+                    <button class="btn btn-primary" id="btn-manual-scan">Scan Now</button>
+                </header>
+
+                <div class="dashboard-grid">
+                    <!-- Gauge Card -->
+                    <div class="card card-gauge">
+                        <h3>Overall System Threat Level</h3>
+                        <div class="gauge-container">
+                            <div class="radial-gauge" id="threat-gauge">
+                                <div class="gauge-value" id="threat-score-val">0%</div>
+                            </div>
+                        </div>
+                        <div class="gauge-label" id="threat-status-label">No Active Threat Detected</div>
+                    </div>
+
+                    <!-- Mini Stats -->
+                    <div class="stats-row">
+                        <div class="card mini-card">
+                            <div class="label">Total Detected Alerts</div>
+                            <div class="number" id="stat-total-alerts">0</div>
+                        </div>
+                        <div class="card mini-card">
+                            <div class="label">Active Shell Scans</div>
+                            <div class="number">24/7</div>
+                        </div>
+                        <div class="card mini-card">
+                            <div class="label">IOC Databases Loaded</div>
+                            <div class="number">v1.0.0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-recent-alerts">
+                    <h3>Recent Active Alerts</h3>
+                    <div class="table-container">
+                        <table id="tbl-recent-alerts">
+                            <thead>
+                                <tr>
+                                    <th>Severity</th>
+                                    <th>Title</th>
+                                    <th>Source</th>
+                                    <th>Time</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="empty-state">No alerts triggered in this session.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. ALERTS PAGE -->
+            <section id="alerts-page" class="page-content">
+                <header class="page-header">
+                    <h1>Security Alerts Console</h1>
+                    <button class="btn btn-secondary" id="btn-ack-all">Acknowledge All</button>
+                </header>
+
+                <div class="filter-bar">
+                    <select id="filter-severity">
+                        <option value="">All Severities</option>
+                        <option value="CRITICAL">Critical</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                    <select id="filter-source">
+                        <option value="">All Sources</option>
+                        <option value="System Collector">System Collector</option>
+                        <option value="Network Collector">Network Collector</option>
+                        <option value="Registry Monitor">Registry Monitor</option>
+                        <option value="Malware Analyzer">Malware Analyzer</option>
+                    </select>
+                </div>
+
+                <div id="alerts-list-container">
+                    <div class="empty-state">No security threats detected. System secure.</div>
+                </div>
+            </section>
+
+            <!-- 3. PROCESSES PAGE -->
+            <section id="processes-page" class="page-content">
+                <header class="page-header">
+                    <h1>Process Monitoring</h1>
+                </header>
+                <div class="card">
+                    <div class="search-bar">
+                        <input type="text" id="proc-search" placeholder="Filter processes by name or PID...">
+                    </div>
+                    <div class="table-container max-height-table">
+                        <table id="tbl-processes">
+                            <thead>
+                                <tr>
+                                    <th>PID</th>
+                                    <th>Image</th>
+                                    <th>Command Line</th>
+                                    <th>Parent PID</th>
+                                    <th>Memory</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="empty-state">Collecting process table...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. NETWORK PAGE -->
+            <section id="network-page" class="page-content">
+                <header class="page-header">
+                    <h1>Active Connections & Sockets</h1>
+                </header>
+                <div class="card">
+                    <div class="table-container max-height-table">
+                        <table id="tbl-network">
+                            <thead>
+                                <tr>
+                                    <th>Proto</th>
+                                    <th>Local Address</th>
+                                    <th>Remote Address</th>
+                                    <th>State</th>
+                                    <th>PID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="empty-state">Collecting active sockets...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. REGISTRY PAGE -->
+            <section id="registry-page" class="page-content">
+                <header class="page-header">
+                    <h1>Registry Persistence Entries</h1>
+                </header>
+                <div class="card">
+                    <div class="table-container max-height-table">
+                        <table id="tbl-registry">
+                            <thead>
+                                <tr>
+                                    <th>Registry Key Path</th>
+                                    <th>Value Name</th>
+                                    <th>Data / Executable Path</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="3" class="empty-state">Collecting registry startup targets...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. FILE THREAT ENGINE PAGE -->
+            <section id="file-engine-page" class="page-content">
+                <header class="page-header">
+                    <h1>Master File Threat Analysis Engine</h1>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" id="btn-pick-file-scan">📂 Select File to Inspect</button>
+                        <button class="btn btn-secondary" id="btn-run-deep-audit">🔍 Deep Host Audit</button>
+                    </div>
+                </header>
+
+                <div class="card" style="margin-bottom:15px; padding:15px; background:rgba(30,41,59,0.7); border:1px solid #334155; border-radius:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <h3 style="margin:0 0 4px 0;">⚡ Multi-Layered Threat Engine Ready</h3>
+                            <div style="font-size:12px; color:#94a3b8;">Identification • SHA-256 • Local Reputation • VirusTotal • PE/Mach-O/ELF Static Parser • Shannon Entropy • Strings • Imports • Signatures • YARA • ML Classifier</div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="file-engine-path-input" placeholder="Or enter full file path..." style="padding:6px 12px; border-radius:4px; border:1px solid #475569; background:#0f172a; color:#fff; min-width:280px; font-size:12px;">
+                            <button class="btn btn-primary btn-sm" id="btn-scan-path-input">Scan Path</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="file-engine-results" style="display:none;">
+                    <!-- Result Card -->
+                    <div class="card" style="padding:18px; border-radius:8px; margin-bottom:15px; background:rgba(15,23,42,0.9); border:1px solid #334155;" id="file-result-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <span class="badge-sec" id="file-res-verdict-badge" style="font-size:13px; font-weight:bold; padding:4px 10px;">SAFE</span>
+                                <h2 id="file-res-filename" style="margin:6px 0 2px 0; font-family:monospace; font-size:18px;">sample.exe</h2>
+                                <div id="file-res-filepath" style="font-size:11px; color:#64748b; font-family:monospace; word-break:break-all;">C:\path\to\file</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:11px; color:#94a3b8;">DETERMINISTIC RISK SCORE</div>
+                                <div style="font-size:28px; font-weight:800;" id="file-res-risk-score">0<span style="font-size:14px; color:#64748b;">/100</span></div>
+                                <div style="font-size:11px; color:#38bdf8;" id="file-res-confidence">Confidence: 95%</div>
+                            </div>
+                        </div>
+
+                        <!-- Metric Tiles -->
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-bottom:15px;">
+                            <div style="background:rgba(30,41,59,0.5); padding:10px; border-radius:6px; border:1px solid #334155;">
+                                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">Format & Type</div>
+                                <div style="font-weight:bold; font-size:13px; margin-top:2px;" id="file-res-format">PE Executable</div>
+                                <div style="font-size:10px; color:#64748b;" id="file-res-size">0 KB</div>
+                            </div>
+                            <div style="background:rgba(30,41,59,0.5); padding:10px; border-radius:6px; border:1px solid #334155;">
+                                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">Shannon Entropy</div>
+                                <div style="font-weight:bold; font-size:13px; margin-top:2px;" id="file-res-entropy">5.4 / 8.0</div>
+                                <div style="font-size:10px; color:#64748b;" id="file-res-entropy-tier">Normal</div>
+                            </div>
+                            <div style="background:rgba(30,41,59,0.5); padding:10px; border-radius:6px; border:1px solid #334155;">
+                                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">Digital Signature</div>
+                                <div style="font-weight:bold; font-size:13px; margin-top:2px;" id="file-res-sig">Unsigned</div>
+                                <div style="font-size:10px; color:#64748b;" id="file-res-publisher">Unknown</div>
+                            </div>
+                            <div style="background:rgba(30,41,59,0.5); padding:10px; border-radius:6px; border:1px solid #334155;">
+                                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">YARA Matches</div>
+                                <div style="font-weight:bold; font-size:13px; margin-top:2px;" id="file-res-yara">0 Rules</div>
+                                <div style="font-size:10px; color:#64748b;">Compiled Ruleset</div>
+                            </div>
+                            <div style="background:rgba(30,41,59,0.5); padding:10px; border-radius:6px; border:1px solid #334155;">
+                                <div style="font-size:10px; color:#94a3b8; text-transform:uppercase;">ML Threat Probability</div>
+                                <div style="font-weight:bold; font-size:13px; margin-top:2px;" id="file-res-ml">0.05</div>
+                                <div style="font-size:10px; color:#64748b;" id="file-res-ml-class">BENIGN</div>
+                            </div>
+                        </div>
+
+                        <!-- SHA-256 Hash Banner -->
+                        <div style="background:rgba(15,23,42,0.8); padding:8px 12px; border-radius:4px; font-family:monospace; font-size:11px; margin-bottom:15px; border-left:3px solid #38bdf8;">
+                            <strong>SHA-256:</strong> <span id="file-res-sha256" style="color:#e2e8f0;">—</span>
+                        </div>
+
+                        <!-- Evidence Breakdown -->
+                        <div style="margin-bottom:15px;">
+                            <h4 style="margin:0 0 8px 0; font-size:13px;">🔍 Explainable Evidence Breakdown</h4>
+                            <div id="file-res-evidence-list" style="display:flex; flex-direction:column; gap:6px;">
+                                <!-- Dynamically populated items -->
+                            </div>
+                        </div>
+
+                        <!-- Remediation & Action -->
+                        <div style="background:rgba(30,41,59,0.7); padding:12px; border-radius:6px; border:1px solid #475569;">
+                            <h4 style="margin:0 0 6px 0; font-size:13px;">🛠️ Recommended Security Remediation</h4>
+                            <div id="file-res-remediation-desc" style="font-size:12px; margin-bottom:8px; color:#cbd5e1;">—</div>
+                            <code id="file-res-remediation-cmd" style="display:block; padding:8px; background:#0f172a; border-radius:4px; color:#38bdf8; font-size:11px; word-break:break-all;"></code>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="file-engine-empty" class="empty-state" style="padding:50px 20px; text-align:center;">
+                    <div style="font-size:36px; margin-bottom:10px;">🦠</div>
+                    <h3>No File Selected</h3>
+                    <p style="color:#94a3b8; font-size:13px;">Click "Select File to Inspect" or enter a file path to run deep deterministic malware threat analysis.</p>
+                </div>
+            </section>
+
+            <!-- 7. THREAT REPLAY & INCIDENT FORENSICS PAGE -->
+            <section id="replay-page" class="page-content">
+                <header class="page-header">
+                    <h1>Incident Timeline & Threat Replay</h1>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" id="btn-load-replay-timeline">⚡ Load Recent Timeline</button>
+                    </div>
+                </header>
+
+                <!-- Replay Controller Bar -->
+                <div class="card" style="margin-bottom:15px; padding:15px; background:rgba(30,41,59,0.8); border:1px solid #334155; border-radius:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <span style="font-size:13px; font-weight:bold;">⏪ Timeline Player</span>
+                            <span id="replay-step-label" style="font-size:12px; color:#94a3b8; margin-left:10px;">Step 0 of 0</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:11px; color:#94a3b8;">Speed:</span>
+                            <button class="btn btn-secondary btn-sm btn-speed" data-speed="1">1x</button>
+                            <button class="btn btn-secondary btn-sm btn-speed" data-speed="2">2x</button>
+                            <button class="btn btn-secondary btn-sm btn-speed" data-speed="5">5x</button>
+                            <button class="btn btn-secondary btn-sm btn-speed" data-speed="10">10x</button>
+                            <button class="btn btn-secondary btn-sm btn-speed" data-speed="50">50x</button>
+                            <button class="btn btn-secondary btn-sm btn-speed" data-speed="0">⚡ Instant</button>
+                        </div>
+                    </div>
+
+                    <!-- Scrub Slider -->
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                        <input type="range" id="replay-scrub" min="0" max="100" value="0" style="flex:1; cursor:pointer;">
+                        <span id="replay-percent-badge" style="font-family:monospace; font-size:12px; color:#38bdf8; min-width:45px;">0%</span>
+                    </div>
+
+                    <!-- Transport Buttons -->
+                    <div style="display:flex; justify-content:center; gap:10px;">
+                        <button class="btn btn-secondary" id="btn-replay-first">⏮ First</button>
+                        <button class="btn btn-secondary" id="btn-replay-prev">◀ Step Back</button>
+                        <button class="btn btn-primary" id="btn-replay-play">▶ Play</button>
+                        <button class="btn btn-secondary" id="btn-replay-next">Step Next ▶</button>
+                        <button class="btn btn-secondary" id="btn-replay-last">⏭ Last</button>
+                    </div>
+                </div>
+
+                <!-- State Snapshot Cards -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:15px;">
+                    <div class="card mini-card" style="padding:10px;">
+                        <div class="label">Replay Active Processes</div>
+                        <div class="number" id="replay-state-pids">0</div>
+                    </div>
+                    <div class="card mini-card" style="padding:10px;">
+                        <div class="label">Active Network Sockets</div>
+                        <div class="number" id="replay-state-sockets">0</div>
+                    </div>
+                    <div class="card mini-card" style="padding:10px;">
+                        <div class="label">Filesystem Writes</div>
+                        <div class="number" id="replay-state-files">0</div>
+                    </div>
+                    <div class="card mini-card" style="padding:10px;">
+                        <div class="label">Triggered Alerts</div>
+                        <div class="number" id="replay-state-alerts">0</div>
+                    </div>
+                </div>
+
+                <!-- Live Step Inspection Card -->
+                <div class="card" id="replay-current-card" style="margin-bottom:15px; padding:15px; border-left:4px solid #38bdf8;">
+                    <h3 id="replay-curr-title" style="margin:0 0 6px 0;">Select or Play Timeline to Inspect Microsecond Steps</h3>
+                    <div id="replay-curr-desc" style="font-size:12px; color:#cbd5e1;">No step loaded. Click "Load Recent Timeline" to stream indexed logs.</div>
+                    <div id="replay-curr-time" style="font-size:11px; color:#64748b; margin-top:6px;">—</div>
+                </div>
+
+                <!-- Timeline Table -->
+                <div class="card">
+                    <h3>Chronological Telemetry Stream</h3>
+                    <div class="table-container max-height-table">
+                        <table id="tbl-replay-stream">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Type</th>
+                                    <th>Event Summary</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="empty-state">No timeline events loaded yet. Click "Load Recent Timeline" above.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. AI CHAT PAGE -->
+            <section id="chat-page" class="page-content">
+                <header class="page-header">
+                    <h1>AI Security Copilot</h1>
+                </header>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-history">
+                        <div class="message system">
+                            Hello! I am FlotBot's onboard Security Copilot. I have context on your current system logs, running processes, active connections, and triggered alerts. Ask me to explain an alert or offer investigation ideas.
+                        </div>
+                    </div>
+                    <div class="chat-input-row">
+                        <input type="text" id="chat-user-input" placeholder="Ask the Copilot about system security or incident logs...">
+                        <button class="btn btn-primary" id="btn-send-chat">Send</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. SETTINGS PAGE -->
+            <section id="settings-page" class="page-content">
+                <header class="page-header">
+                    <h1>Settings</h1>
+                </header>
+                <div class="card settings-card">
+                    <div class="form-group">
+                        <label for="settings-interval">Scan Interval (milliseconds)</label>
+                        <input type="number" id="settings-interval" value="5000">
+                    </div>
+                    <div class="form-group">
+                        <label for="settings-provider">AI Provider</label>
+                        <select id="settings-provider">
+                            <option value="gemini">Google Gemini</option>
+                            <option value="mock">Mock Offline Analysis Mode</option>
+                        </select>
+                    </div>
+                    <div class="form-group row-checkbox">
+                        <input type="checkbox" id="settings-notifications" checked>
+                        <label for="settings-notifications">Enable Toast Notifications</label>
+                    </div>
+                    <div class="form-group row-checkbox">
+                        <input type="checkbox" id="settings-sound" checked>
+                        <label for="settings-sound">Enable Sound Notifications</label>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" id="btn-save-settings">Save Configurations</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Alert Modal Details Panel -->
+    <div id="alert-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-alert-title">Suspicious PowerShell Execution</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="badge-row">
+                    <span class="severity-badge" id="modal-alert-severity">HIGH</span>
+                    <span class="category-badge" id="modal-alert-category">EXECUTION</span>
+                </div>
+                <div class="meta-row">
+                    <strong>Detected at:</strong> <span id="modal-alert-time">2026-07-20</span><br>
+                    <strong>Source Module:</strong> <span id="modal-alert-source">System Collector</span>
+                </div>
+                <div class="section-title">Threat Explanation</div>
+                <p id="modal-alert-desc">Suspicious powershell processes were launched with high-obfuscated script args.</p>
+
+                <div class="section-title">AI Explainer Insight</div>
+                <div class="ai-box">
+                    <p id="modal-alert-ai-explanation">Click "Request AI Analysis" below to fetch real-time behavior explanation and Mitre correlation from Copilot...</p>
+                    <button class="btn btn-secondary" id="btn-request-ai-explain">Request AI Analysis</button>
+                </div>
+
+                <div class="section-title">Incident Evidence</div>
+                <pre class="evidence-block" id="modal-alert-evidence">{}</pre>
+
+                <div class="section-title">Mitigation & Actions</div>
+                <p id="modal-alert-recommend">Check process execution patterns and lock the local user account if behavior continues.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btn-modal-ack">Acknowledge Threat</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
