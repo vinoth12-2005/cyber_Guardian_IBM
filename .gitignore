@@ -5,5 +5,8 @@ node_modules/
 dist/
 build/
 *.db
+*.db-wal
+*.db-shm
+*.db-journal
 *.sqlite
 *.sqlite3

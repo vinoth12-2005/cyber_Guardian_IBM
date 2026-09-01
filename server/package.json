@@ -1,0 +1,8 @@
+{
+  "name": "cyberguardian-backend",
+  "version": "1.0.0",
+  "description": "Unified CyberGuardian AI & FlotBot Defender Express Backend",
+  "main": "server.js",
+  "type": "commonjs",
+  "dependencies": {}
+}
