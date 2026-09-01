@@ -22,7 +22,7 @@ npm run dev:all
 ```
 
 > [!NOTE]
-> **Automatic Database Setup:** When your teammate starts the server, the backend automatically creates the database file (`FlotBot/data/cyberguardian_unified.db`), runs all schema migrations, creates all 22 tables and 28 indexes, and seeds the 53 courses, quizzes, and simulation scenarios automatically.
+> **PostgreSQL Primary Database:** The backend is natively built for **PostgreSQL** (using `pg.Pool` with connection details in `.env`). If a teammate does not have a running local PostgreSQL instance, the server seamlessly uses an embedded local SQLite engine (`FlotBot/data/cyberguardian_unified.db`) so development is never blocked. All 22 tables, 28 indexes, and 53 courses/scenarios are auto-created and seeded on startup.
 
 ---
 
