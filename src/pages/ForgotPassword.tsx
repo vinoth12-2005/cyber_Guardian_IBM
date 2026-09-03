@@ -114,10 +114,27 @@ export default function ForgotPassword() {
               We sent a password reset link to{" "}
               <span style={{ color: "var(--text-primary)" }}>{getValues("email")}</span>.
             </p>
+            <div
+              className="mt-3.5 max-w-sm rounded-xl p-3 text-left text-xs"
+              style={{
+                background: "var(--surface-2)",
+                border: "1px solid var(--border-default)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              <p className="font-medium" style={{ color: "var(--text-primary)" }}>
+                Didn't see the email?
+              </p>
+              <ul className="mt-1.5 list-disc list-inside space-y-1 text-[11px] leading-relaxed">
+                <li>Check your <strong>Spam / Junk</strong> folder (sent from <code>noreply@ibmhack-c98c2.firebaseapp.com</code>).</li>
+                <li>Make sure the email matches your registered account exactly.</li>
+                <li>Check the <strong>Promotions</strong> or <strong>Updates</strong> tab if using Gmail.</li>
+              </ul>
+            </div>
             <button
               onClick={resend}
               disabled={cooldown > 0}
-              className="mt-6 text-sm font-medium disabled:cursor-not-allowed transition-opacity"
+              className="mt-5 text-sm font-medium disabled:cursor-not-allowed transition-opacity"
               style={{ color: cooldown > 0 ? "var(--text-secondary)" : "var(--accent-primary)" }}
             >
               {cooldown > 0 ? `Resend link in ${cooldown}s` : "Resend link"}

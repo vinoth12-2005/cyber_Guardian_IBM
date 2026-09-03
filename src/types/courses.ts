@@ -21,6 +21,19 @@ export interface Activity {
   };
 }
 
+export interface FlipCardData {
+  front: {
+    title: string;
+    scenario: string;
+    indicator: string;
+  };
+  back: {
+    title: string;
+    analysis: string;
+    mitigation: string;
+  };
+}
+
 export interface Lesson {
   id?: string;
   title: string;
@@ -28,6 +41,8 @@ export interface Lesson {
   dur: string;
   body: string;
   image?: string;
+  videoUrl?: string;
+  flipCard?: FlipCardData;
   example?: string;
   realTimeExample?: string;
   points?: string[];
@@ -69,6 +84,9 @@ export interface Course {
   prerequisites?: string[];
   bannerImage?: string | null;
   introVideo?: string;
+  status?: 'draft' | 'published' | 'archived';
+  createdBy?: string;
+  sourceDocName?: string;
   modules: Module[];
   quiz: QuizQuestion[]; // Final Assessment
   credentialEligible?: boolean;

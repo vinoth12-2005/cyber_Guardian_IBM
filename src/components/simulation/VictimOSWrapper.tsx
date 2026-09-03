@@ -113,7 +113,7 @@ function SOCReportDrawer({ spec, onClose }: { spec: VictimSpec; onClose: () => v
       </div>
 
       <div className="pt-3 border-t border-slate-800 text-[10px] text-slate-500 flex justify-between items-center">
-        <span>SE-LAB SOC Console</span>
+        <span>Cyber Range SOC Console</span>
         <span className="font-mono text-cyan-400">Agent v7.14</span>
       </div>
     </div>

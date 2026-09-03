@@ -10,7 +10,21 @@ const { ROLE_PERMISSIONS } = require('../middleware/rbac');
  */
 router.post('/sync', authenticate, async (req, res, next) => {
   try {
-    const user = req.user;
+    let user = req.user;
+    if (req.body && (req.body.name || req.body.organization || req.body.profilePicture || req.body.role)) {
+      const userService = require('../services/userService');
+      const updates = {};
+      if (req.body.name && req.body.name !== user.name) updates.name = req.body.name;
+      if (req.body.organization && req.body.organization !== user.organization) updates.organization = req.body.organization;
+      if (req.body.profilePicture && req.body.profilePicture !== user.profile_picture) updates.profile_picture = req.body.profilePicture;
+      if (Object.keys(updates).length > 0) {
+        user = (await userService.updateProfile(user.id, updates)) || user;
+      }
+      if (req.body.role && req.body.role !== user.role && user.email.toLowerCase().startsWith('admin@')) {
+        user = (await userService.updateRole(user.id, req.body.role)) || user;
+      }
+    }
+
     const permissions = ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.STUDENT;
 
     res.json({

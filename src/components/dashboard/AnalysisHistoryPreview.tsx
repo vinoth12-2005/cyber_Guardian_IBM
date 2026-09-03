@@ -71,27 +71,33 @@ export const AnalysisHistoryPreview: React.FC<AnalysisHistoryPreviewProps> = ({
 
       {/* Rows */}
       <div className="space-y-0">
-        {preview.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center gap-3 py-2.5 cursor-pointer transition-colors"
-            style={{ borderBottom: '1px solid var(--border-subtle)' }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'var(--surface-1)')}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'transparent')}
-            onClick={() => onSelectLog(item)}
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-medium truncate" style={{ color: 'var(--accent-info)' }}>{item.target}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.type} · {item.date}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {getRiskBadge(item.riskLevel)}
-              <button onClick={(e) => { e.stopPropagation(); onSelectLog(item); }} className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
-                <Eye className="w-3 h-3" />
-              </button>
-            </div>
+        {preview.length === 0 ? (
+          <div className="py-8 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+            No analysis history recorded yet. Live scans and inspection logs will appear here.
           </div>
-        ))}
+        ) : (
+          preview.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center gap-3 py-2.5 cursor-pointer transition-colors"
+              style={{ borderBottom: '1px solid var(--border-subtle)' }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'var(--surface-1)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'transparent')}
+              onClick={() => onSelectLog(item)}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-medium truncate" style={{ color: 'var(--accent-info)' }}>{item.target}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.type} · {item.date}</p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {getRiskBadge(item.riskLevel)}
+                <button onClick={(e) => { e.stopPropagation(); onSelectLog(item); }} className="p-1 rounded-lg" style={{ color: 'var(--text-muted)' }}>
+                  <Eye className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

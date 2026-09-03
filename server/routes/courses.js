@@ -9,9 +9,11 @@ const courseService = require('../services/courseService');
  */
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
-    const { cat, level, search } = req.query;
+    const { cat, level, search, status, includeDrafts } = req.query;
     const userId = req.user ? req.user.id : null;
-    const courses = await courseService.listCourses({ cat, level, search, userId });
+    const isAdmin = req.user && ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'].includes(req.user.role);
+    const allowDrafts = isAdmin || includeDrafts === 'true';
+    const courses = await courseService.listCourses({ cat, level, search, status, includeDrafts: allowDrafts, userId });
 
     res.json({
       success: true,

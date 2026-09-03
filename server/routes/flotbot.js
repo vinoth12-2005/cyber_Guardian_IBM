@@ -323,15 +323,144 @@ router.put('/rules/:id', authenticate, requireRole('SUPER_ADMIN', 'FLOTBOT_SECUR
   }
 });
 
+// ── URL Threat Detection & Interception ──────────────────────────────────────
+
+/**
+ * POST /api/flotbot/analyze-url
+ * Analyze URL with URLEngine, pause navigation, generate AI awareness explanation, and log alert
+ */
+router.post('/analyze-url', optionalAuth, async (req, res, next) => {
+  try {
+    const { url, metadata } = req.body;
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_INPUT', message: 'url is required' },
+      });
+    }
+
+    const userId = req.user ? req.user.id : (metadata?.userId || null);
+    const result = await flotbotService.analyzeUrl(url, userId, metadata || {});
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/flotbot/analyze-file
+ * Analyze file hash via VirusTotal & Hybrid Analysis with local entropy heuristics
+ */
+router.post('/analyze-file', optionalAuth, async (req, res, next) => {
+  try {
+    const { sha256, fileName, filePath, entropy } = req.body;
+    const userId = req.user ? req.user.id : null;
+    const result = await flotbotService.analyzeFile({ sha256, fileName, filePath, entropy }, userId);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/flotbot/alerts/:id/decision
+ * Record user decision at Interception Gate (safe_exit vs override_proceed)
+ */
+router.post('/alerts/:id/decision', optionalAuth, async (req, res, next) => {
+  try {
+    const { action, reason } = req.body;
+    const userId = req.user ? req.user.id : null;
+    const result = await flotbotService.recordUserDecision(req.params.id, userId, action, reason || '');
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── AI Operations ────────────────────────────────────────────────────────────
 
 /**
+ * GET /api/flotbot/chats
+ * List persistent chat sessions for authenticated user + course study context
+ */
+router.get('/chats', optionalAuth, async (req, res, next) => {
+  try {
+    const userId = req.user ? req.user.id : 'anonymous';
+    const sessions = await flotbotService.listChatSessions(userId);
+    const studyContext = await flotbotService.getUserCourseStudyContext(userId);
+
+    res.json({
+      success: true,
+      data: {
+        sessions,
+        studyContext,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/flotbot/chats/:sessionId
+ * Load complete message history for a specific chat session
+ */
+router.get('/chats/:sessionId', optionalAuth, async (req, res, next) => {
+  try {
+    const userId = req.user ? req.user.id : 'anonymous';
+    const result = await flotbotService.getChatSessionWithMessages(req.params.sessionId, userId);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Chat session not found' },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * DELETE /api/flotbot/chats/:sessionId
+ * Delete chat session and its message logs
+ */
+router.delete('/chats/:sessionId', optionalAuth, async (req, res, next) => {
+  try {
+    const userId = req.user ? req.user.id : 'anonymous';
+    const result = await flotbotService.deleteChatSession(req.params.sessionId, userId);
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /api/flotbot/ai/chat
- * FlotBot AI Chat assistant
+ * Persistent FlotBot AI Chat assistant with course study awareness and multi-turn history
  */
 router.post('/ai/chat', optionalAuth, async (req, res, next) => {
   try {
-    const { message, context } = req.body;
+    const { message, sessionId, context = {} } = req.body;
     if (!message) {
       return res.status(400).json({
         success: false,
@@ -339,10 +468,62 @@ router.post('/ai/chat', optionalAuth, async (req, res, next) => {
       });
     }
 
-    const reply = await flotbotService.askAI(message, context || {});
+    const userId = req.user ? req.user.id : 'anonymous';
+
+    // 1. Create or retrieve persistent session
+    const session = await flotbotService.createOrGetSession(sessionId, userId, message);
+    const activeSessionId = session.id;
+
+    // 2. Persist user message to PostgreSQL
+    const savedUserMsg = await flotbotService.saveChatMessage(
+      activeSessionId,
+      userId,
+      'user',
+      message,
+      context.metadata || {}
+    );
+
+    // 3. Inject Course Study Context & Recent Conversation History
+    const studyContext = await flotbotService.getUserCourseStudyContext(userId);
+    const fullSession = await flotbotService.getChatSessionWithMessages(activeSessionId, userId);
+    const recentMessages = (fullSession?.messages || []).slice(-8);
+
+    const mergedContext = {
+      ...context,
+      userId,
+      sessionId: activeSessionId,
+      courseContext: studyContext,
+      conversationHistory: recentMessages,
+    };
+
+    // 4. Query AI Engine
+    const aiResult = await flotbotService.askAI(message, mergedContext);
+
+    // 5. Persist AI response to PostgreSQL
+    const savedBotMsg = await flotbotService.saveChatMessage(
+      activeSessionId,
+      userId,
+      'flotbot',
+      aiResult.reply,
+      {
+        provider: aiResult.provider,
+        model: aiResult.model,
+      }
+    );
+
     res.json({
       success: true,
-      data: reply,
+      data: {
+        reply: aiResult.reply,
+        sessionId: activeSessionId,
+        sessionTitle: session.title,
+        sessionCategory: session.category,
+        provider: aiResult.provider,
+        model: aiResult.model,
+        userMessage: savedUserMsg,
+        botMessage: savedBotMsg,
+        studyContext,
+      },
     });
   } catch (err) {
     next(err);
@@ -368,3 +549,4 @@ router.post('/ai/explain', optionalAuth, async (req, res, next) => {
 });
 
 module.exports = router;
+

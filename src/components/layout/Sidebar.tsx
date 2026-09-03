@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { LogOut } from 'lucide-react';
+import logoIcon from '@/assets/logo-icon.png';
 import {
   LayoutDashboard,
   GraduationCap,
@@ -13,6 +14,7 @@ import {
   X,
   Lock,
   History,
+  Shield,
   ShieldAlert,
   TrendingUp,
   Bell,
@@ -79,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -87,6 +89,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     toast.success("Logged out successfully");
     navigate("/login");
   };
+
+  const isAdmin = authUser?.role && [
+    'SUPER_ADMIN',
+    'PLATFORM_ADMIN',
+    'COURSE_ADMIN',
+    'USER_ADMIN',
+    'SIMULATION_ADMIN',
+    'CERTIFICATION_ADMIN',
+    'FLOTBOT_SECURITY_ADMIN',
+    'SECURITY_ANALYST',
+    'ANALYST',
+  ].includes(authUser.role);
 
   return (
     <>
@@ -117,9 +131,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="flex items-center gap-3">
             <img
-              src="/logo-icon.png"
+              src={logoIcon}
               alt="CyberGuardian AI"
               className="w-11 h-11 rounded-xl flex-shrink-0 object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/shield.svg';
+              }}
             />
             <div>
               <span
@@ -128,12 +145,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 CyberGuardian
               </span>
-              <span
-                className="text-[9.5px] tracking-[0.12em] uppercase block"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                AI Security Hub
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
+                  {authUser?.role || 'EMPLOYEE'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -148,6 +164,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Nav groups */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-5 mt-2">
+          {isAdmin && (
+            <div className="pb-2 mb-2 border-b border-indigo-900/30">
+              <div
+                className="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.12em] uppercase text-indigo-400 font-mono"
+              >
+                Enterprise Portal
+              </div>
+              <a
+                href="http://localhost:5174"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-indigo-200 hover:text-white bg-indigo-950/60 hover:bg-indigo-900/60 border border-indigo-700/50 shadow-sm transition-all"
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="text-[12px] font-bold">Admin Center</span>
+                </div>
+                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-200 border border-indigo-400/40">
+                  5174
+                </span>
+              </a>
+            </div>
+          )}
           {navGroups.map((group) => (
             <div key={group.label}>
               <div

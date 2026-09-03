@@ -16,6 +16,121 @@ class UserService {
     return res.rows[0] || null;
   }
 
+  async createFirebaseUser(email, password, displayName) {
+    const apiKey = process.env.VITE_FIREBASE_API_KEY || 'AIzaSyDjPVMc_frUBiZUFp5kR6emxRlJk53N5TQ';
+    try {
+      const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          displayName,
+          returnSecureToken: true,
+        }),
+      });
+      const data = await response.json();
+      if (data.localId) {
+        return { uid: data.localId, email: data.email, createdInFirebase: true };
+      } else if (data.error) {
+        if (data.error.message === 'EMAIL_EXISTS') {
+          return { email, createdInFirebase: false, note: 'User already exists in Firebase Auth' };
+        }
+        console.warn('[Firebase Auth] Note creating user:', data.error.message);
+      }
+    } catch (e) {
+      console.warn('[Firebase Auth] Error calling identitytoolkit:', e.message);
+    }
+    return null;
+  }
+
+  async createUser(userData = {}) {
+    const {
+      name,
+      email,
+      password,
+      role = 'EMPLOYEE',
+      organization = 'Enterprise CyberGuardian Organization',
+      bio = 'Enterprise workforce security member.',
+      status = 'ACTIVE',
+      firebaseUid,
+    } = userData;
+
+    if (!email) {
+      throw new Error('Email address is required to create a user');
+    }
+
+    const existing = await this.findByEmail(email);
+    if (existing) {
+      throw new Error(`A user account with email "${email}" already exists in the database.`);
+    }
+
+    // Provision in Firebase Authentication if password provided
+    let resolvedUid = firebaseUid;
+    const finalPassword = password || 'TempPass@' + Math.floor(1000 + Math.random() * 9000);
+
+    if (!resolvedUid) {
+      const fbResult = await this.createFirebaseUser(email, finalPassword, name);
+      if (fbResult && fbResult.uid) {
+        resolvedUid = fbResult.uid;
+      }
+    }
+
+    const uid = resolvedUid || 'usr_manual_' + Math.random().toString(36).substring(2, 12);
+    const newId = 'usr_' + uid.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6);
+    const now = new Date().toISOString();
+
+    const sql = `
+      INSERT INTO users (id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      RETURNING *
+    `;
+    const params = [
+      newId,
+      uid,
+      name || email.split('@')[0],
+      email,
+      null,
+      role,
+      status,
+      bio,
+      organization,
+      1,
+      0,
+      0,
+      null,
+      now,
+      now,
+    ];
+
+    const res = await db.query(sql, params);
+
+    // Record welcome activity
+    try {
+      await db.query(
+        `INSERT INTO user_activity (id, user_id, activity_type, label, detail, category, icon_type, metadata_json, timestamp)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          'act_' + Math.random().toString(36).substring(2, 10),
+          newId,
+          'ACCOUNT_PROVISIONED',
+          'User provisioned by Super Administrator',
+          `Account created with role ${role}`,
+          'administrative',
+          'user',
+          JSON.stringify({ createdByAdmin: true, initialRole: role }),
+          now,
+        ]
+      );
+    } catch (e) {}
+
+    const createdUser = res.rows[0];
+    return {
+      ...createdUser,
+      tempPassword: finalPassword,
+    };
+  }
+
   async updateProfile(userId, updates = {}) {
     const allowed = ['name', 'bio', 'organization', 'profile_picture'];
     const setClauses = [];
@@ -68,9 +183,9 @@ class UserService {
   }
 
   async updateStatus(userId, newStatus) {
-    const validStatuses = ['ACTIVE', 'SUSPENDED', 'INACTIVE'];
+    const validStatuses = ['ACTIVE', 'SUSPENDED', 'INACTIVE', 'DELETED'];
     if (!validStatuses.includes(newStatus)) {
-      throw new Error(`Invalid status: ${newStatus}`);
+      throw new Error(`Invalid status: ${newStatus}. Supported: ${validStatuses.join(', ')}`);
     }
 
     const now = new Date().toISOString();
@@ -78,7 +193,73 @@ class UserService {
       'UPDATE users SET status = $1, updated_at = $2 WHERE id = $3 RETURNING *',
       [newStatus, now, userId]
     );
+
+    // If status is SUSPENDED or DELETED, disable user in Firebase if admin SDK available
+    if (newStatus === 'SUSPENDED' || newStatus === 'DELETED') {
+      try {
+        const { admin } = require('../config/firebaseAdmin');
+        const user = res.rows[0];
+        if (admin && admin.apps.length > 0 && user?.firebase_uid) {
+          await admin.auth().updateUser(user.firebase_uid, { disabled: true });
+        }
+      } catch (fbErr) {}
+    } else if (newStatus === 'ACTIVE') {
+      try {
+        const { admin } = require('../config/firebaseAdmin');
+        const user = res.rows[0];
+        if (admin && admin.apps.length > 0 && user?.firebase_uid) {
+          await admin.auth().updateUser(user.firebase_uid, { disabled: false });
+        }
+      } catch (fbErr) {}
+    }
+
     return res.rows[0] || null;
+  }
+
+  async deleteUser(userId, { allowNonSuspended = false, permanent = false } = {}) {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Permanent hard delete option (purges from database)
+    if (permanent) {
+      const dependentTables = [
+        'course_quiz_submissions',
+        'course_progress',
+        'course_enrollments',
+        'simulation_events',
+        'simulation_attempts',
+        'certifications',
+        'user_activity',
+        'security_behavior',
+      ];
+
+      for (const table of dependentTables) {
+        try {
+          await db.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId]);
+        } catch (e) {}
+      }
+
+      await db.query('DELETE FROM users WHERE id = $1', [userId]);
+
+      try {
+        const { admin } = require('../config/firebaseAdmin');
+        if (admin && admin.apps.length > 0 && user.firebase_uid) {
+          await admin.auth().deleteUser(user.firebase_uid);
+        }
+      } catch (fbErr) {}
+
+      return { ...user, status: 'PURGED' };
+    }
+
+    // Standard deletion: Convert status to DELETED (Soft Delete)
+    if (!allowNonSuspended && user.status !== 'SUSPENDED') {
+      throw new Error('User must be in SUSPENDED status before deletion. Please suspend the account first.');
+    }
+
+    const updatedUser = await this.updateStatus(userId, 'DELETED');
+    return updatedUser;
   }
 
   async listUsers({ page = 1, limit = 20, search = '', role = '', status = '' } = {}) {

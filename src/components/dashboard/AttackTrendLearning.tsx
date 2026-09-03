@@ -47,8 +47,13 @@ export const AttackTrendLearning: React.FC<AttackTrendLearningProps> = ({ trends
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {trends.map((item) => {
+      {trends.length === 0 ? (
+        <div className="py-8 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+          No trending threat patterns detected in database.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {trends.map((item) => {
           const isExpanded = expandedId === item.id;
           return (
             <div
@@ -144,6 +149,7 @@ export const AttackTrendLearning: React.FC<AttackTrendLearningProps> = ({ trends
           );
         })}
       </div>
+      )}
     </div>
   );
 };

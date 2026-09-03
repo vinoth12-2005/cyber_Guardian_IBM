@@ -48,8 +48,13 @@ export const AIInsightPage: React.FC<AIInsightPageProps> = ({
       </div>
 
       {/* All recommendations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {recommendations.map((item) => {
+      {recommendations.length === 0 ? (
+        <div className="glass-card rounded-2xl p-8 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+          No pending security recommendations. Your security posture is currently clean.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {recommendations.map((item) => {
           const meta = priorityMeta(item.priority);
           return (
             <div
@@ -100,6 +105,7 @@ export const AIInsightPage: React.FC<AIInsightPageProps> = ({
           );
         })}
       </div>
+      )}
     </div>
   );
 };

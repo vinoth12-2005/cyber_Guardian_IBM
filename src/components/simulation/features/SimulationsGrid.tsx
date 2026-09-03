@@ -5,145 +5,192 @@ import { seScenarios } from '@/data/simulation/se-scenarios';
 import {
   Search, Clock, CheckCircle2, ArrowRight, Shield, Target,
   Wifi, Lock, Mail, Phone, Globe, Database, Zap, AlertTriangle,
-  Users, Cpu, ChevronDown, ChevronRight, Filter, Star
+  Users, Cpu, ChevronDown, ChevronRight, Filter, Star, Crosshair,
+  Layers, Sparkles, X, Smartphone, Fingerprint, Award, Flame, SlidersHorizontal
 } from 'lucide-react';
 
-// ── Attack type configuration ──────────────────────────────────────────────
+// ── Attack vector & category configuration ──────────────────────────────────
 const ATTACK_TYPES = [
   {
     key: 'All',
-    label: 'All Attacks',
-    icon: Target,
+    label: 'All Attack Vectors',
+    icon: Crosshair,
     color: 'text-cyan-400',
-    bg: 'bg-cyan-950/20',
-    border: 'border-cyan-800/30',
-    desc: 'Every simulation across all categories',
+    bg: 'bg-cyan-500/10',
+    border: 'border-cyan-500/30',
+    activeBg: 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(56,189,248,0.25)]',
+    desc: 'Full matrix of 47 interactive red-team attack & defense scenarios',
   },
   {
     key: 'phishing',
-    label: 'Phishing & Email',
+    label: 'Phishing & BEC Spoofing',
     icon: Mail,
     color: 'text-blue-400',
-    bg: 'bg-blue-950/20',
-    border: 'border-blue-800/30',
-    desc: 'Email-based credential harvesting, BEC, spoofing',
-    categories: ['Phishing', 'Impersonation', 'Business Email Compromise', 'Credential Theft'],
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    activeBg: 'bg-blue-500/20 border-blue-400 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.25)]',
+    desc: 'Email-based credential harvesting, executive impersonation (BEC), spoofing & invoice fraud',
+    categories: ['Phishing', 'Impersonation', 'Business Email Compromise', 'Credential Theft', 'Recruitment Scam'],
   },
   {
-    key: 'social',
-    label: 'Social Media',
-    icon: Users,
+    key: 'identity',
+    label: 'Identity & Social Recon',
+    icon: Fingerprint,
     color: 'text-pink-400',
-    bg: 'bg-pink-950/20',
-    border: 'border-pink-800/30',
-    desc: 'Fake profiles, giveaway scams, account takeover',
-    categories: ['Social Media Attack'],
+    bg: 'bg-pink-500/10',
+    border: 'border-pink-500/30',
+    activeBg: 'bg-pink-500/20 border-pink-400 text-pink-300 shadow-[0_0_15px_rgba(244,114,182,0.25)]',
+    desc: 'OSINT profiling, impersonation, pretexting, employee targeting & profile hijacking',
+    categories: ['Social Media Attack', 'Pretexting', 'Reconnaissance', 'Manipulation', 'Impersonation'],
   },
   {
     key: 'mitm',
-    label: 'MITM / Network',
+    label: 'MITM & Network Exploits',
     icon: Wifi,
     color: 'text-amber-400',
-    bg: 'bg-amber-950/20',
-    border: 'border-amber-800/30',
-    desc: 'Evil Twin Wi-Fi, SSL stripping, ARP poisoning',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    activeBg: 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)]',
+    desc: 'Evil Twin Wi-Fi, SSL stripping, ARP cache poisoning & gateway packet sniffing',
     categories: ['MITM Attack'],
   },
   {
     key: 'ransomware',
-    label: 'Ransomware',
+    label: 'Ransomware & Malware',
     icon: Lock,
     color: 'text-red-400',
-    bg: 'bg-red-950/20',
-    border: 'border-red-800/30',
-    desc: 'File encryption, double extortion, ransom demands',
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    activeBg: 'bg-red-500/20 border-red-400 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.25)]',
+    desc: 'Payload execution, file encryption, double extortion & incident containment drills',
     categories: ['Ransomware'],
   },
   {
     key: 'mobile',
-    label: 'Mobile & SMS',
-    icon: Phone,
+    label: 'Smishing & Mobile Vectors',
+    icon: Smartphone,
     color: 'text-emerald-400',
-    bg: 'bg-emerald-950/20',
-    border: 'border-emerald-800/30',
-    desc: 'Smishing, vishing, QR phishing, mobile malware',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    activeBg: 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]',
+    desc: 'SMS phishing (smishing), voice phishing (vishing), QR code quishing & rogue mobile apps',
     categories: ['Smishing', 'Vishing', 'QR Phishing'],
   },
   {
     key: 'web',
-    label: 'Web & Browser',
+    label: 'Web & Browser Exploits',
     icon: Globe,
     color: 'text-purple-400',
-    bg: 'bg-purple-950/20',
-    border: 'border-purple-800/30',
-    desc: 'XSS, CSRF, clickjacking, credential stuffing',
-    categories: ['Browser Attack', 'Web Attack'],
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    activeBg: 'bg-purple-500/20 border-purple-400 text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.25)]',
+    desc: 'Cross-Site Scripting (XSS), CSRF, clickjacking, rogue browser extensions & cookie theft',
+    categories: ['Browser Attack', 'Web Attack', 'Extension Attack'],
   },
   {
     key: 'cloud',
-    label: 'Cloud & OAuth',
+    label: 'Cloud & OAuth Breaches',
     icon: Database,
-    color: 'text-cyan-400',
-    bg: 'bg-cyan-950/20',
-    border: 'border-cyan-800/30',
-    desc: 'Cloud phishing, OAuth abuse, MFA fatigue',
-    categories: ['Cloud Phishing', 'MFA Attack'],
+    color: 'text-sky-400',
+    bg: 'bg-sky-500/10',
+    border: 'border-sky-500/30',
+    activeBg: 'bg-sky-500/20 border-sky-400 text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.25)]',
+    desc: 'Cloud identity phishing, malicious OAuth application scopes & MFA fatigue exploits',
+    categories: ['Cloud Phishing', 'OAuth Attack', 'MFA Attack'],
   },
   {
     key: 'advanced',
-    label: 'Advanced Threats',
+    label: 'APT & Advanced Threats',
     icon: Cpu,
     color: 'text-rose-400',
-    bg: 'bg-rose-950/20',
-    border: 'border-rose-800/30',
-    desc: 'Supply chain, deepfake, multi-stage campaigns',
-    categories: ['Multi-Stage Campaign', 'Deepfake', 'Multi-Channel', 'Pretexting'],
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/30',
+    activeBg: 'bg-rose-500/20 border-rose-400 text-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.25)]',
+    desc: 'AI deepfake impersonation, supply chain compromise & multi-channel coordinated killchains',
+    categories: ['Multi-Stage Campaign', 'Deepfake', 'Multi-Channel'],
   },
 ];
 
-const DIFFICULTY_CONFIG = {
-  Beginner:     { color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-400' },
-  Intermediate: { color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', dot: 'bg-amber-400' },
-  Advanced:     { color: 'bg-rose-500/10 text-rose-400 border-rose-500/20', dot: 'bg-rose-400' },
+const DIFFICULTY_CONFIG: Record<string, { label: string; color: string; dot: string; border: string }> = {
+  Beginner:     { label: 'Beginner',     color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30', dot: 'bg-emerald-400', border: 'border-emerald-500/30' },
+  Intermediate: { label: 'Intermediate', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',     dot: 'bg-amber-400',   border: 'border-amber-500/30' },
+  Advanced:     { label: 'Advanced',     color: 'text-rose-400 bg-rose-500/10 border-rose-500/30',         dot: 'bg-rose-400',    border: 'border-rose-500/30' },
 };
 
 const categoryColorMap: Record<string, string> = {
-  'Phishing': 'text-blue-400',
-  'Smishing': 'text-indigo-400',
-  'Vishing': 'text-violet-400',
-  'Impersonation': 'text-rose-400',
-  'Pretexting': 'text-amber-400',
-  'Credential Theft': 'text-red-400',
-  'Business Email Compromise': 'text-orange-400',
-  'Multi-Stage Campaign': 'text-cyan-400',
-  'MITM Attack': 'text-amber-400',
-  'Ransomware': 'text-red-400',
-  'Social Media Attack': 'text-pink-400',
-  'QR Phishing': 'text-purple-400',
-  'Cloud Phishing': 'text-sky-400',
-  'MFA Attack': 'text-yellow-400',
-  'Deepfake': 'text-rose-400',
+  'Phishing': 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+  'Smishing': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+  'Vishing': 'text-violet-400 bg-violet-500/10 border-violet-500/20',
+  'Impersonation': 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+  'Pretexting': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  'Credential Theft': 'text-red-400 bg-red-500/10 border-red-500/20',
+  'Business Email Compromise': 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+  'Multi-Stage Campaign': 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+  'MITM Attack': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  'Ransomware': 'text-red-400 bg-red-500/10 border-red-500/20',
+  'Social Media Attack': 'text-pink-400 bg-pink-500/10 border-pink-500/20',
+  'QR Phishing': 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+  'Cloud Phishing': 'text-sky-400 bg-sky-500/10 border-sky-500/20',
+  'MFA Attack': 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
+  'OAuth Attack': 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+  'Extension Attack': 'text-teal-400 bg-teal-500/10 border-teal-500/20',
+  'Deepfake': 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+  'Manipulation': 'text-pink-400 bg-pink-500/10 border-pink-500/20',
+  'Reconnaissance': 'text-teal-400 bg-teal-500/10 border-teal-500/20',
+  'Recruitment Scam': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
 };
+
+type StatusFilter = 'all' | 'uncompleted' | 'completed';
+type SortOption = 'default' | 'difficulty-asc' | 'difficulty-desc' | 'xp-desc' | 'duration-asc';
 
 export function SimulationsGrid() {
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [attackTypeKey, setAttackTypeKey] = useState('All');
-  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('default');
   const completedList = useCyberStore(s => s.completedList);
 
   const activeType = ATTACK_TYPES.find(t => t.key === attackTypeKey)!;
 
-  const filteredSims = useMemo(() => seScenarios.filter(sim => {
-    const matchesSearch = !searchTerm ||
-      sim.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sim.goal.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sim.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDifficulty = difficultyFilter === 'all' || sim.difficulty === difficultyFilter;
-    const matchesType = attackTypeKey === 'All' ||
-      (activeType.categories ?? []).includes(sim.category);
-    return matchesSearch && matchesDifficulty && matchesType;
-  }), [searchTerm, difficultyFilter, attackTypeKey, activeType]);
+  // Filter and sort simulations
+  const filteredSims = useMemo(() => {
+    let list = seScenarios.filter(sim => {
+      const isCompleted = completedList.some(c => c.id === sim.id || c.numericId === sim.numericId);
+
+      const matchesSearch = !searchTerm ||
+        sim.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sim.goal.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sim.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sim.id.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesDifficulty = difficultyFilter === 'all' || sim.difficulty === difficultyFilter;
+
+      const matchesType = attackTypeKey === 'All' ||
+        (activeType.categories ?? []).includes(sim.category);
+
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'completed' && isCompleted) ||
+        (statusFilter === 'uncompleted' && !isCompleted);
+
+      return matchesSearch && matchesDifficulty && matchesType && matchesStatus;
+    });
+
+    // Sorting
+    const diffWeights: Record<string, number> = { Beginner: 1, Intermediate: 2, Advanced: 3 };
+    if (sortBy === 'difficulty-asc') {
+      list = [...list].sort((a, b) => (diffWeights[a.difficulty] || 0) - (diffWeights[b.difficulty] || 0));
+    } else if (sortBy === 'difficulty-desc') {
+      list = [...list].sort((a, b) => (diffWeights[b.difficulty] || 0) - (diffWeights[a.difficulty] || 0));
+    } else if (sortBy === 'xp-desc') {
+      list = [...list].sort((a, b) => b.xp - a.xp);
+    } else if (sortBy === 'duration-asc') {
+      list = [...list].sort((a, b) => a.duration - b.duration);
+    }
+
+    return list;
+  }, [searchTerm, difficultyFilter, attackTypeKey, statusFilter, sortBy, activeType, completedList]);
 
   const stats = useMemo(() => ({
     total: seScenarios.length,
@@ -153,183 +200,320 @@ export function SimulationsGrid() {
     advanced: seScenarios.filter(s => s.difficulty === 'Advanced').length,
   }), [completedList]);
 
-  return (
-    <section id="simulations" className="w-full max-w-7xl mx-auto px-4 py-12 space-y-8 scroll-mt-20">
+  const hasActiveFilters = searchTerm !== '' || difficultyFilter !== 'all' || attackTypeKey !== 'All' || statusFilter !== 'all' || sortBy !== 'default';
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-800 pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Target className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-2xl md:text-3xl font-extrabold text-white">Cyber Range — Simulation Matrix</h2>
+  const resetFilters = () => {
+    setSearchTerm('');
+    setDifficultyFilter('all');
+    setAttackTypeKey('All');
+    setStatusFilter('all');
+    setSortBy('default');
+  };
+
+  return (
+    <section id="simulations" className="w-full max-w-7xl mx-auto px-4 py-8 space-y-6 scroll-mt-20">
+
+      {/* Main Header & Matrix Stats */}
+      <div className="p-6 rounded-2xl border backdrop-blur-md relative overflow-hidden"
+        style={{
+          background: 'var(--bg-card, rgba(12, 12, 18, 0.85))',
+          borderColor: 'var(--border-default, rgba(255, 255, 255, 0.08))',
+          boxShadow: 'var(--shadow-md, 0 8px 30px rgba(0,0,0,0.4))',
+        }}
+      >
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <Target className="w-4 h-4" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Cyber Range — Attack & Defense Matrix
+              </h2>
+            </div>
+            <p className="text-xs text-slate-400 flex items-center gap-2">
+              <span>{stats.total} interactive red-team attack simulations</span>
+              <span>•</span>
+              <span className="text-emerald-400 font-semibold">{stats.completed} mastered</span>
+              <span>•</span>
+              <span className="text-cyan-400 font-mono">{stats.total - stats.completed} available</span>
+            </p>
           </div>
-          <p className="text-xs text-slate-400">
-            {stats.total} interactive attack simulations •{' '}
-            <span className="text-emerald-400 font-semibold">{stats.completed} completed</span>
-          </p>
-          {/* Difficulty counts */}
-          <div className="flex items-center gap-3 mt-2">
-            {([['Beginner', 'text-emerald-400', stats.beginner], ['Intermediate', 'text-amber-400', stats.intermediate], ['Advanced', 'text-red-400', stats.advanced]] as const).map(([label, color, count]) => (
+
+          {/* Quick Search & Clear */}
+          <div className="flex items-center gap-3 w-full lg:w-auto">
+            <div className="relative w-full lg:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search by attack name, vector, goal..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-950/80 border border-slate-800 text-xs px-3.5 py-2.5 pl-10 pr-9 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500 placeholder-slate-500 transition shadow-inner"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Difficulty Quick Chips & Status Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-5 mt-5 border-t border-slate-800/80">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-mono uppercase text-slate-500 mr-1 flex items-center gap-1">
+              <SlidersHorizontal className="w-3 h-3" /> Difficulty:
+            </span>
+            <button
+              onClick={() => setDifficultyFilter('all')}
+              className={`text-xs font-semibold px-3 py-1 rounded-lg border transition ${
+                difficultyFilter === 'all'
+                  ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_12px_rgba(56,189,248,0.2)]'
+                  : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+              }`}
+            >
+              All Tiers ({stats.total})
+            </button>
+            {([
+              ['Beginner', 'text-emerald-400', 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.2)]', stats.beginner],
+              ['Intermediate', 'text-amber-400', 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.2)]', stats.intermediate],
+              ['Advanced', 'text-rose-400', 'bg-rose-500/20 border-rose-400 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.2)]', stats.advanced]
+            ] as const).map(([label, color, activeStyle, count]) => (
               <button
                 key={label}
                 onClick={() => setDifficultyFilter(difficultyFilter === label ? 'all' : label)}
-                className={`text-[11px] font-semibold px-2 py-0.5 rounded border transition ${
+                className={`text-xs font-semibold px-3 py-1 rounded-lg border transition flex items-center gap-1.5 ${
                   difficultyFilter === label
-                    ? `${color} border-current bg-current/10`
-                    : 'text-slate-500 border-slate-800 hover:border-slate-600'
+                    ? activeStyle
+                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                 }`}
               >
-                {label} ({count})
+                <span className={`w-1.5 h-1.5 rounded-full ${difficultyFilter === label ? 'bg-current' : 'bg-slate-500'}`} />
+                <span>{label}</span>
+                <span className="text-[10px] font-mono opacity-80">({count})</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Status filter: All / Active / Completed */}
+          <div className="flex items-center gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800">
+            {(['all', 'uncompleted', 'completed'] as StatusFilter[]).map(st => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg transition capitalize ${
+                  statusFilter === st
+                    ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {st === 'all' ? 'All Drills' : st === 'uncompleted' ? 'Uncompleted' : 'Mastered'}
               </button>
             ))}
           </div>
         </div>
-
-        {/* Search */}
-        <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search simulations..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900/60 border border-slate-800 text-xs px-3 py-2.5 pl-9 rounded-lg text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
-          />
-        </div>
       </div>
 
-      {/* Attack Type Category Chips */}
-      <div className="space-y-2">
-        <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider flex items-center gap-1.5">
-          <Filter className="w-3 h-3" /> Filter by Attack Category
+      {/* ── Attack Vector & Category Options (Simulation Options) ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-slate-400 font-mono uppercase tracking-wider flex items-center gap-1.5 font-semibold">
+            <Filter className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Select Threat Vector & Scenario Category:</span>
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition"
+            >
+              <X className="w-3 h-3" /> Reset All Filters
+            </button>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2">
+
+        {/* Category Pills */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
           {ATTACK_TYPES.map(type => {
             const Icon = type.icon;
             const isActive = attackTypeKey === type.key;
             const count = type.key === 'All' ? seScenarios.length :
               seScenarios.filter(s => (type.categories ?? []).includes(s.category)).length;
-            if (count === 0 && type.key !== 'All') return null;
+
             return (
               <button
                 key={type.key}
                 onClick={() => setAttackTypeKey(type.key)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border transition ${
+                className={`flex flex-col items-center justify-center p-3 rounded-xl text-center border transition-all duration-200 cursor-pointer relative group ${
                   isActive
-                    ? `${type.bg} ${type.border} ${type.color}`
-                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-200'
+                    ? type.activeBg
+                    : 'bg-slate-900/50 hover:bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Icon className={`w-3 h-3 ${isActive ? type.color : 'text-slate-500'}`} />
-                {type.label}
-                <span className={`text-[9px] font-mono px-1 rounded ${isActive ? 'bg-slate-900/60' : 'bg-slate-800 text-slate-500'}`}>{count}</span>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1.5 transition-transform group-hover:scale-110 ${
+                  isActive ? 'bg-white/10' : type.bg
+                }`}>
+                  <Icon className={`w-4 h-4 ${isActive ? 'text-current' : type.color}`} />
+                </div>
+                <span className="text-[11px] font-bold leading-tight line-clamp-1">{type.label}</span>
+                <span className={`text-[9px] font-mono mt-1 px-1.5 py-0.5 rounded-full ${
+                  isActive ? 'bg-black/30 font-bold' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {count}
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* Active type description */}
-        {attackTypeKey !== 'All' && (
-          <div className={`text-[11px] ${activeType.color} ${activeType.bg} border ${activeType.border} px-3 py-1.5 rounded-lg flex items-center gap-1.5`}>
-            <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-            <span><strong>{activeType.label}:</strong> {activeType.desc}</span>
+        {/* Active Vector Briefing Card */}
+        <div className="p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs backdrop-blur-md"
+          style={{
+            background: 'rgba(15, 23, 42, 0.4)',
+            borderColor: 'rgba(56, 189, 248, 0.2)',
+          }}
+        >
+          <div className="flex items-center gap-2.5 text-slate-300">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <span>
+              <strong className="text-white font-mono uppercase">{activeType.label}:</strong> {activeType.desc}
+            </span>
           </div>
+
+          {/* Sort Selector */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as SortOption)}
+              className="bg-slate-900 border border-slate-800 text-xs px-2.5 py-1 rounded-lg text-slate-300 focus:outline-none focus:border-cyan-500"
+            >
+              <option value="default">Default Order</option>
+              <option value="difficulty-asc">Difficulty (Low → High)</option>
+              <option value="difficulty-desc">Difficulty (High → Low)</option>
+              <option value="xp-desc">XP Bounty (High → Low)</option>
+              <option value="duration-asc">Fastest Duration</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Header */}
+      <div className="flex justify-between items-center text-xs font-mono text-slate-400 px-1">
+        <span>
+          Displaying <strong className="text-cyan-400">{filteredSims.length}</strong> of {stats.total} combat scenarios
+          {searchTerm && <span className="text-slate-400 ml-1.5">matching "{searchTerm}"</span>}
+        </span>
+        {filteredSims.length > 0 && (
+          <span className="text-[11px] text-slate-500">Live Sandboxed Threat Environment</span>
         )}
       </div>
 
-      {/* Results count */}
-      <div className="text-[11px] text-slate-500 font-mono">
-        Showing {filteredSims.length} of {stats.total} simulations
-        {searchTerm && <span className="text-cyan-400 ml-1">for "{searchTerm}"</span>}
-      </div>
-
-      {/* Simulation Cards Grid */}
+      {/* ── Scenario Cards Matrix ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredSims.map(sim => {
           const completedNode = completedList.find(c => c.id === sim.id || c.numericId === sim.numericId);
           const isCompleted = !!completedNode;
-          const diffStyle = DIFFICULTY_CONFIG[sim.difficulty];
-          const catColor = categoryColorMap[sim.category] ?? 'text-slate-400';
+          const diffStyle = DIFFICULTY_CONFIG[sim.difficulty] || DIFFICULTY_CONFIG.Beginner;
+          const catColor = categoryColorMap[sim.category] ?? 'text-slate-300 bg-slate-800 border-slate-700';
           const isNew = sim.numericId >= 41;
 
           return (
             <div
               key={sim.id}
-              className={`glass p-4 rounded-xl border flex flex-col justify-between space-y-3 relative group transition-all duration-300 hover:-translate-y-0.5 ${
+              className={`p-4 rounded-2xl border flex flex-col justify-between space-y-4 relative group transition-all duration-300 hover:-translate-y-1 backdrop-blur-md ${
                 isCompleted
-                  ? 'border-emerald-500/50 bg-emerald-950/10 shadow-lg shadow-emerald-950/20 hover:border-emerald-400'
-                  : 'border-cyan-500/10 hover:border-cyan-500/25'
+                  ? 'border-emerald-500/40 bg-emerald-950/15 shadow-lg shadow-emerald-950/20 hover:border-emerald-400'
+                  : 'border-slate-800 hover:border-cyan-500/40 hover:shadow-[0_8px_30px_rgba(56,189,248,0.12)]'
               }`}
+              style={{
+                background: isCompleted ? 'rgba(6, 78, 59, 0.15)' : 'var(--bg-card, rgba(12, 12, 18, 0.75))',
+              }}
             >
-              {/* Status badges */}
-              <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-                {isCompleted && (
-                  <div className="flex items-center gap-1">
-                    <div className="flex items-center gap-0.5 bg-amber-950/60 border border-amber-500/50 px-1.5 py-0.5 rounded-full text-amber-400 text-[10px] font-bold">
-                      {Array.from({ length: completedNode.stars || 3 }).map((_, i) => (
-                        <Star key={i} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
-                    <div className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 text-[10px] px-2 py-0.5 rounded-full font-mono font-extrabold flex items-center gap-1 shadow-sm shadow-emerald-900/50">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400 fill-emerald-950" />
-                      <span>✓ COMPLETED</span>
-                    </div>
+              {/* Top Row: ID, Category & Badges */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-900/90 border border-slate-800 text-cyan-400">
+                      {sim.id}
+                    </span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border truncate max-w-[130px] ${catColor}`}>
+                      {sim.category}
+                    </span>
                   </div>
-                )}
-                {isNew && !isCompleted && (
-                  <div className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold animate-pulse">
-                    NEW
-                  </div>
-                )}
-              </div>
 
-              <div className="space-y-2.5">
-                {/* ID + category */}
-                <div className="flex items-center gap-2 pr-24">
-                  <span className="text-[10px] font-mono text-slate-500">{sim.id}</span>
-                  <span className={`text-[10px] font-semibold ${catColor}`}>{sim.category}</span>
+                  {/* Status Indicator */}
+                  {isCompleted ? (
+                    <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5 bg-amber-950/70 border border-amber-500/50 px-1.5 py-0.5 rounded-full text-amber-400 text-[10px] font-bold">
+                        {Array.from({ length: completedNode.stars || 3 }).map((_, i) => (
+                          <Star key={i} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                        ))}
+                      </div>
+                      <div className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 text-[10px] px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        <span>PASSED</span>
+                      </div>
+                    </div>
+                  ) : isNew ? (
+                    <div className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold animate-pulse">
+                      NEW VECTOR
+                    </div>
+                  ) : null}
                 </div>
 
-                {/* Title with completed tick if completed */}
-                <h3 className="text-sm font-bold text-white leading-snug group-hover:text-cyan-400 transition-colors duration-200 flex items-start gap-1.5">
-                  {isCompleted && <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />}
-                  <span>{sim.title}</span>
-                </h3>
+                {/* Scenario Title */}
+                <div>
+                  <h3 className="text-sm font-extrabold text-white leading-snug group-hover:text-cyan-400 transition-colors duration-200 line-clamp-1">
+                    {sim.title}
+                  </h3>
+                  {sim.brand && (
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Target: {sim.brand}</p>
+                  )}
+                </div>
 
-                {/* Goal */}
-                <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">{sim.goal}</p>
+                {/* Goal Briefing */}
+                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                  {sim.goal}
+                </p>
               </div>
 
-              {/* Footer */}
-              <div className="space-y-2.5 pt-2 border-t border-slate-800/60">
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className={`px-2 py-0.5 rounded border text-[10px] flex items-center gap-1 ${diffStyle.color}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${diffStyle.dot} flex-shrink-0`} />
+              {/* Card Footer: Metadata & Launch Button */}
+              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className={`px-2 py-0.5 rounded border flex items-center gap-1.5 ${diffStyle.color}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${diffStyle.dot}`} />
                     {sim.difficulty}
                   </span>
                   <span className="flex items-center gap-1 text-slate-400">
-                    <Clock className="w-3 h-3" />{sim.duration}m
+                    <Clock className="w-3 h-3 text-slate-500" /> {sim.duration}m
                   </span>
-                  <span className="text-cyan-400 font-mono font-bold">+{sim.xp} XP</span>
+                  <span className="text-cyan-400 font-bold">
+                    +{sim.xp} XP
+                  </span>
                 </div>
 
                 <Link
                   to={`/simulation/${sim.numericId}`}
-                  className={`w-full text-center py-2 font-bold rounded-lg text-[11px] transition duration-200 flex items-center justify-center gap-1.5 font-mono tracking-wider cursor-pointer border ${
+                  className={`w-full text-center py-2.5 font-bold rounded-xl text-xs transition duration-200 flex items-center justify-center gap-2 font-mono tracking-wider cursor-pointer border ${
                     isCompleted
-                      ? 'bg-emerald-950/60 hover:bg-emerald-600 text-emerald-300 hover:text-white border-emerald-800/60'
-                      : 'bg-slate-900 hover:bg-cyan-500 hover:text-slate-950 border-slate-800 group-hover:border-cyan-500/30'
+                      ? 'bg-emerald-950/60 hover:bg-emerald-600 text-emerald-300 hover:text-white border-emerald-700/60 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                      : 'bg-slate-900 hover:bg-cyan-500 hover:text-slate-950 text-slate-200 border-slate-800 group-hover:border-cyan-500/50 group-hover:bg-gradient-to-r group-hover:from-cyan-500 group-hover:to-blue-500 group-hover:text-slate-950 shadow-sm'
                   }`}
                 >
                   {isCompleted ? (
                     <>
-                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      <span>REPLAY SIM (PASSED)</span>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>REPLAY DRILL (MASTERED)</span>
                     </>
                   ) : (
                     <>
-                      <span>LAUNCH SIM</span>
-                      <ArrowRight className="w-3 h-3" />
+                      <span>LAUNCH DRILL</span>
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                     </>
                   )}
                 </Link>
@@ -339,35 +523,46 @@ export function SimulationsGrid() {
         })}
       </div>
 
-      {/* Empty state */}
+      {/* Empty State */}
       {filteredSims.length === 0 && (
-        <div className="text-center py-16 glass rounded-xl border border-slate-800">
-          <Shield className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400 text-sm">No simulations match your current filters.</p>
+        <div className="text-center py-16 rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur-md space-y-3">
+          <Shield className="w-12 h-12 text-slate-600 mx-auto" />
+          <p className="text-slate-300 text-sm font-semibold">No simulation scenarios match your current filters.</p>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">Try adjusting your search terms, difficulty levels, or attack categories.</p>
           <button
-            onClick={() => { setSearchTerm(''); setDifficultyFilter('all'); setAttackTypeKey('All'); }}
-            className="mt-3 text-xs text-cyan-400 hover:underline"
+            onClick={resetFilters}
+            className="mt-2 text-xs font-mono font-bold px-4 py-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition"
           >
-            Clear all filters
+            Reset All Filters
           </button>
         </div>
       )}
 
-      {/* Info footer */}
-      <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-800/60 text-[10px] text-slate-600">
-        <span>Attack data sources:</span>
-        {[
-          { label: 'MITRE ATT&CK', url: 'https://attack.mitre.org/' },
-          { label: 'OWASP', url: 'https://owasp.org/' },
-          { label: 'NIST', url: 'https://www.nist.gov/cyberframework' },
-          { label: 'CISA', url: 'https://www.cisa.gov/cybersecurity' },
-          { label: 'Verizon DBIR 2024', url: 'https://www.verizon.com/business/resources/reports/dbir/' },
-        ].map(link => (
-          <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer"
-            className="text-cyan-600 hover:text-cyan-400 transition hover:underline">
-            {link.label}
-          </a>
-        ))}
+      {/* Framework & Standards Reference Footer */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800 text-[11px] text-slate-500">
+        <div className="flex items-center gap-2">
+          <Shield className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Simulations benchmarked against global cybersecurity frameworks:</span>
+        </div>
+        <div className="flex flex-wrap gap-3 font-mono">
+          {[
+            { label: 'MITRE ATT&CK', url: 'https://attack.mitre.org/' },
+            { label: 'NIST CSF 2.0', url: 'https://www.nist.gov/cyberframework' },
+            { label: 'OWASP Top 10', url: 'https://owasp.org/' },
+            { label: 'CISA Guidelines', url: 'https://www.cisa.gov/cybersecurity' },
+            { label: 'Verizon DBIR', url: 'https://www.verizon.com/business/resources/reports/dbir/' },
+          ].map(link => (
+            <a
+              key={link.label}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-400 hover:text-cyan-400 transition hover:underline"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   );

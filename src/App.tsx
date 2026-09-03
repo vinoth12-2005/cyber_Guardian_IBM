@@ -43,26 +43,23 @@ import { FlotBotWidget } from './components/flotbot/FlotBotWidget';
 // Modals
 import { ActivityDetailModal } from './components/modals/ActivityDetailModal';
 
-import {
-  mockUserProfile,
-  mockAwarenessScore,
-  mockQuickStats,
-  mockAnalysisHistory,
-  mockSuspiciousActivity,
-  mockChatbotHistory,
-  mockSimulationHistory,
-  mockWeeklyReport,
-  mockAttackTrends,
-  mockAIRecommendations,
-  mockNotifications,
-} from './data/mockData';
+import { api } from './lib/api';
 
 import type {
   SuspiciousActivityItem,
   AnalysisHistoryItem,
   ChatbotHistoryItem,
+  SimulationHistoryItem,
   AIRecommendationItem,
   NotificationItem,
+  QuickStatItem,
+  AwarenessScoreData,
+  WeeklyReportData,
+  AttackTrendItem,
+  RiskLevel,
+  SimulationDifficulty,
+  ScoreLevel,
+  UserProfile,
 } from './types/dashboard';
 
 // Map tab IDs to human-readable page titles
@@ -96,28 +93,307 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
   }, [defaultTab]);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [notifications, setNotifications] = useState<NotificationItem[]>(mockNotifications);
-
   const [selectedItem, setSelectedItem] = useState<
     SuspiciousActivityItem | AnalysisHistoryItem | null
   >(null);
 
-  const currentUserProfile = {
-    ...mockUserProfile,
-    name: authUser?.displayName || authUser?.email?.split('@')[0] || mockUserProfile.name,
-    email: authUser?.email || mockUserProfile.email,
+  // Live database records
+  const [dbDashboard, setDbDashboard] = useState<any>(null);
+  const [dbAlerts, setDbAlerts] = useState<any[]>([]);
+  const [dbActivities, setDbActivities] = useState<any[]>([]);
+  const [dbSimulations, setDbSimulations] = useState<any[]>([]);
+  const [dbChats, setDbChats] = useState<any[]>([]);
+  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
+
+  // Load real data from backend
+  const loadDatabaseData = async () => {
+    try {
+      const [dashRes, alertsRes, actRes, simRes, chatsRes] = await Promise.allSettled([
+        api.users.getDashboard(),
+        api.flotbot.getAlerts({ limit: 50 }),
+        api.activity.list(),
+        api.simulations.getMyHistory(),
+        api.flotbot.listChats(),
+      ]);
+
+      if (dashRes.status === 'fulfilled' && dashRes.value?.success && dashRes.value?.data) {
+        setDbDashboard(dashRes.value.data);
+      }
+      if (alertsRes.status === 'fulfilled' && alertsRes.value?.success && alertsRes.value?.data) {
+        const list = alertsRes.value.data.alerts || alertsRes.value.data || [];
+        setDbAlerts(Array.isArray(list) ? list : []);
+      }
+      if (actRes.status === 'fulfilled' && actRes.value?.success && actRes.value?.data) {
+        setDbActivities(Array.isArray(actRes.value.data) ? actRes.value.data : []);
+      }
+      if (simRes.status === 'fulfilled' && simRes.value?.success && simRes.value?.data) {
+        setDbSimulations(Array.isArray(simRes.value.data) ? simRes.value.data : []);
+      }
+      if (chatsRes.status === 'fulfilled' && chatsRes.value?.success && chatsRes.value?.data) {
+        const cList = chatsRes.value.data.sessions || [];
+        setDbChats(Array.isArray(cList) ? cList : []);
+      }
+    } catch (err) {
+      console.warn('[Dashboard] Live DB sync notice:', err);
+    }
   };
 
+  useEffect(() => {
+    loadDatabaseData();
+  }, [authUser?.uid]);
+
+  // Derived real data
+  const currentUserProfile: UserProfile = {
+    name: authUser?.displayName || dbDashboard?.profile?.name || authUser?.email?.split('@')[0] || 'User',
+    email: authUser?.email || dbDashboard?.profile?.email || '',
+    role: authUser?.role || dbDashboard?.profile?.role || 'EMPLOYEE',
+    bio: authUser?.bio || dbDashboard?.profile?.bio || '',
+    organization: authUser?.organization || dbDashboard?.profile?.organization || 'Enterprise CyberGuardian Organization',
+    avatarUrl: authUser?.avatarUrl || dbDashboard?.profile?.avatarUrl || '',
+    awarenessLevel: (dbDashboard?.awarenessScore?.level as ScoreLevel) || 'Intermediate',
+    securityTipOfDay: {
+      tip: "Be vigilant with unexpected MFA push prompts or emergency SMS verification requests—attackers use fatigue tactics to gain unauthorized access.",
+      category: "Authentication Hygiene"
+    }
+  };
+
+  const quickStats: QuickStatItem[] = [
+    {
+      id: "stat-1",
+      title: "Security Threats",
+      value: dbAlerts.length.toString(),
+      trend: dbAlerts.length > 0 ? `${dbAlerts.length} logged in DB` : "0 active threats",
+      isPositive: dbAlerts.length === 0,
+      iconName: "ShieldAlert",
+      gradient: "from-red-500/20 via-orange-500/10 to-transparent",
+    },
+    {
+      id: "stat-2",
+      title: "Enrolled Courses",
+      value: (dbDashboard?.stats?.enrolledCourses ?? 0).toString(),
+      trend: (dbDashboard?.stats?.completedCourses ?? 0) > 0 ? `${dbDashboard?.stats?.completedCourses} completed` : "Ready to learn",
+      isPositive: true,
+      iconName: "GraduationCap",
+      gradient: "from-blue-500/20 via-indigo-500/10 to-transparent",
+    },
+    {
+      id: "stat-3",
+      title: "Simulations Run",
+      value: (dbDashboard?.stats?.completedSimulations ?? dbSimulations.length ?? 0).toString(),
+      trend: (dbDashboard?.stats?.averageSimulationScore ?? 0) > 0 ? `Avg: ${dbDashboard?.stats?.averageSimulationScore}%` : "No drills completed",
+      isPositive: true,
+      iconName: "Zap",
+      gradient: "from-amber-500/20 via-yellow-500/10 to-transparent",
+    },
+    {
+      id: "stat-4",
+      title: "Audit Activities",
+      value: dbActivities.length.toString(),
+      trend: dbActivities.length > 0 ? "Real-time audit" : "0 events logged",
+      isPositive: true,
+      iconName: "Globe",
+      gradient: "from-cyan-500/20 via-blue-500/10 to-transparent",
+    },
+    {
+      id: "stat-5",
+      title: "Certifications",
+      value: (dbDashboard?.stats?.earnedCertificates ?? 0).toString(),
+      trend: (dbDashboard?.stats?.earnedCertificates ?? 0) > 0 ? "Verified in DB" : "0 credentials",
+      isPositive: (dbDashboard?.stats?.earnedCertificates ?? 0) > 0,
+      iconName: "Mail",
+      gradient: "from-emerald-500/20 via-green-500/10 to-transparent",
+    },
+    {
+      id: "stat-6",
+      title: "Active Streak",
+      value: `${dbDashboard?.stats?.streakDays ?? (authUser as any)?.streak ?? 0} Days`,
+      trend: (dbDashboard?.stats?.streakDays ?? 0) > 0 ? "Continuous protection" : "Start today",
+      isPositive: true,
+      iconName: "Zap",
+      gradient: "from-purple-500/20 via-pink-500/10 to-transparent",
+    },
+  ];
+
+  const awarenessScore: AwarenessScoreData = dbDashboard?.awarenessScore || {
+    overallScore: 60,
+    maxScore: 100,
+    level: 'Intermediate',
+    weeklyProgress: 0,
+    categoryScores: {
+      phishingDefense: 60,
+      passwordHygiene: 60,
+      networkSecurity: 60,
+      threatDetection: 60,
+    },
+  };
+
+  const suspiciousActivity: SuspiciousActivityItem[] = dbAlerts.map((a: any) => {
+    const isHigh = a.severity === 'CRITICAL' || a.severity === 'HIGH';
+    const isMed = a.severity === 'MEDIUM';
+    const risk: RiskLevel = isHigh ? 'Dangerous' : isMed ? 'Suspicious' : 'Safe';
+
+    let cat: SuspiciousActivityItem['category'] = 'Suspicious Website';
+    const lowerCat = (a.category || '').toLowerCase();
+    if (lowerCat.includes('phish') || lowerCat.includes('mail')) cat = 'Phishing Email';
+    else if (lowerCat.includes('login') || lowerCat.includes('auth')) cat = 'Fake Login';
+    else if (lowerCat.includes('qr')) cat = 'Scam QR';
+    else if (lowerCat.includes('malware') || lowerCat.includes('exec') || lowerCat.includes('file')) cat = 'Malware Link';
+
+    const dateStr = a.timestamp ? new Date(a.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+
+    return {
+      id: a.id,
+      date: dateStr,
+      category: cat,
+      target: a.source || a.title || 'Local Host',
+      riskLevel: risk,
+      aiExplanation: a.description || a.title,
+      technicalDetails: {
+        ipAddress: a.evidence?.ip || a.evidence?.remoteIp || undefined,
+        indicatorsOfCompromise: [a.title, a.category].filter(Boolean),
+        remediationAction: a.recommendation || 'Investigate and acknowledge threat in FlotBot',
+      },
+    };
+  });
+
+  const analysisHistory: AnalysisHistoryItem[] = dbActivities
+    .filter((act: any) => act.category === 'Security Alert' || act.category === 'Security Awareness' || act.category === 'scan' || act.activityType?.includes('threat'))
+    .map((act: any) => {
+      const isDangerous = act.activityType?.includes('intercept') || act.label?.toLowerCase().includes('threat');
+      const dateStr = act.time ? new Date(act.time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recent';
+      return {
+        id: act.id,
+        date: dateStr,
+        type: (act.metadata?.type as any) || 'URL',
+        target: act.metadata?.target || act.label,
+        result: act.detail || act.label,
+        riskLevel: (isDangerous ? 'Dangerous' : 'Safe') as RiskLevel,
+        status: (isDangerous ? 'Flagged' : 'Completed') as any,
+        details: {
+          threatType: act.category,
+          engineDetections: act.detail,
+          recommendation: act.metadata?.recommendation,
+        },
+      };
+    });
+
+  const simulationHistory: SimulationHistoryItem[] = dbSimulations.map((sim: any) => {
+    const dateStr = sim.created_at || sim.start_time
+      ? new Date(sim.created_at || sim.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : 'Recent';
+    return {
+      id: sim.id,
+      simulationType: sim.scenario_title || sim.simulation_id || 'Security Drill',
+      difficulty: (sim.difficulty as SimulationDifficulty) || 'Intermediate',
+      result: (sim.score >= 70 ? 'Passed' : 'Failed') as any,
+      score: sim.score || 0,
+      completionPercentage: sim.status === 'completed' ? 100 : 50,
+      date: dateStr,
+    };
+  });
+
+  const notifications: NotificationItem[] = dbAlerts
+    .filter((a: any) => !readNotifIds.has(`notif-${a.id}`))
+    .map((a: any) => ({
+      id: `notif-${a.id}`,
+      title: a.title,
+      description: a.description || a.title,
+      type: (a.severity === 'CRITICAL' || a.severity === 'HIGH' ? 'alert' : 'warning') as any,
+      timestamp: a.timestamp ? new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
+      read: false,
+    }));
+
+  const weeklyReport: WeeklyReportData = {
+    scoreChange: 0,
+    simulationsCompleted: dbDashboard?.stats?.completedSimulations ?? dbSimulations.length ?? 0,
+    threatsIdentified: dbAlerts.length,
+    weakAreas: Object.entries(awarenessScore.categoryScores)
+      .filter(([_, val]) => typeof val === 'number' && val < 70)
+      .map(([key]) => key.replace(/([A-Z])/g, ' $1').trim()),
+    strongAreas: Object.entries(awarenessScore.categoryScores)
+      .filter(([_, val]) => typeof val === 'number' && val >= 70)
+      .map(([key]) => key.replace(/([A-Z])/g, ' $1').trim()),
+    barChartData: [
+      { day: 'Mon', threatsBlocked: 0, scansPerformed: 0 },
+      { day: 'Tue', threatsBlocked: 0, scansPerformed: 0 },
+      { day: 'Wed', threatsBlocked: 0, scansPerformed: 0 },
+      { day: 'Thu', threatsBlocked: 0, scansPerformed: 0 },
+      { day: 'Fri', threatsBlocked: 0, scansPerformed: 0 },
+      { day: 'Sat', threatsBlocked: 0, scansPerformed: 0 },
+      { day: 'Sun', threatsBlocked: dbAlerts.length, scansPerformed: dbActivities.length },
+    ],
+    lineChartData: [
+      { week: 'W1', score: Math.max(0, awarenessScore.overallScore - 5) },
+      { week: 'W2', score: Math.max(0, awarenessScore.overallScore - 2) },
+      { week: 'W3', score: awarenessScore.overallScore },
+      { week: 'W4', score: awarenessScore.overallScore },
+    ],
+    pieChartData: [
+      { name: 'Threats', value: dbAlerts.length || 0, color: 'var(--accent-danger)' },
+      { name: 'Drills', value: dbSimulations.length || 0, color: 'var(--accent-primary)' },
+      { name: 'Activities', value: dbActivities.length || 0, color: 'var(--accent-info)' },
+    ].filter((p) => p.value > 0),
+  };
+
+  const attackTrends: AttackTrendItem[] = dbAlerts.map((a: any) => ({
+    id: a.id,
+    attackName: a.title,
+    description: a.description || a.title,
+    difficulty: (a.severity === 'CRITICAL' ? 'Expert' : a.severity === 'HIGH' ? 'Advanced' : 'Intermediate') as SimulationDifficulty,
+    popularity: 75,
+    preventionTips: [a.recommendation || 'Follow incident response procedures and quarantine affected endpoints.'],
+    iconName: a.category === 'Network' ? 'BellRing' : 'KeyRound',
+  }));
+
+  const aiRecommendations: AIRecommendationItem[] = [
+    ...(dbAlerts.filter((a: any) => !a.acknowledged).length > 0 ? [{
+      id: 'rec-threats',
+      title: 'Acknowledge Pending Threat Detections',
+      reason: `You have ${dbAlerts.filter((a: any) => !a.acknowledged).length} unacknowledged security threat alerts recorded in the database.`,
+      priority: 'High' as const,
+      actionText: 'Review Alerts',
+      actionType: 'review' as const,
+    }] : []),
+    ...((dbDashboard?.stats?.enrolledCourses ?? 0) === 0 ? [{
+      id: 'rec-courses',
+      title: 'Begin Cybersecurity Fundamentals',
+      reason: 'You are not enrolled in any training modules yet. Enroll in courses to boost your awareness score.',
+      priority: 'Medium' as const,
+      actionText: 'Explore Courses',
+      actionType: 'course' as const,
+    }] : []),
+    ...(dbSimulations.length === 0 ? [{
+      id: 'rec-sim',
+      title: 'Launch Practical Defense Simulation',
+      reason: 'Test your social engineering and phishing detection in an interactive simulation lab.',
+      priority: 'Medium' as const,
+      actionText: 'Start Simulation',
+      actionType: 'simulation' as const,
+    }] : []),
+  ];
+
+  const chatbotHistory: ChatbotHistoryItem[] = dbChats.map((sess: any) => ({
+    id: sess.id,
+    date: sess.updatedAt ? new Date(sess.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Saved',
+    question: sess.title,
+    aiSummary: `Persistent conversation session with ${sess.messageCount || 0} messages saved in PostgreSQL database.`,
+    category: (sess.category as any) || 'General',
+    messageCount: sess.messageCount || 0,
+  }));
+
   const handleMarkAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setReadNotifIds(new Set(notifications.map((n) => n.id)));
   };
 
   const handleExecuteRecommendation = (item: AIRecommendationItem) => {
-    alert(`Initiating Action: ${item.actionText}\nType: ${item.actionType.toUpperCase()}`);
+    if (item.actionType === 'review') setActiveTab('threats');
+    else if (item.actionType === 'course') setActiveTab('training');
+    else if (item.actionType === 'simulation') setActiveTab('simulation');
+    else if (item.actionType === 'setting') setActiveTab('settings');
   };
 
-  const handleContinueChat = (chat: ChatbotHistoryItem) => {
-    alert(`Opening AI Security Chat Session: "${chat.question}"`);
+  const handleContinueChat = (_chat: ChatbotHistoryItem) => {
+    setActiveTab('ai-assistant');
   };
 
   const pageTitle = PAGE_TITLES[activeTab] ?? activeTab;
@@ -178,28 +454,36 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
 
               {/* Row 2 — 6 top stat cards */}
               <div className="animate-fade-in-up stagger">
-                <QuickStats stats={mockQuickStats} />
+                <QuickStats stats={quickStats} />
               </div>
 
               {/* Row 3 — Awareness Score · Quick Actions */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 animate-fade-in-up">
                 <div className="lg:col-span-6">
-                  <CyberAwarenessScore scoreData={mockAwarenessScore} />
+                  <CyberAwarenessScore scoreData={awarenessScore} />
                 </div>
                 <div className="lg:col-span-6 flex flex-col gap-4">
-                  <QuickActions />
+                  <QuickActions
+                    onSelectAction={(actionId) => {
+                      if (actionId === 'url' || actionId === 'email' || actionId === 'qr') {
+                        setActiveTab('ai-assistant');
+                      } else if (actionId === 'sim') {
+                        setActiveTab('simulation');
+                      }
+                    }}
+                  />
                 </div>
               </div>
 
               {/* Row 4 — Preview: Analysis History + Suspicious Activity */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in-up">
                 <AnalysisHistoryPreview
-                  logs={mockAnalysisHistory}
+                  logs={analysisHistory}
                   onSelectLog={(log) => setSelectedItem(log)}
                   onViewAll={() => setActiveTab('history')}
                 />
                 <SuspiciousActivityPreview
-                  activities={mockSuspiciousActivity}
+                  activities={suspiciousActivity}
                   onSelectActivity={(act) => setSelectedItem(act)}
                   onViewAll={() => setActiveTab('threats')}
                 />
@@ -208,7 +492,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
               {/* Row 5 — Simulation preview */}
               <div className="grid grid-cols-1 gap-4 animate-fade-in-up">
                 <SimulationHistoryPreview
-                  simulations={mockSimulationHistory}
+                  simulations={simulationHistory}
                   onViewAll={() => setActiveTab('simulation')}
                 />
               </div>
@@ -223,7 +507,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
           {activeTab === 'history' && (
             <div className="animate-fade-in-up">
               <HistoryPage
-                logs={mockAnalysisHistory}
+                logs={analysisHistory}
                 onSelectLog={(log) => setSelectedItem(log)}
               />
             </div>
@@ -232,7 +516,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
           {activeTab === 'threats' && (
             <div className="animate-fade-in-up">
               <ThreatsPage
-                activities={mockSuspiciousActivity}
+                activities={suspiciousActivity}
                 onSelectActivity={(act) => setSelectedItem(act)}
               />
             </div>
@@ -258,14 +542,14 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
 
           {activeTab === 'reports' && (
             <div className="animate-fade-in-up">
-              <ReportsPage report={mockWeeklyReport} />
+              <ReportsPage report={weeklyReport} />
             </div>
           )}
 
           {activeTab === 'ai-assistant' && (
             <div className="animate-fade-in-up">
               <AIAssistantPage
-                chats={mockChatbotHistory}
+                chats={chatbotHistory}
                 onContinueChat={handleContinueChat}
               />
             </div>
@@ -273,7 +557,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
 
           {activeTab === 'trends' && (
             <div className="animate-fade-in-up">
-              <TrendsPage trends={mockAttackTrends} />
+              <TrendsPage trends={attackTrends} />
             </div>
           )}
 
@@ -286,7 +570,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
           {activeTab === 'ai-insight' && (
             <div className="animate-fade-in-up">
               <AIInsightPage
-                recommendations={mockAIRecommendations}
+                recommendations={aiRecommendations}
                 onExecuteRecommendation={handleExecuteRecommendation}
               />
             </div>

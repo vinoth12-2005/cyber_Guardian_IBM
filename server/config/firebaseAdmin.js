@@ -83,6 +83,7 @@ async function verifyFirebaseToken(idToken) {
         email: claims.email || '',
         name: claims.name || (claims.email ? claims.email.split('@')[0] : 'User'),
         picture: claims.picture || '',
+        role: claims.role || claims.custom_claims?.role || undefined,
         emailVerified: !!claims.email_verified,
         rawClaims: claims,
       };

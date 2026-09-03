@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, X, ShieldAlert, Minimize2, AlertTriangle, Send, Sparkles } from 'lucide-react';
+import { api } from '../../lib/api';
 
 declare global {
   interface Window {
@@ -52,6 +53,23 @@ export const FlotBotWidget: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    // Restore persistent session from PostgreSQL if available
+    const savedSessionId = localStorage.getItem('flotbot_widget_session_id');
+    if (savedSessionId) {
+      api.flotbot.getChat(savedSessionId).then((res) => {
+        if (res.success && res.data?.messages?.length > 0) {
+          setMessages(
+            res.data.messages.map((m: any) => ({
+              sender: m.sender,
+              text: m.text,
+            }))
+          );
+        }
+      }).catch((err) => console.log('Widget history load notice:', err));
+    }
+  }, []);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -59,6 +77,22 @@ export const FlotBotWidget: React.FC = () => {
     const userText = input;
     setMessages((prev) => [...prev, { sender: 'user', text: userText }]);
     setInput('');
+
+    const widgetSessionId = localStorage.getItem('flotbot_widget_session_id') || undefined;
+
+    // Persist and query via backend API
+    try {
+      const res = await api.flotbot.chatAI(userText, widgetSessionId, { alertsCount: alerts.length });
+      if (res.success && res.data?.reply) {
+        if (res.data.sessionId) {
+          localStorage.setItem('flotbot_widget_session_id', res.data.sessionId);
+        }
+        setMessages((prev) => [...prev, { sender: 'flotbot', text: res.data.reply }]);
+        return;
+      }
+    } catch (e) {
+      console.log('API chat fallback:', e);
+    }
 
     if (window.electronAPI?.flotbotChat) {
       try {
@@ -71,21 +105,28 @@ export const FlotBotWidget: React.FC = () => {
       }
     }
 
-    // Fallback response if IPC bridge is unavailable
+    // Fallback response if offline
     setTimeout(() => {
       let botReply = "FlotBot AI is inspecting process threads and network sockets...";
       const query = userText.toLowerCase();
 
-      if (query.includes('status') || query.includes('scan')) {
+      if ((query.includes('suspicious') || query.includes('sus')) && (query.includes('link') || query.includes('url') || query.includes('click') || query.includes('alert'))) {
+        botReply =
+          "🛡️ **Yes! Our Threat Detection Engine actively protects you:**\n\n" +
+          "1. **Real-Time Interception:** When you click any suspicious link or enter a risky URL, our URLEngine pauses navigation immediately.\n" +
+          "2. **AI Threat Explanation:** I analyze the threat heuristics (lookalike domains, punycode, high-risk TLDs) and trigger an interactive Security Alert explaining the risk.\n" +
+          "3. **Human-in-the-Loop Gate:** You can return to safety or acknowledge the risk before proceeding.\n" +
+          "4. **Admin Inspection Log:** Every alert and your acknowledgment decision is recorded in the Admin Panel.";
+      } else if (query.includes('status') || query.includes('scan')) {
         botReply = "🛡️ System Scan Complete: Linux Kernel modules & endpoints are clean. No unauthorized process modification detected.";
       } else if (query.includes('threat') || query.includes('alert')) {
         botReply = `⚠️ Currently monitoring ${alerts.length} registered system events. All decoy canary files (~/.flotbot/canaries) are intact.`;
       } else if (query.includes('hello') || query.includes('hi')) {
-        botReply = "👋 FlotBot is online! Ask me about active socket connections, quarantine files, or threat alerts.";
+        botReply = "👋 FlotBot is online! Ask me about suspicious link detection, process monitoring, or active security alerts.";
       }
 
       setMessages((prev) => [...prev, { sender: 'flotbot', text: botReply }]);
-    }, 400);
+    }, 300);
   };
 
   const handleCloseWidget = () => {

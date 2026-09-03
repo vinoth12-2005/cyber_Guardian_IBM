@@ -32,6 +32,14 @@ const ROLE_PERMISSIONS = {
     'analytics:security',
   ],
   ANALYST: ['analytics:*', 'reports:*'],
+  EMPLOYEE: [
+    'courses:read',
+    'courses:enroll',
+    'courses:progress',
+    'simulations:play',
+    'certifications:read',
+    'profile:manage',
+  ],
   STUDENT: [
     'courses:read',
     'courses:enroll',
@@ -91,7 +99,8 @@ function requireAnyAdmin(req, res, next) {
     'SIMULATION_ADMIN',
     'CERTIFICATION_ADMIN',
     'FLOTBOT_SECURITY_ADMIN',
-    'SECURITY_ANALYST'
+    'SECURITY_ANALYST',
+    'ANALYST'
   )(req, res, next);
 }
 

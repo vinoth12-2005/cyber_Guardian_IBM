@@ -22,7 +22,7 @@ npm run dev:all
 ```
 
 > [!NOTE]
-> **PostgreSQL Primary Database:** The backend is natively built for **PostgreSQL** (using `pg.Pool` with connection details in `.env`). If a teammate does not have a running local PostgreSQL instance, the server seamlessly uses an embedded local SQLite engine (`FlotBot/data/cyberguardian_unified.db`) so development is never blocked. All 22 tables, 28 indexes, and 53 courses/scenarios are auto-created and seeded on startup.
+> **PostgreSQL Primary Database:** The backend operates exclusively on **PostgreSQL** (`postgresql://postgres:postgres@localhost:5432/cyberguardian` with connection details in `.env`). All 22 tables, 28 indexes, 53 courses/modules, 47 threat scenarios, and initial workforce accounts are auto-created and verified on startup. SQLite database files have been cleanly removed.
 
 ---
 
@@ -46,7 +46,7 @@ All dashboard and admin analytics are queried directly from the relational datab
 Your teammate can directly call these endpoints to build the Admin Panel UI (or use the typed client in `src/lib/api.ts`):
 
 #### 👥 User Management:
-* `GET /api/admin/users?page=1&limit=20&search=john&role=STUDENT` — List users with pagination and search.
+* `GET /api/admin/users?page=1&limit=20&search=john&role=EMPLOYEE` — List users with pagination and search.
 * `GET /api/admin/users/:id` — Get single user profile, enrollment history, and security posture score.
 * `PUT /api/admin/users/:id/role` — Body: `{"role": "SECURITY_ANALYST"}` (Changes user role & logs admin audit trail).
 * `PUT /api/admin/users/:id/status` — Body: `{"status": "SUSPENDED"}` (Changes status: `ACTIVE`, `SUSPENDED`, `INACTIVE`).
@@ -56,6 +56,16 @@ Your teammate can directly call these endpoints to build the Admin Panel UI (or 
 * `GET /api/analytics/courses` — Course-by-course popularity and completion rates.
 * `GET /api/analytics/simulations` — Scenario attempt counts, failure rates, and average risk exposure.
 * `GET /api/admin/flotbot/user-behaviour` — Security behaviour breakdown for all users.
+
+#### 📚 Course Curriculum Customization & Creation:
+* `POST /api/admin/courses` — Body: `{"id": "...", "title": "...", "cat": "...", "level": "...", "modules": [...], "quiz": [...]}` — Create new course.
+* `PUT /api/admin/courses/:id` — Body: `{"title": "...", "modules": [...], "quiz": [...]}` — Update/customize existing course.
+* `DELETE /api/admin/courses/:id` — Delete a course and associated progress.
+
+#### 🎮 Attack & Defense Simulation Customization & Creation:
+* `POST /api/admin/simulations` — Body: `{"id": "SE-...", "title": "...", "category": "...", "difficulty": "...", "hints": [...]}` — Publish new scenario.
+* `PUT /api/admin/simulations/:id` — Body: `{"title": "...", "hints": [...], "summary": "..."}` — Update/customize scenario.
+* `DELETE /api/admin/simulations/:id` — Delete a simulation scenario.
 
 #### 🚨 EDR Security Operations & IOCs:
 * `GET /api/flotbot/alerts` — Real-time security alerts with filtering.
@@ -76,6 +86,7 @@ You can now stage and push all changes:
 
 ```bash
 git add .
-git commit -m "feat: complete unified Express backend with SQLite/PostgreSQL, RBAC, and real database analytics"
+git commit -m "feat: complete unified Express backend with SQLite/PostgreSQL, RBAC, full course/simulation suite, and customization modals"
 git push origin main
 ```
+

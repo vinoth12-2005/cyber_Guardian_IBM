@@ -27,7 +27,7 @@ const config = {
 
   // Firebase Configuration
   firebase: {
-    projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'cyberguardian-ai-8098f',
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'ibmhack-c98c2',
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
     serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
@@ -39,6 +39,14 @@ const config = {
     ollamaModel: process.env.OLLAMA_MODEL || 'qwen2.5:0.5b',
     geminiApiKey: process.env.GEMINI_API_KEY,
   },
+
+  // Threat Intelligence APIs
+  threatIntel: {
+    virusTotalApiKey: process.env.VIRUSTOTAL_API_KEY || '',
+    safeBrowsingApiKey: process.env.GOOGLE_SAFE_BROWSING_API_KEY || process.env.SAFE_BROWSING_API_KEY || '',
+    hybridAnalysisApiKey: process.env.HYBRID_ANALYSIS_API_KEY || '',
+  },
 };
 
 module.exports = config;
+

@@ -368,7 +368,8 @@ function createWindow() {
         minWidth: 1000,
         minHeight: 700,
         title: "CyberGuardian AI — Security Operations Console",
-        frame: false, // Frame-less custom design
+        frame: true, // Native window frame with Close, Minimize, Maximize controls
+        autoHideMenuBar: true,
         show: false,  // Standard Electron best practice: hide initially
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
@@ -376,6 +377,8 @@ function createWindow() {
             nodeIntegration: false
         }
     });
+
+    mainWindow.setMenuBarVisibility(false);
 
     const rootDist = path.resolve(__dirname, "../../dist/index.html");
     const localDist = path.resolve(__dirname, "../dist/index.html");
@@ -397,12 +400,10 @@ function createWindow() {
         mainWindow.focus();
     });
 
-    // Prevent direct close, minimize to system tray instead
+    // Clean exit when main window is closed by user
     mainWindow.on("close", (e) => {
-        if (!isQuitting) {
-            e.preventDefault();
-            mainWindow.hide();
-        }
+        isQuitting = true;
+        app.quit();
     });
 
     mainWindow.on("closed", () => {
@@ -1081,7 +1082,10 @@ ipcMain.on("win-maximize", () => {
 });
 
 ipcMain.on("win-close", () => {
-    if (mainWindow) mainWindow.hide(); // Minimize to tray instead of quitting
+    if (mainWindow) {
+        isQuitting = true;
+        app.quit();
+    }
 });
 
 /**

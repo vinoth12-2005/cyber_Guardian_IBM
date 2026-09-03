@@ -171,11 +171,12 @@ export default function Login() {
             <div className="h-px flex-1" style={{ background: "var(--border-default)" }} />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <SocialButton provider="google" label="Google" disabled={!!socialLoading} onClick={() => handleSocial("google", "google")} />
-            <SocialButton provider="microsoft" label="MS" disabled={!!socialLoading} onClick={() => handleSocial("microsoft", "microsoft")} />
-            <SocialButton provider="github" label="GitHub" disabled={!!socialLoading} onClick={() => handleSocial("github", "github")} />
-          </div>
+          <SocialButton
+            provider="google"
+            label="Continue with Google"
+            disabled={!!socialLoading}
+            onClick={() => handleSocial("google", "google")}
+          />
 
           <Button
             type="button"

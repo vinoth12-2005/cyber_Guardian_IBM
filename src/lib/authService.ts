@@ -33,11 +33,17 @@ export function setLocalAvatar(uid: string, dataUrl: string | null): void {
 // ── Shared user shape ─────────────────────────────────────────────────────────
 export interface UserAccount {
   uid: string;
+  id?: string;
   email: string;
   displayName: string;
   organization?: string;
   role?: string;
+  bio?: string;
+  status?: string;
+  level?: number;
+  xp?: number;
   avatarUrl?: string;
+  permissions?: string[];
 }
 
 export function firebaseUserToAccount(user: FirebaseUser): UserAccount {
@@ -127,7 +133,6 @@ export async function resetPassword(email: string): Promise<boolean> {
   return true;
 }
 
-// ── Friendly error messages ───────────────────────────────────────────────────
 export function friendlyAuthError(code?: string): string {
   switch (code) {
     case 'auth/user-not-found':       return 'No account found with this email.';
@@ -142,8 +147,11 @@ export function friendlyAuthError(code?: string): string {
     case 'auth/account-exists-with-different-credential':
       return 'An account already exists with this email. Try signing in with the original method.';
     case 'auth/operation-not-allowed':
-      return 'This sign-in method is not enabled. Please contact support.';
+      return 'This sign-in method is not enabled. Please check Firebase Console.';
     case 'auth/unauthorized-domain':
+      if (typeof window !== 'undefined' && (window.location.protocol === 'file:' || !window.location.hostname || (window as any).electronAPI)) {
+        return 'Google OAuth popup is blocked inside Electron desktop app. Please use Email & Password or open the app in a browser (http://localhost:5173).';
+      }
       return 'This domain is not authorised for OAuth sign-in. Check Firebase Console → Authorised Domains.';
     default: return 'Authentication failed. Please check your credentials.';
   }

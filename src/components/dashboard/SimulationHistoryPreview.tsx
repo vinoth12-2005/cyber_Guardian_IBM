@@ -51,7 +51,7 @@ export const SimulationHistoryPreview: React.FC<SimulationHistoryPreviewProps> =
       </div>
 
       {/* Latest drill */}
-      {latest && (() => {
+      {latest ? (() => {
         const ds = diffStyle(latest.difficulty);
         return (
           <div
@@ -79,7 +79,11 @@ export const SimulationHistoryPreview: React.FC<SimulationHistoryPreviewProps> =
             </div>
           </div>
         );
-      })()}
+      })() : (
+        <div className="p-5 rounded-xl mb-3 text-center text-xs" style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)', color: 'var(--text-muted)' }}>
+          No simulation drills completed yet. Launch a drill to test your security instincts.
+        </div>
+      )}
 
       <button
         onClick={onViewAll}

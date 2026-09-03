@@ -11,7 +11,7 @@ const TABLES = [
     name            VARCHAR(255) NOT NULL,
     email           VARCHAR(255) UNIQUE NOT NULL,
     profile_picture TEXT,
-    role            VARCHAR(64) DEFAULT 'STUDENT' NOT NULL,
+    role            VARCHAR(64) DEFAULT 'EMPLOYEE' NOT NULL,
     status          VARCHAR(32) DEFAULT 'ACTIVE' NOT NULL,
     bio             TEXT,
     organization    VARCHAR(255),
@@ -50,6 +50,9 @@ const TABLES = [
     intro_video         TEXT,
     credential_eligible INTEGER DEFAULT 1,
     credential_name     VARCHAR(255),
+    status              VARCHAR(32) DEFAULT 'published',
+    created_by          VARCHAR(64),
+    source_doc_name     VARCHAR(255),
     created_at          VARCHAR(64) NOT NULL,
     updated_at          VARCHAR(64) NOT NULL
   )`,
@@ -76,6 +79,8 @@ const TABLES = [
     dur                VARCHAR(64) DEFAULT '5 min',
     body               TEXT,
     image              TEXT,
+    video_url          TEXT,
+    flip_card          TEXT,
     example            TEXT,
     real_time_example  TEXT,
     points             TEXT,
@@ -324,6 +329,28 @@ const TABLES = [
     added_at        VARCHAR(64) NOT NULL,
     added_by        VARCHAR(64) DEFAULT 'admin',
     note            TEXT
+  )`,
+
+  // 23. Chat Sessions (Persistent FlotBot History)
+  `CREATE TABLE IF NOT EXISTS chat_sessions (
+    id              VARCHAR(128) PRIMARY KEY,
+    user_id         VARCHAR(64) NOT NULL,
+    title           VARCHAR(255) NOT NULL,
+    category        VARCHAR(64) DEFAULT 'General',
+    message_count   INTEGER DEFAULT 0,
+    created_at      VARCHAR(64) NOT NULL,
+    updated_at      VARCHAR(64) NOT NULL
+  )`,
+
+  // 24. Chat Messages
+  `CREATE TABLE IF NOT EXISTS chat_messages (
+    id              VARCHAR(128) PRIMARY KEY,
+    session_id      VARCHAR(128) NOT NULL,
+    user_id         VARCHAR(64) NOT NULL,
+    sender          VARCHAR(16) NOT NULL,
+    text            TEXT NOT NULL,
+    metadata_json   TEXT,
+    created_at      VARCHAR(64) NOT NULL
   )`
 ];
 
@@ -356,7 +383,9 @@ const INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_iocs_status         ON iocs(status)`,
   `CREATE INDEX IF NOT EXISTS idx_threat_rules_cat    ON threat_rules(category)`,
   `CREATE INDEX IF NOT EXISTS idx_admin_audit_admin   ON admin_audit_logs(admin_id)`,
-  `CREATE INDEX IF NOT EXISTS idx_admin_audit_ts      ON admin_audit_logs(timestamp)`
+  `CREATE INDEX IF NOT EXISTS idx_admin_audit_ts      ON admin_audit_logs(timestamp)`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_sessions_user  ON chat_sessions(user_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_messages_sess  ON chat_messages(session_id)`
 ];
 
 module.exports = {

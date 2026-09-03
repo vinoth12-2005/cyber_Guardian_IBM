@@ -73,9 +73,22 @@ const DEFAULT_ROLES = [
     permissions: JSON.stringify(['analytics:*', 'reports:*']),
   },
   {
+    id: 'role-employee',
+    name: 'EMPLOYEE',
+    description: 'Enterprise workforce member account for security training, threat simulations, and certifications.',
+    permissions: JSON.stringify([
+      'courses:read',
+      'courses:enroll',
+      'courses:progress',
+      'simulations:play',
+      'certifications:read',
+      'profile:manage',
+    ]),
+  },
+  {
     id: 'role-student',
     name: 'STUDENT',
-    description: 'Standard student learner account for courses, simulations, and certifications.',
+    description: 'Legacy alias for employee workforce account.',
     permissions: JSON.stringify([
       'courses:read',
       'courses:enroll',

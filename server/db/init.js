@@ -75,180 +75,200 @@ async function initDatabase() {
     }
   }
 
-  // 7. Seed Initial Courses if empty
+  // 7. Seed Initial Users if empty
+  await seedUsersIfEmpty();
+
+  // 8. Seed Initial Courses if empty
   await seedCoursesIfEmpty();
 
-  // 8. Seed Initial Simulations if empty
+  // 9. Seed Initial Simulations if empty
   await seedSimulationsIfEmpty();
 
-  // 9. Seed Sample Alerts if empty
+  // 10. Seed Sample Alerts if empty
   await seedInitialAlertsIfEmpty();
 
   console.log('[DB Init] Database ready with unified schema & initial data.');
 }
 
+const vm = require('vm');
+
+async function seedUsersIfEmpty() {
+  const countRes = await db.query('SELECT COUNT(*) as count FROM users');
+  const count = parseInt(countRes.rows[0]?.count || 0, 10);
+  if (count > 0) return;
+
+  console.log('[DB Init] Seeding initial workforce profiles into PostgreSQL...');
+  const now = new Date().toISOString();
+  const defaultUsers = [
+    {
+      id: 'usr_superadmin_01',
+      firebase_uid: 'uid_admin_super_01',
+      name: 'Security Operations Lead',
+      email: 'admin@cyberguardian.local',
+      role: 'SUPER_ADMIN',
+      status: 'ACTIVE',
+      bio: 'Principal SOC Engineer & Global Incident Response Lead.',
+      organization: 'IBM Security Operations',
+      level: 10,
+      xp: 2450,
+      streak: 14,
+    },
+  ];
+
+  for (const u of defaultUsers) {
+    await db.query(
+      `INSERT INTO users (id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        u.id,
+        u.firebase_uid,
+        u.name,
+        u.email,
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E",
+        u.role,
+        u.status,
+        u.bio,
+        u.organization,
+        u.level,
+        u.xp,
+        u.streak,
+        now,
+        now,
+        now,
+      ]
+    );
+  }
+  console.log(`[DB Init] Seeded ${defaultUsers.length} initial workforce accounts.`);
+}
+
 async function seedCoursesIfEmpty() {
   const countRes = await db.query('SELECT COUNT(*) as count FROM courses');
   const count = parseInt(countRes.rows[0]?.count || countRes.rows[0]?.COUNT || 0, 10);
-  if (count > 0) return;
+  if (count >= 50) return;
 
-  console.log('[DB Init] Seeding initial courses...');
+  console.log('[DB Init] Seeding comprehensive course curriculum...');
   try {
-    // Dynamically load courses from frontend data files if available
     const coursesDataPath = path.resolve(__dirname, '../../src/data/coursesData.ts');
     let coursesList = [];
 
     if (fs.existsSync(coursesDataPath)) {
-      const content = fs.readFileSync(coursesDataPath, 'utf8');
-      const jsonMatch = content.match(/export\s+const\s+COURSES_DEFAULT:\s*Course\[\]\s*=\s*(\[[\s\S]*?\]);/);
-      if (jsonMatch) {
-        try {
-          coursesList = JSON.parse(jsonMatch[1]);
-        } catch (e) {
-          // Fallback minimal courses if parse regex fails
-        }
+      try {
+        const rawContent = fs.readFileSync(coursesDataPath, 'utf8')
+          .replace(/^import .*/gm, '')
+          .replace(/export const COURSES_DEFAULT:\s*Course\[\]\s*=/, 'const COURSES_DEFAULT =') + '\n;COURSES_DEFAULT;';
+        coursesList = vm.runInNewContext(rawContent);
+      } catch (e) {
+        console.warn('[DB Init] VM course parse note:', e.message);
       }
     }
 
     if (!coursesList || coursesList.length === 0) {
-      // Fallback base course
-      coursesList = [
-        {
-          id: 'phish-fund',
-          title: 'Phishing Fundamentals',
-          cat: 'Phishing',
-          icon: 'mail',
-          color1: '#3B82F6',
-          color2: '#06B6D4',
-          level: 'Beginner',
-          desc: 'Learn to spot the red flags in fake emails, texts, and links before they cost you.',
-          objectives: ['Identify common phishing tactics', 'Spot lookalike domains', 'Report phishing incidents'],
-          modules: [
-            {
-              title: 'Introduction & Detection',
-              lessons: [
-                {
-                  id: 'les-phish-1',
-                  title: 'What is phishing?',
-                  type: 'reading',
-                  dur: '6 min',
-                  body: 'Phishing is a social engineering attack where bad actors impersonate trusted entities.',
-                  points: ['Verify email headers', 'Recognize artificial urgency'],
-                },
-              ],
-            },
-          ],
-          quiz: [
-            {
-              q: 'What is the primary technical check to verify if an email sender address is spoofed?',
-              options: ['Check display name', 'Inspect Return-Path and SPF/DKIM headers', 'Check attachments', 'Read signature'],
-              answer: 1,
-              explanation: 'SPF/DKIM headers confirm the genuine originating server.',
-            },
-          ],
-        },
-      ];
+      return;
     }
 
     const now = new Date().toISOString();
 
     for (const course of coursesList) {
-      await db.query(
-        `INSERT INTO courses (id, title, cat, icon, color1, color2, level, desc_text, duration, provider, objectives, skills_gained, prerequisites, banner_image, intro_video, credential_eligible, credential_name, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
-        [
-          course.id,
-          course.title,
-          course.cat,
-          course.icon || 'shield',
-          course.color1 || '#7C3AED',
-          course.color2 || '#38BDF8',
-          course.level || 'Beginner',
-          course.desc || '',
-          course.duration || '4-6 hours',
-          course.provider || 'CyberGuardian Institute',
-          JSON.stringify(course.objectives || []),
-          JSON.stringify(course.skillsGained || []),
-          JSON.stringify(course.prerequisites || []),
-          course.bannerImage || null,
-          course.introVideo || null,
-          course.credentialEligible !== false ? 1 : 0,
-          course.credentialName || `${course.title} Specialist Certification`,
-          now,
-          now,
-        ]
-      );
+      const exists = await db.query('SELECT id FROM courses WHERE id = $1', [course.id]);
+      if (exists.rowCount === 0) {
+        await db.query(
+          `INSERT INTO courses (id, title, cat, icon, color1, color2, level, desc_text, duration, provider, objectives, skills_gained, prerequisites, banner_image, intro_video, credential_eligible, credential_name, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+          [
+            course.id,
+            course.title,
+            course.cat,
+            course.icon || 'shield',
+            course.color1 || '#7C3AED',
+            course.color2 || '#38BDF8',
+            course.level || 'Beginner',
+            course.desc || '',
+            course.duration || '4-6 hours',
+            course.provider || 'CyberGuardian Institute',
+            JSON.stringify(course.objectives || []),
+            JSON.stringify(course.skillsGained || []),
+            JSON.stringify(course.prerequisites || []),
+            course.bannerImage || null,
+            course.introVideo || null,
+            course.credentialEligible !== false ? 1 : 0,
+            course.credentialName || `${course.title} Specialist Certification`,
+            now,
+            now,
+          ]
+        );
 
-      // Insert Modules and Lessons
-      if (Array.isArray(course.modules)) {
-        for (let mi = 0; mi < course.modules.length; mi++) {
-          const mod = course.modules[mi];
-          const moduleId = `${course.id}-mod-${mi + 1}`;
-          await db.query(
-            `INSERT INTO course_modules (id, course_id, module_order, title, desc_text, duration, objectives)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [
-              moduleId,
-              course.id,
-              mi,
-              mod.title,
-              mod.desc || '',
-              mod.duration || '',
-              JSON.stringify(mod.objectives || []),
-            ]
-          );
+        // Insert Modules and Lessons
+        if (Array.isArray(course.modules)) {
+          for (let mi = 0; mi < course.modules.length; mi++) {
+            const mod = course.modules[mi];
+            const moduleId = `${course.id}-mod-${mi + 1}`;
+            await db.query(
+              `INSERT INTO course_modules (id, course_id, module_order, title, desc_text, duration, objectives)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [
+                moduleId,
+                course.id,
+                mi,
+                mod.title,
+                mod.desc || '',
+                mod.duration || '',
+                JSON.stringify(mod.objectives || []),
+              ]
+            );
 
-          if (Array.isArray(mod.lessons)) {
-            for (let li = 0; li < mod.lessons.length; li++) {
-              const les = mod.lessons[li];
-              const lessonId = les.id || `${moduleId}-les-${li + 1}`;
-              await db.query(
-                `INSERT INTO lessons (id, module_id, course_id, lesson_order, title, lesson_type, dur, body, image, example, real_time_example, points, activities, knowledge_check)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-                [
-                  lessonId,
-                  moduleId,
-                  course.id,
-                  li,
-                  les.title,
-                  les.type || 'reading',
-                  les.dur || '5 min',
-                  les.body || '',
-                  les.image || null,
-                  les.example || null,
-                  les.realTimeExample || null,
-                  JSON.stringify(les.points || []),
-                  JSON.stringify(les.activities || []),
-                  JSON.stringify(les.knowledgeCheck || []),
-                ]
-              );
+            if (Array.isArray(mod.lessons)) {
+              for (let li = 0; li < mod.lessons.length; li++) {
+                const les = mod.lessons[li];
+                const lessonId = les.id || `${moduleId}-les-${li + 1}`;
+                await db.query(
+                  `INSERT INTO lessons (id, module_id, course_id, lesson_order, title, lesson_type, dur, body, image, example, real_time_example, points, activities, knowledge_check)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+                  [
+                    lessonId,
+                    moduleId,
+                    course.id,
+                    li,
+                    les.title,
+                    les.type || 'reading',
+                    les.dur || '5 min',
+                    les.body || '',
+                    les.image || null,
+                    les.example || null,
+                    les.realTimeExample || null,
+                    JSON.stringify(les.points || []),
+                    JSON.stringify(les.activities || []),
+                    JSON.stringify(les.knowledgeCheck || []),
+                  ]
+                );
+              }
             }
           }
         }
-      }
 
-      // Insert Course Quizzes
-      if (Array.isArray(course.quiz)) {
-        for (let qi = 0; qi < course.quiz.length; qi++) {
-          const q = course.quiz[qi];
-          const quizId = `${course.id}-quiz-${qi + 1}`;
-          await db.query(
-            `INSERT INTO course_quizzes (id, course_id, question, options, answer, explanation, question_order)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [
-              quizId,
-              course.id,
-              q.q || q.question || '',
-              JSON.stringify(q.options || []),
-              typeof q.answer === 'number' ? q.answer : 0,
-              q.explanation || '',
-              qi,
-            ]
-          );
+        // Insert Course Quizzes
+        if (Array.isArray(course.quiz)) {
+          for (let qi = 0; qi < course.quiz.length; qi++) {
+            const q = course.quiz[qi];
+            const quizId = `${course.id}-quiz-${qi + 1}`;
+            await db.query(
+              `INSERT INTO course_quizzes (id, course_id, question, options, answer, explanation, question_order)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+              [
+                quizId,
+                course.id,
+                q.q || q.question || '',
+                JSON.stringify(q.options || []),
+                typeof q.answer === 'number' ? q.answer : 0,
+                q.explanation || '',
+                qi,
+              ]
+            );
+          }
         }
       }
     }
-    console.log(`[DB Init] Seeded ${coursesList.length} courses with modules and quizzes.`);
+    console.log(`[DB Init] Verified & seeded course catalog (${coursesList.length} courses total).`);
   } catch (err) {
     console.error('[DB Init] Error seeding courses:', err.message);
   }
@@ -257,112 +277,61 @@ async function seedCoursesIfEmpty() {
 async function seedSimulationsIfEmpty() {
   const countRes = await db.query('SELECT COUNT(*) as count FROM simulations');
   const count = parseInt(countRes.rows[0]?.count || countRes.rows[0]?.COUNT || 0, 10);
-  if (count > 0) return;
+  if (count >= 40) return;
 
-  console.log('[DB Init] Seeding initial simulation scenarios...');
-  const defaultSims = [
-    {
-      id: 'SE-001',
-      numeric_id: 1,
-      title: 'Urgent Password Reset',
-      category: 'Phishing',
-      difficulty: 'Beginner',
-      duration: 10,
-      environment: 'email',
-      xp: 150,
-      icon: 'mail',
-      goal: 'Learn to identify phishing emails, suspicious URLs, and credential harvesting attacks.',
-      summary: 'Phishing is the #1 entry point for cyber attacks. Practice identifying sender spoofing, urgency manipulation, and credential harvesting.',
-      brand: 'Northstar Systems',
-      learning_objectives: ['Inspect sender addresses carefully', 'Identify homoglyph/typosquatting attacks', 'Report phishing to security operations'],
-      hints: [
-        { level: 1, text: 'Look carefully at the sender email address', scorePenalty: 5 },
-        { level: 2, text: 'Compare the sender domain with the official domain', scorePenalty: 10 },
-      ],
-    },
-    {
-      id: 'SE-002',
-      numeric_id: 2,
-      title: 'Fake IT Helpdesk Phone Scam',
-      category: 'Vishing',
-      difficulty: 'Beginner',
-      duration: 12,
-      environment: 'phone',
-      xp: 175,
-      icon: 'phone',
-      goal: 'Defend against voice phishing (vishing) impersonating internal IT support.',
-      summary: 'Attackers use urgent telephone calls requesting AnyDesk remote access or password changes.',
-      brand: 'Global Enterprise IT',
-      learning_objectives: ['Demand employee verification badge numbers', 'Never grant remote desktop control to unsolicited callers'],
-      hints: [
-        { level: 1, text: 'IT support will never call asking for your cleartext password', scorePenalty: 5 },
-      ],
-    },
-    {
-      id: 'SE-003',
-      numeric_id: 3,
-      title: 'Malicious QR Code (Quishing)',
-      category: 'Quishing',
-      difficulty: 'Intermediate',
-      duration: 15,
-      environment: 'qr',
-      xp: 200,
-      icon: 'qr',
-      goal: 'Detect and inspect malicious QR codes in cafeteria parking and corporate notices.',
-      summary: 'Quishing disguises malicious URLs inside QR codes to bypass standard email URL security gateways.',
-      brand: 'SmartPark Enterprise',
-      learning_objectives: ['Inspect destination URL before opening QR codes', 'Avoid scanning unverified public stickers'],
-      hints: [
-        { level: 1, text: 'Check the real domain preview before proceeding in browser', scorePenalty: 5 },
-      ],
-    },
-    {
-      id: 'SE-004',
-      numeric_id: 4,
-      title: 'MFA Push Fatigue & Session Hijacking',
-      category: 'MFA Fatigue',
-      difficulty: 'Advanced',
-      duration: 20,
-      environment: 'mfa',
-      xp: 250,
-      icon: 'lock',
-      goal: 'Recognize MFA prompt flooding and prevent unauthorized token approvals.',
-      summary: 'Adversaries spam authentication prompts at late night hours hoping tired users tap Approve.',
-      brand: 'Azure AD / Entra ID',
-      learning_objectives: ['Reject unprompted MFA requests', 'Change credentials immediately upon prompt spamming'],
-      hints: [
-        { level: 1, text: 'If you did not initiate the login, tap Deny & Report immediately', scorePenalty: 5 },
-      ],
-    },
-  ];
+  console.log('[DB Init] Seeding full simulation scenario suite...');
+  try {
+    const simDataPath = path.resolve(__dirname, '../../src/data/simulation/se-scenarios.ts');
+    let simList = [];
 
-  const now = new Date().toISOString();
-  for (const sim of defaultSims) {
-    await db.query(
-      `INSERT INTO simulations (id, numeric_id, title, category, difficulty, duration, environment, xp, icon, goal, summary, brand, learning_objectives, hints, learning_cards, debrief, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
-      [
-        sim.id,
-        sim.numeric_id,
-        sim.title,
-        sim.category,
-        sim.difficulty,
-        sim.duration,
-        sim.environment,
-        sim.xp,
-        sim.icon,
-        sim.goal,
-        sim.summary,
-        sim.brand,
-        JSON.stringify(sim.learning_objectives || []),
-        JSON.stringify(sim.hints || []),
-        JSON.stringify([]),
-        JSON.stringify({}),
-        now,
-      ]
-    );
+    if (fs.existsSync(simDataPath)) {
+      try {
+        const rawContent = fs.readFileSync(simDataPath, 'utf8')
+          .replace(/^import .*/gm, '')
+          .replace(/export const seScenarios:\s*SESimulation\[\]\s*=/, 'const seScenarios =') + '\n;seScenarios;';
+        simList = vm.runInNewContext(rawContent);
+      } catch (e) {
+        console.warn('[DB Init] VM simulation parse note:', e.message);
+      }
+    }
+
+    if (!simList || simList.length === 0) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+    for (const sim of simList) {
+      const exists = await db.query('SELECT id FROM simulations WHERE id = $1', [sim.id]);
+      if (exists.rowCount === 0) {
+        await db.query(
+          `INSERT INTO simulations (id, numeric_id, title, category, difficulty, duration, environment, xp, icon, goal, summary, brand, learning_objectives, hints, learning_cards, debrief, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+          [
+            sim.id,
+            sim.numericId || sim.numeric_id || 1,
+            sim.title,
+            sim.category,
+            sim.difficulty,
+            sim.duration || 10,
+            sim.environment || 'email',
+            sim.xp || 100,
+            sim.icon || 'mail',
+            sim.goal || '',
+            sim.summary || '',
+            sim.brand || '',
+            JSON.stringify(sim.learningObjectives || sim.learning_objectives || []),
+            JSON.stringify(sim.hints || []),
+            JSON.stringify(sim.learningCards || sim.learning_cards || []),
+            JSON.stringify(sim.debrief || {}),
+            now,
+          ]
+        );
+      }
+    }
+    console.log(`[DB Init] Verified & seeded simulation lab suite (${simList.length} scenarios total).`);
+  } catch (err) {
+    console.error('[DB Init] Error seeding simulations:', err.message);
   }
-  console.log(`[DB Init] Seeded ${defaultSims.length} simulation scenarios.`);
 }
 
 async function seedInitialAlertsIfEmpty() {

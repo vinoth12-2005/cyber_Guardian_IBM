@@ -28,8 +28,13 @@ export const ChatbotHistory: React.FC<ChatbotHistoryProps> = ({ chats, onContinu
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {chats.map((chat) => (
+      {chats.length === 0 ? (
+        <div className="py-8 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+          No previous chat consultations recorded. Start a new conversation above with FlotBot.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {chats.map((chat) => (
           <div
             key={chat.id}
             className="p-4 rounded-xl flex flex-col justify-between transition-all duration-200"
@@ -94,6 +99,7 @@ export const ChatbotHistory: React.FC<ChatbotHistoryProps> = ({ chats, onContinu
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 };

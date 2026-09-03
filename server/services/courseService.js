@@ -5,10 +5,17 @@ class CourseService {
   /**
    * List courses with optional filters and user progress
    */
-  async listCourses({ cat = '', level = '', search = '', userId = null } = {}) {
+  async listCourses({ cat = '', level = '', search = '', status = '', includeDrafts = false, userId = null } = {}) {
     const conditions = [];
     const params = [];
     let idx = 1;
+
+    if (!includeDrafts && !status) {
+      conditions.push(`(status = 'published' OR status IS NULL)`);
+    } else if (status && status !== 'All') {
+      conditions.push(`status = $${idx++}`);
+      params.push(status);
+    }
 
     if (cat && cat !== 'All') {
       conditions.push(`cat = $${idx++}`);
@@ -356,8 +363,8 @@ class CourseService {
     const now = new Date().toISOString();
 
     await db.query(
-      `INSERT INTO courses (id, title, cat, icon, color1, color2, level, desc_text, duration, provider, objectives, skills_gained, prerequisites, banner_image, intro_video, credential_eligible, credential_name, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+      `INSERT INTO courses (id, title, cat, icon, color1, color2, level, desc_text, duration, provider, objectives, skills_gained, prerequisites, banner_image, intro_video, credential_eligible, credential_name, status, created_by, source_doc_name, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
       [
         id,
         courseData.title,
@@ -376,6 +383,9 @@ class CourseService {
         courseData.introVideo || null,
         courseData.credentialEligible !== false ? 1 : 0,
         courseData.credentialName || `${courseData.title} Specialist Certification`,
+        courseData.status || 'published',
+        courseData.createdBy || null,
+        courseData.sourceDocName || null,
         now,
         now,
       ]
@@ -397,8 +407,8 @@ class CourseService {
             const les = mod.lessons[li];
             const lessonId = les.id || `${moduleId}-les-${li + 1}`;
             await db.query(
-              `INSERT INTO lessons (id, module_id, course_id, lesson_order, title, lesson_type, dur, body, image, example, real_time_example, points, activities, knowledge_check)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+              `INSERT INTO lessons (id, module_id, course_id, lesson_order, title, lesson_type, dur, body, image, video_url, flip_card, example, real_time_example, points, activities, knowledge_check)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
               [
                 lessonId,
                 moduleId,
@@ -409,6 +419,8 @@ class CourseService {
                 les.dur || '5 min',
                 les.body || '',
                 les.image || null,
+                les.videoUrl || null,
+                les.flipCard ? JSON.stringify(les.flipCard) : null,
                 les.example || null,
                 les.realTimeExample || null,
                 JSON.stringify(les.points || []),
@@ -435,6 +447,133 @@ class CourseService {
     }
 
     return await this.getCourseById(id);
+  }
+
+  /**
+   * Update existing course (Admin)
+   */
+  async updateCourse(courseId, courseData) {
+    const existing = await this.getCourseById(courseId);
+    if (!existing) return null;
+
+    const now = new Date().toISOString();
+    await db.query(
+      `UPDATE courses SET
+         title = COALESCE($1, title),
+         cat = COALESCE($2, cat),
+         icon = COALESCE($3, icon),
+         color1 = COALESCE($4, color1),
+         color2 = COALESCE($5, color2),
+         level = COALESCE($6, level),
+         desc_text = COALESCE($7, desc_text),
+         duration = COALESCE($8, duration),
+         provider = COALESCE($9, provider),
+         objectives = COALESCE($10, objectives),
+         skills_gained = COALESCE($11, skills_gained),
+         prerequisites = COALESCE($12, prerequisites),
+         banner_image = COALESCE($13, banner_image),
+         intro_video = COALESCE($14, intro_video),
+         credential_eligible = COALESCE($15, credential_eligible),
+         credential_name = COALESCE($16, credential_name),
+         status = COALESCE($17, status),
+         updated_at = $18
+       WHERE id = $19`,
+      [
+        courseData.title ?? null,
+        courseData.cat ?? null,
+        courseData.icon ?? null,
+        courseData.color1 ?? null,
+        courseData.color2 ?? null,
+        courseData.level ?? null,
+        courseData.desc || courseData.desc_text || null,
+        courseData.duration ?? null,
+        courseData.provider ?? null,
+        courseData.objectives ? JSON.stringify(courseData.objectives) : null,
+        courseData.skillsGained ? JSON.stringify(courseData.skillsGained) : null,
+        courseData.prerequisites ? JSON.stringify(courseData.prerequisites) : null,
+        courseData.bannerImage ?? null,
+        courseData.introVideo ?? null,
+        courseData.credentialEligible !== undefined ? (courseData.credentialEligible ? 1 : 0) : null,
+        courseData.credentialName ?? null,
+        courseData.status ?? null,
+        now,
+        courseId,
+      ]
+    );
+
+    // If modules provided, replace them
+    if (Array.isArray(courseData.modules)) {
+      await db.query('DELETE FROM lessons WHERE course_id = $1', [courseId]);
+      await db.query('DELETE FROM course_modules WHERE course_id = $1', [courseId]);
+
+      for (let mi = 0; mi < courseData.modules.length; mi++) {
+        const mod = courseData.modules[mi];
+        const moduleId = `${courseId}-mod-${mi + 1}`;
+        await db.query(
+          `INSERT INTO course_modules (id, course_id, module_order, title, desc_text, duration, objectives)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [moduleId, courseId, mi, mod.title, mod.desc || '', mod.duration || '', JSON.stringify(mod.objectives || [])]
+        );
+
+        if (Array.isArray(mod.lessons)) {
+          for (let li = 0; li < mod.lessons.length; li++) {
+            const les = mod.lessons[li];
+            const lessonId = les.id || `${moduleId}-les-${li + 1}`;
+            await db.query(
+              `INSERT INTO lessons (id, module_id, course_id, lesson_order, title, lesson_type, dur, body, image, video_url, flip_card, example, real_time_example, points, activities, knowledge_check)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+              [
+                lessonId,
+                moduleId,
+                courseId,
+                li,
+                les.title,
+                les.type || 'reading',
+                les.dur || '5 min',
+                les.body || '',
+                les.image || null,
+                les.videoUrl || null,
+                les.flipCard ? JSON.stringify(les.flipCard) : null,
+                les.example || null,
+                les.realTimeExample || null,
+                JSON.stringify(les.points || []),
+                JSON.stringify(les.activities || []),
+                JSON.stringify(les.knowledgeCheck || []),
+              ]
+            );
+          }
+        }
+      }
+    }
+
+    // If quizzes provided, replace them
+    if (Array.isArray(courseData.quiz)) {
+      await db.query('DELETE FROM course_quizzes WHERE course_id = $1', [courseId]);
+      for (let qi = 0; qi < courseData.quiz.length; qi++) {
+        const q = courseData.quiz[qi];
+        const quizId = `${courseId}-quiz-${qi + 1}`;
+        await db.query(
+          `INSERT INTO course_quizzes (id, course_id, question, options, answer, explanation, question_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [quizId, courseId, q.q || q.question || '', JSON.stringify(q.options || []), q.answer ?? 0, q.explanation || '', qi]
+        );
+      }
+    }
+
+    return await this.getCourseById(courseId);
+  }
+
+  /**
+   * Publish a draft course (Admin)
+   */
+  async publishCourse(courseId) {
+    const now = new Date().toISOString();
+    const res = await db.query(
+      `UPDATE courses SET status = 'published', updated_at = $1 WHERE id = $2 RETURNING *`,
+      [now, courseId]
+    );
+    if (res.rowCount === 0) return null;
+    return await this.getCourseById(courseId);
   }
 
   /**
@@ -469,6 +608,9 @@ class CourseService {
       introVideo: row.intro_video,
       credentialEligible: !!row.credential_eligible,
       credentialName: row.credential_name,
+      status: row.status || 'published',
+      createdBy: row.created_by,
+      sourceDocName: row.source_doc_name,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
@@ -482,6 +624,8 @@ class CourseService {
       dur: row.dur,
       body: row.body,
       image: row.image,
+      videoUrl: row.video_url || null,
+      flipCard: JSON.parse(row.flip_card || 'null'),
       example: row.example,
       realTimeExample: row.real_time_example,
       points: JSON.parse(row.points || '[]'),

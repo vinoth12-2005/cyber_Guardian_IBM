@@ -26,7 +26,7 @@ export function SimulationIdPage() {
             to="/simulation"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition"
           >
-            <ArrowLeft className="w-4 h-4" /> Return to Simulation Matrix
+            <ArrowLeft className="w-4 h-4" /> Return to Cyber Range Matrix
           </Link>
         </div>
       </div>

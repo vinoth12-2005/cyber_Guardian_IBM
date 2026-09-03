@@ -19,8 +19,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userProfile, onUpdat
   // ── Profile fields ────────────────────────────────────────────────────────
   const [displayName, setDisplayName] = useState(authUser?.displayName || userProfile.name || '');
   const [email] = useState(authUser?.email || userProfile.email || '');
-  const [role, setRole] = useState('Senior Security Analyst');
-  const [bio, setBio] = useState('Cybersecurity specialist focused on threat analysis and AI response.');
+  const [role, setRole] = useState(authUser?.role || userProfile.role || 'EMPLOYEE');
+  const [bio, setBio] = useState(authUser?.bio || userProfile.bio || 'Enterprise workforce security member.');
+
+  // Sync with authUser when user account is loaded from PostgreSQL
+  React.useEffect(() => {
+    if (authUser) {
+      if (authUser.displayName) setDisplayName(authUser.displayName);
+      if (authUser.role) setRole(authUser.role);
+      if (authUser.bio) setBio(authUser.bio);
+      if (authUser.avatarUrl) setAvatarPreview(authUser.avatarUrl);
+    }
+  }, [authUser]);
 
   // ── Avatar ────────────────────────────────────────────────────────────────
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +96,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userProfile, onUpdat
     if (!displayName.trim()) { toast.error('Name cannot be empty'); return; }
     try {
       await updateDisplayName(displayName.trim());
-      if (onUpdateProfile) onUpdateProfile({ name: displayName.trim(), email });
+      try {
+        const { api } = await import('../../lib/api');
+        await api.auth.sync({ name: displayName.trim(), bio: bio.trim() });
+      } catch (e) {}
+      if (onUpdateProfile) onUpdateProfile({ name: displayName.trim(), email, role, bio });
       toast.success('Profile updated successfully!');
     } catch {
       toast.error('Failed to update profile');
@@ -173,7 +187,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userProfile, onUpdat
                 <img
                   src={avatarPreview}
                   alt={displayName}
-                  className="w-24 h-24 rounded-2xl object-cover mx-auto shadow-md"
+                  onError={(e) => {
+                    e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+                  }}
+                  className="w-24 h-24 rounded-2xl object-cover mx-auto shadow-md bg-slate-800"
                   style={{ border: '1px solid var(--border-medium)' }}
                 />
               ) : (
@@ -322,19 +339,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ userProfile, onUpdat
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Job Title / Role</label>
-                  <input
-                    type="text"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl text-xs input-base"
-                    placeholder="Security Role"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Enterprise Role (RBAC)</label>
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300">
+                      <Shield className="w-4 h-4 text-indigo-400 shrink-0" />
+                      <span className="font-mono font-bold text-xs">{role}</span>
+                    </div>
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Assigned via Enterprise CyberGuardian Policy.</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Organization / Department</label>
+                    <input
+                      type="text"
+                      value={authUser?.organization || userProfile.organization || 'Enterprise CyberGuardian Organization'}
+                      readOnly
+                      className="w-full px-4 py-2.5 rounded-xl text-xs input-base opacity-75 cursor-default"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Bio / Description</label>
+                  <label className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Bio / Operational Summary</label>
                   <textarea
                     rows={3}
                     value={bio}

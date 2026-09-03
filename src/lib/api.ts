@@ -9,6 +9,12 @@ export interface ApiResponse<T = any> {
   };
 }
 
+const BACKEND_ORIGIN = import.meta.env.VITE_API_URL || (
+  typeof window !== 'undefined' && (window.location.protocol === 'file:' || !window.location.port || (window as any).electronAPI)
+    ? 'http://localhost:5000'
+    : ''
+);
+
 /**
  * Base API client with automatic Firebase Auth Bearer token insertion
  */
@@ -16,7 +22,7 @@ export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const url = endpoint.startsWith('http') ? endpoint : endpoint;
+  const url = endpoint.startsWith('http') ? endpoint : `${BACKEND_ORIGIN}${endpoint}`;
   const headers = new Headers(options.headers || {});
 
   if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
@@ -60,7 +66,7 @@ export async function apiRequest<T = any>(
 export const api = {
   // Auth
   auth: {
-    sync: () => apiRequest('/api/auth/sync', { method: 'POST' }),
+    sync: (data?: any) => apiRequest('/api/auth/sync', { method: 'POST', body: data ? JSON.stringify(data) : undefined }),
     me: () => apiRequest('/api/auth/me'),
   },
 
@@ -73,7 +79,7 @@ export const api = {
 
   // Courses
   courses: {
-    list: (params?: { cat?: string; level?: string; search?: string }) => {
+    list: (params?: { cat?: string; level?: string; search?: string; status?: string; includeDrafts?: boolean }) => {
       const qs = new URLSearchParams(params as any).toString();
       return apiRequest(`/api/courses${qs ? `?${qs}` : ''}`);
     },
@@ -81,8 +87,14 @@ export const api = {
     enroll: (id: string) => apiRequest(`/api/courses/${id}/enroll`, { method: 'POST' }),
     updateProgress: (id: string, data: { lessonKey?: string; timeSpentMinutes?: number }) =>
       apiRequest(`/api/courses/${id}/progress`, { method: 'POST', body: JSON.stringify(data) }),
-    submitQuiz: (id: string, answers: number[]) =>
-      apiRequest(`/api/courses/${id}/quiz`, { method: 'POST', body: JSON.stringify({ answers }) }),
+    submitQuiz: (id: string, answers: number[], integrityMetrics?: any) =>
+      apiRequest(`/api/courses/${id}/quiz`, { method: 'POST', body: JSON.stringify({ answers, integrityMetrics }) }),
+    generateFromPdf: (formData: FormData) =>
+      apiRequest('/api/admin/courses/generate-from-pdf', { method: 'POST', body: formData }),
+    uploadMedia: (formData: FormData) =>
+      apiRequest('/api/admin/courses/upload-media', { method: 'POST', body: formData }),
+    publish: (id: string) =>
+      apiRequest(`/api/admin/courses/${id}/publish`, { method: 'PUT' }),
   },
 
   // Simulations
@@ -128,8 +140,17 @@ export const api = {
       apiRequest(`/api/flotbot/alerts/${id}/acknowledge`, { method: 'POST' }),
     explainAlert: (alertId: string) =>
       apiRequest('/api/flotbot/ai/explain', { method: 'POST', body: JSON.stringify({ alertId }) }),
-    chatAI: (message: string, context?: any) =>
-      apiRequest('/api/flotbot/ai/chat', { method: 'POST', body: JSON.stringify({ message, context }) }),
+    chatAI: (message: string, sessionId?: string, context?: any) =>
+      apiRequest('/api/flotbot/ai/chat', { method: 'POST', body: JSON.stringify({ message, sessionId, context }) }),
+    listChats: () => apiRequest('/api/flotbot/chats'),
+    getChat: (sessionId: string) => apiRequest(`/api/flotbot/chats/${sessionId}`),
+    deleteChat: (sessionId: string) => apiRequest(`/api/flotbot/chats/${sessionId}`, { method: 'DELETE' }),
+    analyzeUrl: (url: string, metadata?: any) =>
+      apiRequest('/api/flotbot/analyze-url', { method: 'POST', body: JSON.stringify({ url, metadata }) }),
+    analyzeFile: (params: { sha256?: string; fileName?: string; filePath?: string; entropy?: number }) =>
+      apiRequest('/api/flotbot/analyze-file', { method: 'POST', body: JSON.stringify(params) }),
+    recordDecision: (alertId: string, action: 'safe_exit' | 'override_proceed', reason?: string) =>
+      apiRequest(`/api/flotbot/alerts/${alertId}/decision`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
     getMySecurityBehaviour: () => apiRequest('/api/flotbot/my-security-behaviour'),
   },
 

@@ -35,30 +35,34 @@ async function authenticate(req, res, next) {
     // Find or create user in unified Database
     let user = null;
     const userQuery = await db.query(
-      'SELECT id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at FROM users WHERE firebase_uid = $1',
-      [uid]
+      'SELECT id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at FROM users WHERE firebase_uid = $1 OR (email IS NOT NULL AND email != \'\' AND email = $2)',
+      [uid, email || '']
     );
 
     const now = new Date().toISOString();
 
+    const isSuperAdmin = (
+      (process.env.ADMIN_EMAILS && process.env.ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase()).includes((email || '').toLowerCase())) ||
+      (email && email.toLowerCase().startsWith('admin@'))
+    );
+
     if (userQuery.rowCount > 0) {
       user = userQuery.rows[0];
-      // Update last_login and avatar if changed
+      // Update last_login, avatar, and role if admin role switch occurred
+      const newRole = (decoded.role && isSuperAdmin) ? decoded.role : user.role;
+      const userName = name || user.name;
       await db.query(
-        'UPDATE users SET last_login = $1, profile_picture = COALESCE($2, profile_picture), updated_at = $3 WHERE id = $4',
-        [now, picture || null, now, user.id]
+        'UPDATE users SET firebase_uid = $1, name = COALESCE($2, name), last_login = $3, profile_picture = COALESCE($4, profile_picture), role = $5, updated_at = $6 WHERE id = $7',
+        [uid, userName, now, picture || null, newRole, now, user.id]
       );
+      user.firebase_uid = uid;
+      user.name = userName;
       user.last_login = now;
+      user.role = newRole;
     } else {
       // Create new user in Database
       const newId = 'usr_' + uid.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6);
-      
-      // Default to SUPER_ADMIN if email is configured or contains 'admin', else STUDENT
-      const isSuperAdmin = (
-        (process.env.ADMIN_EMAILS && process.env.ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase()).includes((email || '').toLowerCase())) ||
-        (email && email.toLowerCase().startsWith('admin@'))
-      );
-      const initialRole = isSuperAdmin ? 'SUPER_ADMIN' : 'STUDENT';
+      const initialRole = decoded.role || (isSuperAdmin ? 'SUPER_ADMIN' : 'EMPLOYEE');
 
       await db.query(
         `INSERT INTO users (id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at)
@@ -66,13 +70,13 @@ async function authenticate(req, res, next) {
         [
           newId,
           uid,
-          name || (email ? email.split('@')[0] : 'User'),
+          name || (email ? email.split('@')[0] : 'Employee'),
           email || `${uid}@cyberguardian.local`,
           picture || null,
           initialRole,
           'ACTIVE',
-          'Cybersecurity enthusiast and learner.',
-          'CyberGuardian Academy',
+          'Enterprise workforce security member.',
+          'Enterprise CyberGuardian Organization',
           1,
           0,
           0,
@@ -110,6 +114,16 @@ async function authenticate(req, res, next) {
         error: {
           code: 'ACCOUNT_SUSPENDED',
           message: 'Your account has been suspended. Please contact platform administrators.',
+        },
+      });
+    }
+
+    if (user.status === 'DELETED') {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'ACCOUNT_DELETED',
+          message: 'This account has been deleted. Please contact platform administrators.',
         },
       });
     }

@@ -6,6 +6,9 @@ export type SimulationDifficulty = 'Beginner' | 'Intermediate' | 'Advanced' | 'E
 export interface UserProfile {
   name: string;
   email?: string;
+  role?: string;
+  bio?: string;
+  organization?: string;
   avatarUrl: string;
   awarenessLevel: ScoreLevel;
   securityTipOfDay: {

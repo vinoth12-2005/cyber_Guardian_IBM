@@ -17,6 +17,7 @@ import {
   Play,
   Award,
 } from 'lucide-react';
+import { InteractiveFlipCard } from './InteractiveFlipCard';
 
 interface LessonViewProps {
   course: Course;
@@ -153,12 +154,47 @@ export const LessonView: React.FC<LessonViewProps> = ({
                   <img
                     src={lesson.image}
                     alt={lesson.title}
-                    className="w-full h-auto rounded-lg max-h-96 object-cover object-center"
+                    className="w-full h-auto rounded-lg max-h-96 object-contain object-center mx-auto"
+                    onError={(e) => {
+                      (e.currentTarget.parentElement as HTMLElement)?.style.setProperty('display', 'none');
+                    }}
                   />
                   <span className="text-[10px] text-[var(--text-muted)] italic block text-center mt-1.5">
-                    Figure 1: {lesson.title} Architectural Diagram & Threat Flow
+                    Figure: {lesson.title} Architectural Diagram & Threat Flow
                   </span>
                 </div>
+              )}
+
+              {/* Video Lecture Demonstration */}
+              {lesson.videoUrl && (
+                <div className="rounded-xl overflow-hidden border border-[var(--border-default)] glass-card p-3 bg-black/60 space-y-2 shadow-lg">
+                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
+                    <Play className="w-3.5 h-3.5" /> Video Lecture & Practical Demonstration
+                  </div>
+                  <div className="aspect-video w-full rounded-lg overflow-hidden bg-black flex items-center justify-center">
+                    {lesson.videoUrl.endsWith('.mp4') || lesson.videoUrl.endsWith('.webm') || lesson.videoUrl.startsWith('/uploads/') ? (
+                      <video
+                        src={lesson.videoUrl}
+                        controls
+                        className="w-full h-full object-contain"
+                        preload="metadata"
+                      />
+                    ) : (
+                      <iframe
+                        src={lesson.videoUrl}
+                        title={lesson.title}
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Interactive 3D Threat Inspector Flip Card */}
+              {lesson.flipCard && (
+                <InteractiveFlipCard card={lesson.flipCard} />
               )}
 
               {/* Main Reading Body */}

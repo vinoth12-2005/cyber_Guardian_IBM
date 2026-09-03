@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import FloatingParticles from "./FloatingParticles";
 import GlowShield from "./GlowShield";
+import logoIcon from "@/assets/logo-icon.png";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -127,7 +128,14 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
               layoutId="auth-brand-mobile"
               className="mb-5 flex items-center gap-2 lg:hidden"
             >
-              <img src="/logo-icon.png" alt="CyberGuardian AI" className="h-10 w-10 object-contain" />
+              <img
+                src={logoIcon}
+                alt="CyberGuardian AI"
+                className="h-10 w-10 object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = '/shield.svg';
+                }}
+              />
               <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                 CyberGuardian AI
               </span>

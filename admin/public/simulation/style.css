@@ -1,0 +1,184 @@
+/* CyberGuard Academy - Custom CSS and Premium Animations */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --color-cyber-bg: #0B1020;
+  --color-cyber-primary: #00E5FF;
+  --color-cyber-secondary: #00FF99;
+  --color-cyber-accent: #7C3AED;
+  --color-cyber-danger: #FF4D4D;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--color-cyber-bg);
+  color: #F8FAFC;
+  overflow-x: hidden;
+}
+
+.font-mono {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15), inset 0 0 10px rgba(0, 229, 255, 0.05);
+  transform: translateY(-4px);
+}
+
+/* Glow Borders */
+.glow-primary {
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+}
+
+.glow-secondary {
+  box-shadow: 0 0 15px rgba(0, 255, 153, 0.3);
+}
+
+.glow-danger {
+  box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
+}
+
+.glow-accent {
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
+}
+
+/* Cyber Grid Background */
+.cyber-grid {
+  background-image: 
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center;
+}
+
+/* Scanning Line Animation */
+.scanlines {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanlines::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 2;
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+}
+
+.scanlines::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 100%;
+  background: linear-gradient(to bottom, rgba(0, 229, 255, 0), rgba(0, 229, 255, 0.05) 10%, rgba(0, 229, 255, 0) 20%);
+  animation: scanline 8s linear infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(11, 16, 32, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.6);
+}
+
+/* Animated Particles Canvas */
+#particles-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Neon Text Glow */
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.text-glow-green {
+  text-shadow: 0 0 10px rgba(0, 255, 153, 0.5);
+}
+
+/* Custom Checkbox/Radio Styling */
+input[type="range"]::-webkit-slider-thumb {
+  background: #00E5FF;
+  box-shadow: 0 0 8px #00E5FF;
+}
+
+input[type="range"]::-moz-range-thumb {
+  background: #00E5FF;
+  box-shadow: 0 0 8px #00E5FF;
+}
+
+/* Animated Flow Arrows */
+.flow-arrow-active {
+  animation: pulse-arrow 1.5s infinite;
+}
+
+@keyframes pulse-arrow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); color: #00E5FF; }
+}
+
+/* Confetti and Stars Animations for Completion */
+.star-glow {
+  animation: star-shine 2s infinite alternate;
+}
+
+@keyframes star-shine {
+  0% { transform: scale(0.9); opacity: 0.6; filter: drop-shadow(0 0 2px #00FF99); }
+  100% { transform: scale(1.1); opacity: 1; filter: drop-shadow(0 0 12px #00FF99); }
+}
+
+/* Modal Fade-in */
+.modal-enter {
+  animation: modal-zoom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modal-zoom {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}

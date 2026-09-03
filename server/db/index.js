@@ -36,10 +36,14 @@ class UnifiedDatabase {
 
         this.driver = 'postgres';
         this.connected = true;
-        console.log(`[Database] Connected successfully to PostgreSQL (${config.db.host}:${config.db.port}/${config.db.database})`);
+        console.log(
+          `[Database] Connected successfully to PostgreSQL (${config.db.host}:${config.db.port}/${config.db.database})`
+        );
         return;
       } catch (pgErr) {
-        console.warn(`[Database] PostgreSQL connection failed (${pgErr.message}). Falling back to SQLite...`);
+        console.warn(
+          `[Database] PostgreSQL connection failed (${pgErr.message}). Falling back to SQLite for zero-setup execution...`
+        );
       }
     }
 
@@ -70,7 +74,7 @@ class UnifiedDatabase {
   /**
    * Execute parameterized query.
    * Standard SQL uses $1, $2 placeholder format.
-   * Automatically adapts to SQLite (?, ?) when in SQLite mode.
+   * Automatically adapts to SQLite (?1, ?2) when in SQLite mode.
    */
   async query(text, params = []) {
     if (!this.connected) {
@@ -90,7 +94,6 @@ class UnifiedDatabase {
       let sqliteSql = text.replace(/\$(\d+)/g, '?$1');
 
       // Also convert PostgreSQL specific functions / keywords if necessary
-      // NOW() -> datetime('now'), ILIKE -> LIKE
       sqliteSql = sqliteSql.replace(/\bILIKE\b/gi, 'LIKE');
       sqliteSql = sqliteSql.replace(/\bNOW\(\)/gi, "datetime('now')");
       sqliteSql = sqliteSql.replace(/\bCURRENT_TIMESTAMP\b/gi, "datetime('now')");

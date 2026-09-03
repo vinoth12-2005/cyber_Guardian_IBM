@@ -21,6 +21,7 @@ import { LearningPathsView } from '../courses/LearningPathsView';
 import { SkillsExplorerView } from '../courses/SkillsExplorerView';
 import { RecommendationsView } from '../courses/RecommendationsView';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 import {
   BookOpen,
   Trophy,
@@ -30,12 +31,17 @@ import {
   Compass,
   Zap,
   Target,
+  Shield,
+  PlusCircle,
 } from 'lucide-react';
 
 type TabView = 'paths' | 'catalog' | 'skills' | 'recommended' | 'my-learning' | 'certificates' | 'streaks';
 type ActiveMode = TabView | 'detail' | 'lesson' | 'quiz';
 
 export function TrainingCoursesPage() {
+  const { user: authUser } = useAuth();
+  const canManageCourses = authUser?.role && ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'].includes(authUser.role);
+
   const [courses] = useState<Course[]>(loadCoursesFromStorage);
   const [progress, setProgress] = useState<CourseProgressMap>(() =>
     buildInitialProgress(courses)
@@ -109,7 +115,7 @@ export function TrainingCoursesPage() {
     setMode('quiz');
   };
 
-  const handleQuizPassed = (scorePct: number) => {
+  const handleQuizPassed = (scorePct: number, _integrityMetrics?: any) => {
     if (!activeCourse) return;
     const credId = `CG-CERT-${activeCourse.id.toUpperCase()}-${Math.floor(
       10000 + Math.random() * 90000
@@ -175,8 +181,20 @@ export function TrainingCoursesPage() {
           })}
         </div>
 
-        {/* Streak & XP Badges */}
+        {/* Streak, XP Badges & Admin Authoring Action */}
         <div className="flex items-center gap-3 shrink-0">
+          {canManageCourses && (
+            <a
+              href="http://localhost:5174"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 transition-all border border-indigo-400/40"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>+ Author Course</span>
+            </a>
+          )}
+
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold shadow-sm">
             <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
             <span>{streak.current} Day Streak</span>
@@ -188,6 +206,30 @@ export function TrainingCoursesPage() {
           </div>
         </div>
       </div>
+
+      {/* Course Administrator Banner */}
+      {canManageCourses && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-200">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300">
+              <Shield className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div>
+              <span className="font-bold text-white">Course Administrator Privileges Active</span>
+              <p className="text-[11px] text-indigo-300/80">You can create courses, structure modules, and publish certification quizzes.</p>
+            </div>
+          </div>
+          <a
+            href="http://localhost:5174"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-xs font-semibold text-indigo-200 border border-indigo-500/30 transition-colors"
+          >
+            <span>Open Admin Course Studio</span>
+            <span>→</span>
+          </a>
+        </div>
+      )}
 
       {/* Main View Container */}
       <div className="flex-1 w-full">

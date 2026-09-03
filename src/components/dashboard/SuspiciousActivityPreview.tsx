@@ -55,34 +55,37 @@ export const SuspiciousActivityPreview: React.FC<SuspiciousActivityPreviewProps>
 
       {/* Incidents */}
       <div className="space-y-2">
-        {preview.map((item) => {
-          const rs = riskStyle(item.riskLevel);
-          return (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-150"
-              style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)' }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-medium)')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-default)')}
-              onClick={() => onSelectActivity(item)}
-            >
-              <span
-                className="badge flex-shrink-0"
-                style={{ background: rs.bg, color: rs.color, borderColor: rs.border, fontSize: '9px' }}
+        {preview.length === 0 ? (
+          <div className="py-8 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+            No suspicious activities or active threats detected.
+          </div>
+        ) : (
+          preview.map((item) => {
+            const rs = riskStyle(item.riskLevel);
+            return (
+              <div
+                key={item.id}
+                className="p-3 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-colors"
+                style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)' }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-medium)')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-default)')}
+                onClick={() => onSelectActivity(item)}
               >
-                {item.riskLevel.toUpperCase()}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-medium leading-tight" style={{ color: 'var(--text-primary)' }}>{item.category}</p>
-                <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{item.target}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="badge text-[10px]" style={{ background: rs.bg, color: rs.color, borderColor: rs.border }}>
+                      {item.riskLevel.toUpperCase()}
+                    </span>
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{item.date}</span>
+                  </div>
+                  <p className="text-[12px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{item.category}</p>
+                  <p className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{item.target}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
               </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{item.date}</span>
-                <ChevronRight className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

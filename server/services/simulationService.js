@@ -242,6 +242,97 @@ class SimulationService {
     }));
   }
 
+  /**
+   * Create a new simulation scenario (Admin)
+   */
+  async createSimulation(simData) {
+    const id = simData.id || `SE-${String(Math.floor(Math.random() * 900) + 100).padStart(3, '0')}`;
+    const countRes = await db.query('SELECT COUNT(*) as count FROM simulations');
+    const numericId = simData.numericId || (parseInt(countRes.rows[0]?.count || 0, 10) + 1);
+    const now = new Date().toISOString();
+
+    await db.query(
+      `INSERT INTO simulations (id, numeric_id, title, category, difficulty, duration, environment, xp, icon, goal, summary, brand, learning_objectives, hints, learning_cards, debrief, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+      [
+        id,
+        numericId,
+        simData.title,
+        simData.category || 'Phishing',
+        simData.difficulty || 'Beginner',
+        simData.duration || 10,
+        simData.environment || 'email',
+        simData.xp || 100,
+        simData.icon || 'mail',
+        simData.goal || '',
+        simData.summary || '',
+        simData.brand || '',
+        JSON.stringify(simData.learningObjectives || []),
+        JSON.stringify(simData.hints || []),
+        JSON.stringify(simData.learningCards || []),
+        JSON.stringify(simData.debrief || {}),
+        now,
+      ]
+    );
+
+    return await this.getSimulationById(id);
+  }
+
+  /**
+   * Update an existing simulation scenario (Admin)
+   */
+  async updateSimulation(id, simData) {
+    const existing = await this.getSimulationById(id);
+    if (!existing) return null;
+
+    await db.query(
+      `UPDATE simulations SET
+         title = COALESCE($1, title),
+         category = COALESCE($2, category),
+         difficulty = COALESCE($3, difficulty),
+         duration = COALESCE($4, duration),
+         environment = COALESCE($5, environment),
+         xp = COALESCE($6, xp),
+         icon = COALESCE($7, icon),
+         goal = COALESCE($8, goal),
+         summary = COALESCE($9, summary),
+         brand = COALESCE($10, brand),
+         learning_objectives = COALESCE($11, learning_objectives),
+         hints = COALESCE($12, hints),
+         learning_cards = COALESCE($13, learning_cards),
+         debrief = COALESCE($14, debrief)
+       WHERE id = $15`,
+      [
+        simData.title ?? null,
+        simData.category ?? null,
+        simData.difficulty ?? null,
+        simData.duration ?? null,
+        simData.environment ?? null,
+        simData.xp ?? null,
+        simData.icon ?? null,
+        simData.goal ?? null,
+        simData.summary ?? null,
+        simData.brand ?? null,
+        simData.learningObjectives ? JSON.stringify(simData.learningObjectives) : null,
+        simData.hints ? JSON.stringify(simData.hints) : null,
+        simData.learningCards ? JSON.stringify(simData.learningCards) : null,
+        simData.debrief ? JSON.stringify(simData.debrief) : null,
+        id,
+      ]
+    );
+
+    return await this.getSimulationById(id);
+  }
+
+  /**
+   * Delete a simulation scenario (Admin)
+   */
+  async deleteSimulation(id) {
+    await db.query('DELETE FROM simulation_attempts WHERE simulation_id = $1', [id]);
+    const res = await db.query('DELETE FROM simulations WHERE id = $1', [id]);
+    return res.rowCount > 0;
+  }
+
   _formatSimulation(row) {
     return {
       id: row.id,

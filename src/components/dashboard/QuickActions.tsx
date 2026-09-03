@@ -45,7 +45,11 @@ const actions: ActionItem[] = [
   },
 ];
 
-export const QuickActions: React.FC = () => {
+interface QuickActionsProps {
+  onSelectAction?: (actionId: string) => void;
+}
+
+export const QuickActions: React.FC<QuickActionsProps> = ({ onSelectAction }) => {
   return (
     <div className="glass-card rounded-2xl p-5">
       {/* Header */}
@@ -61,7 +65,8 @@ export const QuickActions: React.FC = () => {
         {actions.map((action) => (
           <button
             key={action.id}
-            className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all duration-200 group"
+            onClick={() => onSelectAction?.(action.id)}
+            className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all duration-200 group cursor-pointer"
             style={{
               background: 'var(--surface-1)',
               border: '1px solid var(--border-default)',

@@ -12,7 +12,7 @@ The CyberGuardian AI platform utilizes a **single unified backend** that brings 
 * **Unified Single Backend**: One Express backend service (`server/server.js`) on port `5000` serves all API needs (Learning, Simulations, Certifications, FlotBot EDR, Admin, Analytics).
 * **Single Authentication Flow**: Preserves Firebase Google OAuth & Email authentication on the frontend and cryptographically verifies Firebase ID Tokens on the backend.
 * **Unified Relational Database**: Supports **PostgreSQL** in production with an automatic zero-config **SQLite WAL** fallback (`FlotBot/data/cyberguardian_unified.db`).
-* **Role-Based Access Control (RBAC)**: 10 granular administrative and student roles with strict server-side middleware enforcement.
+* **Role-Based Access Control (RBAC)**: 10 granular administrative and employee roles with strict server-side middleware enforcement.
 * **Non-Invasive Privacy Policy**: User security behavior analytics are strictly computed from application-specific security events and alert interactions.
 
 ```
@@ -133,7 +133,7 @@ Stores all platform user accounts, mapped to Firebase Authentication.
 | `name` | `VARCHAR(255)` | `NOT NULL` | Display name |
 | `email` | `VARCHAR(255)` | `UNIQUE, NOT NULL` | User email address |
 | `profile_picture` | `TEXT` | `NULL` | Avatar URL or base64 image data |
-| `role` | `VARCHAR(64)` | `NOT NULL, DEFAULT 'STUDENT'` | Assigned authorization role |
+| `role` | `VARCHAR(64)` | `NOT NULL, DEFAULT 'EMPLOYEE'` | Assigned authorization role |
 | `status` | `VARCHAR(32)` | `NOT NULL, DEFAULT 'ACTIVE'` | Account status: `ACTIVE`, `SUSPENDED`, `INACTIVE` |
 | `bio` | `TEXT` | `NULL` | User biography description |
 | `organization` | `VARCHAR(255)` | `NULL` | User affiliation / academy name |
@@ -152,7 +152,7 @@ Defines available system roles and their permission scopes.
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | `VARCHAR(64)` | `PRIMARY KEY` | Role ID (`role_super_admin`, etc.) |
-| `name` | `VARCHAR(128)` | `UNIQUE, NOT NULL` | Role name (`SUPER_ADMIN`, `STUDENT`, etc.) |
+| `name` | `VARCHAR(128)` | `UNIQUE, NOT NULL` | Role name (`SUPER_ADMIN`, `EMPLOYEE`, etc.) |
 | `description` | `TEXT` | `NULL` | Role purpose and authority description |
 | `permissions` | `TEXT` | `NOT NULL` | JSON array of assigned permission wildcard strings |
 
@@ -484,7 +484,7 @@ Unified immutable audit trail for administrative operations.
 | **`FLOTBOT_SECURITY_ADMIN`**| Complete EDR management: threat rules, IOC repository, security alerts, and system sensor configs (`flotbot:*`, `security:*`, `rules:*`, `iocs:*`). |
 | **`SECURITY_ANALYST`** | Alert inspection, AI explanation requests, IOC search/add, and alert acknowledgment (`flotbot:read`, `flotbot:ack`, `iocs:read`, `iocs:add`). |
 | **`ANALYST`** | Read-only reporting access across platform analytics and security metrics (`analytics:*`, `reports:*`). |
-| **`STUDENT`** | Course learning, simulation labs, quiz taking, certificate earning, personal security behaviour metrics (`courses:read`, `courses:progress`, `simulations:play`, `profile:manage`). |
+| **`EMPLOYEE`** | Course learning, simulation labs, quiz taking, certificate earning, personal security behaviour metrics (`courses:read`, `courses:progress`, `simulations:play`, `profile:manage`). |
 
 ---
 
@@ -573,4 +573,28 @@ const explanation = await api.flotbot.explainAlert('alert-sec-101');
 ```
 
 ---
+
+## 8. Latest Backend Updates & Admin Extensibility
+
+### 8.1. Full 53 Course & 47 Simulation Scenario Database Synchronization
+* **Automated Seeding via Node VM (`server/db/init.js`)**: Evaluates canonical frontend catalog structures in `src/data/coursesData.ts` and `src/data/simulation/se-scenarios.ts` safely into memory and idempotently registers all courses, modules, reading lessons, certification exam quizzes, and simulation scenarios into the PostgreSQL/SQLite schema.
+* **Guaranteed Minimum Thresholds**: Automatically checks if `courses >= 50` and `simulations >= 40`. Any missing records are automatically restored on server startup.
+
+### 8.2. Admin Course & Simulation Mutation Endpoints
+* `POST /api/admin/courses` — Create new course with nested modules, lessons, and quizzes.
+* `PUT /api/admin/courses/:id` — Update/customize existing course metadata, modules, and quizzes.
+* `DELETE /api/admin/courses/:id` — Cascade delete course, modules, lessons, and progress.
+* `POST /api/admin/simulations` — Publish new interactive simulation scenario.
+* `PUT /api/admin/simulations/:id` — Update/customize scenario goal, narrative, hints, and XP.
+* `DELETE /api/admin/simulations/:id` — Delete simulation scenario and associated attempts.
+
+### 8.4. PostgreSQL Exclusive Architecture & Live Operations Center Telemetry
+* **Direct PostgreSQL Driver (`server/db/index.js`)**: All database queries execute directly via the `pg.Pool` connection pool (`localhost:5432/cyberguardian`). Legacy SQLite databases have been removed.
+* **Unified Executive Operations Center (`AdminDashboardView.tsx`)**: The Admin Dashboard now queries and displays interactive previews of the **53 Enterprise Courses** and **47 Attack & Defense Labs** alongside live registered workforce users and active FlotBot EDR threat alerts.
+* **10-Second Telemetry Heartbeat**: Automatic background polling keeps all metrics, registered workforce accounts, and threat detections synchronized in real time.
+
+---
 *Documentation generated for CyberGuardian AI Unified Backend.*
+
+
+

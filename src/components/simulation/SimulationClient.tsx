@@ -12,7 +12,7 @@ import {
   Shield, AlertTriangle, Clock, ChevronLeft, RotateCcw,
   Eye, CheckCircle2, XCircle, Activity, Skull, Target,
   Lightbulb, BookOpen, TrendingUp, Zap, Terminal,
-  HelpCircle, Flag, Award, PlayCircle, Info, ExternalLink
+  HelpCircle, Flag, Award, PlayCircle, Info, ExternalLink, LogOut
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { EmailClient } from '@/components/simulation/EmailClient';
@@ -1442,8 +1442,8 @@ export default function SimulationClient({ sim }: { sim: SESimulation }) {
             ))}
           </div>
           <div className="flex items-center justify-center gap-3">
-            <Link to="/simulation" className="px-4 py-2.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 transition text-sm flex items-center gap-1.5">
-              <ChevronLeft className="w-4 h-4" /> Back
+            <Link to="/simulation" className="px-4 py-2.5 rounded-lg border border-rose-800/60 bg-rose-950/40 text-rose-300 hover:bg-rose-900/60 hover:text-white transition text-sm font-semibold flex items-center gap-1.5">
+              <LogOut className="w-4 h-4" /> Exit to Lab Catalog
             </Link>
             <button
               onClick={() => setShowKnowMore(true)}

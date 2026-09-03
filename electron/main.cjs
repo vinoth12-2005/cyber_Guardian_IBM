@@ -1,7 +1,10 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const isDev = !app.isPackaged;
+
+// Standard modern Chrome User-Agent to prevent Google OAuth 403 disallowed_useragent
+const CHROME_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 // Load FlotBot backend modules
 let flotbotBackend = null;
@@ -42,12 +45,49 @@ function createMainWindow() {
     minWidth: 900,
     minHeight: 600,
     title: 'CyberGuardian AI',
+    autoHideMenuBar: true,
     show: false, // Hidden until ready-to-show
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
     },
+  });
+
+  mainWindow.setMenuBarVisibility(false);
+
+  // Apply Chrome User-Agent so Google OAuth popup is permitted
+  mainWindow.webContents.setUserAgent(CHROME_USER_AGENT);
+
+  // Handle Google / Firebase OAuth popups
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // If it's Google OAuth, Firebase Auth, or social login, allow popup window
+    if (
+      url.includes('accounts.google.com') ||
+      url.includes('firebaseapp.com') ||
+      url.includes('googleapis.com') ||
+      url.includes('github.com/login') ||
+      url.includes('login.microsoftonline.com')
+    ) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 520,
+          height: 680,
+          autoHideMenuBar: true,
+          title: 'Sign In with Provider',
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            userAgent: CHROME_USER_AGENT,
+          },
+        },
+      };
+    }
+
+    // Otherwise, open external links in system browser
+    shell.openExternal(url);
+    return { action: 'deny' };
   });
 
   const startUrl = isDev && process.env.VITE_DEV === 'true'

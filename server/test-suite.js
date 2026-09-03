@@ -80,10 +80,10 @@ async function runTests() {
 
     // 2. Authentication & User Sync
     console.log('\n--- 2. Authentication & Token Verification ---');
-    const studentToken = createMockFirebaseToken({
-      uid: 'test_student_123',
-      email: 'student@example.com',
-      name: 'Alice Student',
+    const employeeToken = createMockFirebaseToken({
+      uid: 'test_employee_123',
+      email: 'employee@ibm.enterprise.local',
+      name: 'Alice Employee',
     });
 
     const adminToken = createMockFirebaseToken({
@@ -96,12 +96,12 @@ async function runTests() {
     const unauthRes = await makeRequest(PORT, '/api/auth/me');
     assert(unauthRes.status === 401, 'Protected route returns 401 without token');
 
-    // Test sync endpoint for student
-    const syncStudent = await makeRequest(PORT, '/api/auth/sync', 'POST', {}, {
-      Authorization: `Bearer ${studentToken}`,
+    // Test sync endpoint for employee
+    const syncEmployee = await makeRequest(PORT, '/api/auth/sync', 'POST', {}, {
+      Authorization: `Bearer ${employeeToken}`,
     });
-    assert(syncStudent.status === 200 && syncStudent.data.data.user.email === 'student@example.com', 'Student sync creates database user');
-    const studentUserId = syncStudent.data.data.user.id;
+    assert(syncEmployee.status === 200 && syncEmployee.data.data.user.email === 'employee@ibm.enterprise.local', 'Employee sync creates database user');
+    const employeeUserId = syncEmployee.data.data.user.id;
 
     // Test sync endpoint for admin
     const syncAdmin = await makeRequest(PORT, '/api/auth/sync', 'POST', {}, {
@@ -113,15 +113,15 @@ async function runTests() {
     // 3. User Profile & Dashboard
     console.log('\n--- 3. User Profile & Dashboard ---');
     const userMe = await makeRequest(PORT, '/api/users/me', 'GET', null, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
-    assert(userMe.status === 200 && userMe.data.data.profile.id === studentUserId, 'GET /api/users/me returns student profile and stats');
+    assert(userMe.status === 200 && userMe.data.data.profile.id === employeeUserId, 'GET /api/users/me returns employee profile and stats');
 
     const updateProfile = await makeRequest(PORT, '/api/users/me', 'PUT', {
       name: 'Alice Updated',
-      bio: 'Cybersecurity learner and bug bounty hunter.',
+      bio: 'Enterprise security champion.',
     }, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(updateProfile.status === 200 && updateProfile.data.data.name === 'Alice Updated', 'PUT /api/users/me updates profile info');
 
@@ -135,7 +135,7 @@ async function runTests() {
     assert(courseDetail.status === 200 && courseDetail.data.data.id === firstCourseId, `GET /api/courses/${firstCourseId} returns course with modules`);
 
     const enrollRes = await makeRequest(PORT, `/api/courses/${firstCourseId}/enroll`, 'POST', {}, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(enrollRes.status === 200 && enrollRes.data.success === true, 'POST /api/courses/:id/enroll enrolls user');
 
@@ -143,7 +143,7 @@ async function runTests() {
       lessonKey: `${firstCourseId}-mod-1-les-1`,
       timeSpentMinutes: 10,
     }, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(progRes.status === 200 && progRes.data.success === true, 'POST /api/courses/:id/progress records lesson completion & XP');
 
@@ -152,7 +152,7 @@ async function runTests() {
     const quizRes = await makeRequest(PORT, `/api/courses/${firstCourseId}/quiz`, 'POST', {
       answers: quizAnswers,
     }, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(quizRes.status === 200 && quizRes.data.data.passed === true, 'POST /api/courses/:id/quiz grades answers and issues certificate');
     const issuedCredId = quizRes.data.data.certificate?.credId;
@@ -160,7 +160,7 @@ async function runTests() {
     // 5. Certifications
     console.log('\n--- 5. Certifications ---');
     const myCerts = await makeRequest(PORT, '/api/certifications/my', 'GET', null, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(myCerts.status === 200 && myCerts.data.data.length > 0, 'GET /api/certifications/my returns earned certificate');
 
@@ -176,7 +176,7 @@ async function runTests() {
     const firstSimId = simList.data.data[0].id;
 
     const startSim = await makeRequest(PORT, `/api/simulations/${firstSimId}/start`, 'POST', {}, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(startSim.status === 200 && startSim.data.data.attemptId, 'POST /api/simulations/:id/start creates attempt session');
     const attemptId = startSim.data.data.attemptId;
@@ -186,7 +186,7 @@ async function runTests() {
       action: 'INSPECTED_HEADER',
       riskDelta: -10,
     }, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(recordEvent.status === 200 && recordEvent.data.data.riskScore !== undefined, 'POST /api/simulations/:id/event records interaction');
 
@@ -196,14 +196,14 @@ async function runTests() {
       outcome: 'safe',
       hintsUsed: 0,
     }, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(completeSim.status === 200 && completeSim.data.data.stars === 3, 'POST /api/simulations/:id/complete finalizes score & awards XP');
 
     // 7. Activity Timeline
     console.log('\n--- 7. User Activity Timeline ---');
     const activityRes = await makeRequest(PORT, '/api/activity', 'GET', null, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(activityRes.status === 200 && activityRes.data.data.length >= 3, `GET /api/activity returns real timeline events (${activityRes.data.data.length} events)`);
 
@@ -218,19 +218,19 @@ async function runTests() {
 
     // Acknowledge alert
     const ackRes = await makeRequest(PORT, `/api/flotbot/alerts/${firstAlertId}/acknowledge`, 'POST', {}, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(ackRes.status === 200 && ackRes.data.data.acknowledged === true, 'POST /api/flotbot/alerts/:id/acknowledge updates status');
 
     // AI explanation
     const explainRes = await makeRequest(PORT, '/api/flotbot/ai/explain', 'POST', { alertId: firstAlertId }, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(explainRes.status === 200 && explainRes.data.data.analysis, 'POST /api/flotbot/ai/explain generates security analysis');
 
     // User Security Behaviour
     const behaviourRes = await makeRequest(PORT, '/api/flotbot/my-security-behaviour', 'GET', null, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
     assert(behaviourRes.status === 200 && behaviourRes.data.data.metrics.securityPostureScore > 0, 'GET /api/flotbot/my-security-behaviour computes posture from real DB records');
 
@@ -261,9 +261,9 @@ async function runTests() {
     console.log('\n--- 10. RBAC Authorization Checks ---');
     // Student attempting admin endpoint -> must get 403 Forbidden
     const forbiddenRes = await makeRequest(PORT, '/api/admin/users', 'GET', null, {
-      Authorization: `Bearer ${studentToken}`,
+      Authorization: `Bearer ${employeeToken}`,
     });
-    assert(forbiddenRes.status === 403, 'Student accessing /api/admin/users is correctly rejected with 403 FORBIDDEN');
+    assert(forbiddenRes.status === 403, 'Employee accessing /api/admin/users is correctly rejected with 403 FORBIDDEN');
 
     // Admin accessing admin endpoint -> must get 200 OK
     const adminUsers = await makeRequest(PORT, '/api/admin/users', 'GET', null, {
@@ -272,12 +272,12 @@ async function runTests() {
     assert(adminUsers.status === 200 && adminUsers.data.data.users.length >= 2, 'Admin accessing /api/admin/users successfully gets user list');
 
     // Update role (Admin action creates audit log)
-    const updateRoleRes = await makeRequest(PORT, `/api/admin/users/${studentUserId}/role`, 'PUT', {
+    const updateRoleRes = await makeRequest(PORT, `/api/admin/users/${employeeUserId}/role`, 'PUT', {
       role: 'SECURITY_ANALYST',
     }, {
       Authorization: `Bearer ${adminToken}`,
     });
-    assert(updateRoleRes.status === 200 && updateRoleRes.data.data.role === 'SECURITY_ANALYST', 'Admin updates student role to SECURITY_ANALYST');
+    assert(updateRoleRes.status === 200 && updateRoleRes.data.data.role === 'SECURITY_ANALYST', 'Admin updates employee role to SECURITY_ANALYST');
 
     // 11. Admin Audit Logs
     console.log('\n--- 11. Admin Audit Logs ---');
