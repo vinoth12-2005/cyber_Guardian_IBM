@@ -6,6 +6,7 @@ dist/
 build/
 
 # Local database runtime files
+*.db
 *.db-wal
 *.db-shm
 *.db-journal

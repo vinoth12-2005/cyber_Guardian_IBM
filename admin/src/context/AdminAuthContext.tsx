@@ -25,13 +25,13 @@ const AdminAuthContext = createContext<AdminAuthContextType | null>(null);
 export const ROLE_DEFAULT_TAB: { [key: string]: string } = {
   SUPER_ADMIN: 'dashboard',
   PLATFORM_ADMIN: 'dashboard',
-  USER_ADMIN: 'users',
-  COURSE_ADMIN: 'courses',
-  SIMULATION_ADMIN: 'simulations',
-  CERTIFICATION_ADMIN: 'certifications',
-  FLOTBOT_SECURITY_ADMIN: 'flotbot-dashboard',
-  SECURITY_ANALYST: 'flotbot-alerts',
-  ANALYST: 'analytics',
+  USER_ADMIN: 'dashboard',
+  COURSE_ADMIN: 'dashboard',
+  SIMULATION_ADMIN: 'dashboard',
+  CERTIFICATION_ADMIN: 'dashboard',
+  FLOTBOT_SECURITY_ADMIN: 'dashboard',
+  SECURITY_ANALYST: 'dashboard',
+  ANALYST: 'dashboard',
 };
 
 export const TAB_ROLE_PERMISSIONS: { [key: string]: string[] } = {
@@ -75,27 +75,68 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
-    // Attempt to verify existing token if present or initialize dev token
+    // Attempt to verify existing token or URL session parameters from main application
     const checkAuth = async () => {
-      const token = getAdminToken();
+      let activeToken: string | null = null;
+      let urlRole: string | null = null;
+      let urlEmail: string | null = null;
+      let urlName: string | null = null;
+
+      if (typeof window !== 'undefined' && window.location.search) {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const paramToken = urlParams.get('token');
+          urlRole = urlParams.get('role');
+          urlEmail = urlParams.get('email');
+          urlName = urlParams.get('name');
+
+          if (paramToken) {
+            setAdminToken(paramToken);
+            activeToken = paramToken;
+            // Clean up query string without reloading
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (e) {
+          console.warn('[AdminAuth] URL param parse error:', e);
+        }
+      }
+
+      const token = activeToken || getAdminToken();
       if (token) {
         setLoading(true);
         try {
           const res = await adminApi.auth.sync(token);
           if (res.success && res.data?.user) {
+            const syncRole = res.data.user.role || urlRole || 'SUPER_ADMIN';
             setUser({
               id: res.data.user.id,
-              name: res.data.user.name,
-              email: res.data.user.email,
-              role: res.data.user.role || 'SUPER_ADMIN',
+              name: res.data.user.name || urlName || DEFAULT_SUPER_ADMIN.name,
+              email: res.data.user.email || urlEmail || DEFAULT_SUPER_ADMIN.email,
+              role: syncRole,
               avatarUrl: res.data.user.profilePicture || DEFAULT_SUPER_ADMIN.avatarUrl,
               permissions: res.data.permissions || ['*'],
             });
+            setActiveTab('dashboard');
+            setLoading(false);
+            return;
           }
         } catch (e) {
           console.warn('[AdminAuth] Sync error:', e);
         }
         setLoading(false);
+      }
+
+      // If URL had explicit role/email/name but backend sync was offline
+      if (urlRole) {
+        setUser({
+          id: 'usr_sso_' + (urlEmail ? urlEmail.replace(/[^a-zA-Z0-9]/g, '_') : 'admin'),
+          name: urlName || 'System Administrator',
+          email: urlEmail || 'admin@cyberguardian.local',
+          role: urlRole,
+          avatarUrl: DEFAULT_SUPER_ADMIN.avatarUrl,
+          permissions: urlRole === 'SUPER_ADMIN' ? ['*'] : [urlRole.toLowerCase() + ':*'],
+        });
+        setActiveTab('dashboard');
       }
     };
     checkAuth();
@@ -118,12 +159,8 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       permissions,
     });
 
-    // Check if current tab is authorized for the new role
-    const allowedRolesForCurrentTab = TAB_ROLE_PERMISSIONS[activeTab] || [];
-    if (newRole !== 'SUPER_ADMIN' && !allowedRolesForCurrentTab.includes(newRole)) {
-      const fallbackTab = ROLE_DEFAULT_TAB[newRole] || 'dashboard';
-      setActiveTab(fallbackTab);
-    }
+    // Always navigate to the role's tailored dashboard view
+    setActiveTab('dashboard');
 
     try {
       await adminApi.auth.sync(newToken);

@@ -151,10 +151,12 @@ export const api = {
       apiRequest('/api/flotbot/analyze-file', { method: 'POST', body: JSON.stringify(params) }),
     recordDecision: (alertId: string, action: 'safe_exit' | 'override_proceed', reason?: string) =>
       apiRequest(`/api/flotbot/alerts/${alertId}/decision`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+    resolveAlert: (alertId: string, resolutionNotes: string) =>
+      apiRequest(`/api/flotbot/alerts/${alertId}/resolve`, { method: 'POST', body: JSON.stringify({ resolutionNotes }) }),
     getMySecurityBehaviour: () => apiRequest('/api/flotbot/my-security-behaviour'),
   },
 
-  // Admin
+  // Admin Operations
   admin: {
     getStats: () => apiRequest('/api/admin/stats'),
     listUsers: (params?: any) => {
@@ -163,6 +165,16 @@ export const api = {
     },
     updateUserRole: (userId: string, role: string) =>
       apiRequest(`/api/admin/users/${userId}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
+    updateUserStatus: (userId: string, status: string) =>
+      apiRequest(`/api/admin/users/${userId}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+    publishCourse: (courseId: string) =>
+      apiRequest(`/api/admin/courses/${courseId}/publish`, { method: 'PUT' }),
+    listCertificates: (params?: any) => {
+      const qs = new URLSearchParams(params || {}).toString();
+      return apiRequest(`/api/certifications${qs ? `?${qs}` : ''}`);
+    },
+    revokeCertificate: (credId: string, reason: string) =>
+      apiRequest(`/api/admin/certifications/${credId}/revoke`, { method: 'POST', body: JSON.stringify({ reason }) }),
     getAuditLogs: (params?: any) => {
       const qs = new URLSearchParams(params || {}).toString();
       return apiRequest(`/api/admin/audit-logs${qs ? `?${qs}` : ''}`);

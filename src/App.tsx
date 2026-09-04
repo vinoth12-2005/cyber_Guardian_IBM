@@ -18,6 +18,7 @@ import { WelcomeBanner } from './components/dashboard/WelcomeBanner';
 import { CyberAwarenessScore } from './components/dashboard/CyberAwarenessScore';
 import { QuickStats } from './components/dashboard/QuickStats';
 import { QuickActions } from './components/dashboard/QuickActions';
+import { RoleAdminDashboard } from './components/dashboard/RoleAdminDashboard';
 
 // Overview preview components
 import { AnalysisHistoryPreview } from './components/dashboard/AnalysisHistoryPreview';
@@ -396,10 +397,25 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
     setActiveTab('ai-assistant');
   };
 
+  const isAdminRole = Boolean(
+    authUser?.role &&
+    [
+      'SUPER_ADMIN',
+      'PLATFORM_ADMIN',
+      'COURSE_ADMIN',
+      'USER_ADMIN',
+      'SIMULATION_ADMIN',
+      'CERTIFICATION_ADMIN',
+      'FLOTBOT_SECURITY_ADMIN',
+      'SECURITY_ANALYST',
+      'ANALYST',
+    ].includes(authUser.role)
+  );
+
   const pageTitle = PAGE_TITLES[activeTab] ?? activeTab;
   const isTrainingPage = activeTab === 'courses-training' || activeTab === 'training' || activeTab === 'courses';
   const isSimulationPage = activeTab === 'simulation' || activeTab === 'simulation-progress' || activeTab === 'achievements';
-  const hidePageTitle = isTrainingPage || isSimulationPage;
+  const hidePageTitle = isTrainingPage || isSimulationPage || (activeTab === 'dashboard' && isAdminRole);
 
   return (
     <div
@@ -442,62 +458,76 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
 
           {/* ══════════════════════════════════════════
               OVERVIEW / DASHBOARD
-              Only what the user needs at a glance.
+              Role-tailored Admin Command Center for Admins,
+              or Awareness Score Hub for Employees/Students.
           ══════════════════════════════════════════ */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-4">
+            isAdminRole ? (
+              <RoleAdminDashboard
+                user={currentUserProfile}
+                quickStats={quickStats}
+                awarenessScore={awarenessScore}
+                suspiciousActivity={suspiciousActivity}
+                analysisHistory={analysisHistory}
+                simulationHistory={simulationHistory}
+                onNavigateTab={(tabId) => setActiveTab(tabId)}
+                onRefreshData={loadDatabaseData}
+              />
+            ) : (
+              <div className="space-y-4">
 
-              {/* Row 1 — Welcome + Shield status */}
-              <div className="animate-fade-in-up">
-                <WelcomeBanner user={currentUserProfile} />
-              </div>
-
-              {/* Row 2 — 6 top stat cards */}
-              <div className="animate-fade-in-up stagger">
-                <QuickStats stats={quickStats} />
-              </div>
-
-              {/* Row 3 — Awareness Score · Quick Actions */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 animate-fade-in-up">
-                <div className="lg:col-span-6">
-                  <CyberAwarenessScore scoreData={awarenessScore} />
+                {/* Row 1 — Welcome + Shield status */}
+                <div className="animate-fade-in-up">
+                  <WelcomeBanner user={currentUserProfile} />
                 </div>
-                <div className="lg:col-span-6 flex flex-col gap-4">
-                  <QuickActions
-                    onSelectAction={(actionId) => {
-                      if (actionId === 'url' || actionId === 'email' || actionId === 'qr') {
-                        setActiveTab('ai-assistant');
-                      } else if (actionId === 'sim') {
-                        setActiveTab('simulation');
-                      }
-                    }}
+
+                {/* Row 2 — 6 top stat cards */}
+                <div className="animate-fade-in-up stagger">
+                  <QuickStats stats={quickStats} />
+                </div>
+
+                {/* Row 3 — Awareness Score · Quick Actions */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 animate-fade-in-up">
+                  <div className="lg:col-span-6">
+                    <CyberAwarenessScore scoreData={awarenessScore} />
+                  </div>
+                  <div className="lg:col-span-6 flex flex-col gap-4">
+                    <QuickActions
+                      onSelectAction={(actionId) => {
+                        if (actionId === 'url' || actionId === 'email' || actionId === 'qr') {
+                          setActiveTab('ai-assistant');
+                        } else if (actionId === 'sim') {
+                          setActiveTab('simulation');
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 4 — Preview: Analysis History + Suspicious Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in-up">
+                  <AnalysisHistoryPreview
+                    logs={analysisHistory}
+                    onSelectLog={(log) => setSelectedItem(log)}
+                    onViewAll={() => setActiveTab('history')}
+                  />
+                  <SuspiciousActivityPreview
+                    activities={suspiciousActivity}
+                    onSelectActivity={(act) => setSelectedItem(act)}
+                    onViewAll={() => setActiveTab('threats')}
                   />
                 </div>
-              </div>
 
-              {/* Row 4 — Preview: Analysis History + Suspicious Activity */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-fade-in-up">
-                <AnalysisHistoryPreview
-                  logs={analysisHistory}
-                  onSelectLog={(log) => setSelectedItem(log)}
-                  onViewAll={() => setActiveTab('history')}
-                />
-                <SuspiciousActivityPreview
-                  activities={suspiciousActivity}
-                  onSelectActivity={(act) => setSelectedItem(act)}
-                  onViewAll={() => setActiveTab('threats')}
-                />
-              </div>
+                {/* Row 5 — Simulation preview */}
+                <div className="grid grid-cols-1 gap-4 animate-fade-in-up">
+                  <SimulationHistoryPreview
+                    simulations={simulationHistory}
+                    onViewAll={() => setActiveTab('simulation')}
+                  />
+                </div>
 
-              {/* Row 5 — Simulation preview */}
-              <div className="grid grid-cols-1 gap-4 animate-fade-in-up">
-                <SimulationHistoryPreview
-                  simulations={simulationHistory}
-                  onViewAll={() => setActiveTab('simulation')}
-                />
               </div>
-
-            </div>
+            )
           )}
 
           {/* ══════════════════════════════════════════
