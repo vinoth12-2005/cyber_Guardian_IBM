@@ -94,7 +94,7 @@ const ADMIN_NAV_SECTIONS: NavSectionDef[] = [
   {
     label: 'Learner Preview',
     items: [
-      { id: 'courses-training', label: 'Student Course View', icon: GraduationCap, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'] },
+      { id: 'courses-training', label: 'Published Course View', icon: GraduationCap, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'] },
       { id: 'simulation', label: 'Student Lab View', icon: FlaskConical, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'SIMULATION_ADMIN'] },
       { id: 'ai-assistant', label: 'AI Security Assistant', icon: Sparkles, roles: ['SUPER_ADMIN', 'SECURITY_ANALYST', 'FLOTBOT_SECURITY_ADMIN'] },
     ],
@@ -128,26 +128,26 @@ const navGroups: NavSectionDef[] = [
   {
     label: 'Protect',
     items: [
-      { id: 'simulation',   label: 'Simulation Lab', icon: FlaskConical },
-      { id: 'ai-assistant', label: 'AI Assistant',   icon: Bot },
+      { id: 'simulation', label: 'Simulation Lab', icon: FlaskConical },
+      { id: 'ai-assistant', label: 'AI Assistant', icon: Bot },
     ],
   },
   {
     label: 'Analytics',
     items: [
-      { id: 'reports',      label: 'Reports',              icon: BarChart3 },
-      { id: 'history',      label: 'Analysis History',     icon: History },
-      { id: 'threats',      label: 'Suspicious Activity',  icon: ShieldAlert },
-      { id: 'trends',       label: 'Attack Trends',        icon: TrendingUp },
-      { id: 'activity',     label: 'Recent Activity',      icon: Activity },
-      { id: 'ai-insight',   label: 'AI Security Insight',  icon: Sparkles },
+      { id: 'reports', label: 'Reports', icon: BarChart3 },
+      { id: 'history', label: 'Analysis History', icon: History },
+      { id: 'threats', label: 'Suspicious Activity', icon: ShieldAlert },
+      { id: 'trends', label: 'Attack Trends', icon: TrendingUp },
+      { id: 'activity', label: 'Recent Activity', icon: Activity },
+      { id: 'ai-insight', label: 'AI Security Insight', icon: Sparkles },
     ],
   },
   {
     label: 'System',
     items: [
       { id: 'notifications', label: 'Notifications', icon: Bell },
-      { id: 'settings',      label: 'Settings',      icon: Settings },
+      { id: 'settings', label: 'Settings', icon: Settings },
     ],
   },
 ];
@@ -194,9 +194,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-50 w-60 flex flex-col transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`fixed top-0 left-0 bottom-0 z-50 w-60 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
         style={{
           background: 'var(--bg-card)',
           backdropFilter: 'var(--blur-heavy)',
@@ -248,11 +247,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {(() => {
             const activeSections = isAdmin
               ? ADMIN_NAV_SECTIONS.map((sec) => ({
-                  label: sec.label,
-                  items: sec.items.filter(
-                    (item) => !item.roles || userRole === 'SUPER_ADMIN' || item.roles.includes(userRole)
-                  ),
-                })).filter((sec) => sec.items.length > 0)
+                label: sec.label,
+                items: sec.items.filter(
+                  (item) => !item.roles || userRole === 'SUPER_ADMIN' || item.roles.includes(userRole)
+                ),
+              })).filter((sec) => sec.items.length > 0)
               : navGroups;
 
             return activeSections.map((group) => (

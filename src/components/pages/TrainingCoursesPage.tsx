@@ -167,11 +167,10 @@ export function TrainingCoursesPage() {
               <button
                 key={tab.id}
                 onClick={() => switchTab(tab.id as TabView)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${
-                  isActive
+                className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${isActive
                     ? 'bg-purple-600/15 text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm'
                     : 'hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
-                }`}
+                  }`}
                 style={{ color: isActive ? undefined : 'var(--text-secondary)' }}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -219,15 +218,6 @@ export function TrainingCoursesPage() {
               <p className="text-[11px] text-indigo-300/80">You can create courses, structure modules, and publish certification quizzes.</p>
             </div>
           </div>
-          <a
-            href="http://localhost:5174"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-xs font-semibold text-indigo-200 border border-indigo-500/30 transition-colors"
-          >
-            <span>Open Admin Course Studio</span>
-            <span>→</span>
-          </a>
         </div>
       )}
 
