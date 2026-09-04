@@ -72,6 +72,18 @@ async function startServer(port = config.port) {
     console.log('[Server] Connecting to database and applying schema...');
     await initDatabase();
 
+    // Synchronize Firebase Auth cloud users in background without blocking server listen
+    try {
+      const userService = require('./services/userService');
+      userService.syncWithFirebaseUsers()
+        .then((syncResult) => {
+          if (syncResult && syncResult.synced) {
+            console.log(`[Server] Firebase cloud sync: ${syncResult.total} cloud users checked (${syncResult.imported} imported, ${syncResult.updated} updated)`);
+          }
+        })
+        .catch((syncErr) => console.warn('[Server] Note during background Firebase sync:', syncErr.message));
+    } catch (e) {}
+
     const server = app.listen(port, () => {
       console.log(`====================================================`);
       console.log(`🛡️  CyberGuardian AI & FlotBot Unified Backend API`);

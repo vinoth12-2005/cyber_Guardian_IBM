@@ -32,9 +32,11 @@ const config = {
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
     serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || (
-      fs.existsSync(path.resolve(__dirname, '../../serviceAccountKey.json'))
-        ? path.resolve(__dirname, '../../serviceAccountKey.json')
-        : undefined
+      [
+        path.resolve(__dirname, '../../serviceAccountkey.json'),
+        path.resolve(__dirname, '../../serviceAccountKey.json'),
+        path.resolve(__dirname, '../../service-account.json'),
+      ].find((candidate) => fs.existsSync(candidate)) || undefined
     ),
   },
 

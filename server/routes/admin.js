@@ -115,6 +115,22 @@ router.post('/users', requireRole('SUPER_ADMIN', 'PLATFORM_ADMIN', 'USER_ADMIN')
 });
 
 /**
+ * POST /api/admin/users/sync-firebase
+ * Force immediate cloud synchronization between Firebase Auth and local Database
+ */
+router.post('/users/sync-firebase', requireRole('SUPER_ADMIN', 'PLATFORM_ADMIN', 'USER_ADMIN'), async (req, res, next) => {
+  try {
+    const syncResult = await userService.syncWithFirebaseUsers();
+    res.json({
+      success: true,
+      data: syncResult,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * GET /api/admin/users/:id
  * Get single user details & security posture
  */

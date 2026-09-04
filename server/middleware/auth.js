@@ -71,21 +71,46 @@ async function authenticate(req, res, next) {
     }
 
     if (user) {
-      // Update last_login, avatar, and role if admin role switch occurred
-      const newRole = (decoded.role && isSuperAdmin) ? decoded.role : user.role;
+      // If the user's role in Firebase claims is specified, synchronize it with the local database
+      let effectiveRole = user.role;
+      const cloudRole = decoded.role || (decoded.rawClaims && decoded.rawClaims.role);
+
+      if (cloudRole && cloudRole !== user.role && !isSuperAdmin) {
+        effectiveRole = cloudRole;
+      } else if (isSuperAdmin) {
+        effectiveRole = decoded.role || user.role || 'SUPER_ADMIN';
+      }
+
       const userName = name || user.name;
       await db.query(
         'UPDATE users SET firebase_uid = $1, name = COALESCE($2, name), last_login = $3, profile_picture = COALESCE($4, profile_picture), role = $5, updated_at = $6 WHERE id = $7',
-        [uid, userName, now, picture || null, newRole, now, user.id]
+        [uid, userName, now, picture || null, effectiveRole, now, user.id]
       );
       user.firebase_uid = uid;
       user.name = userName;
       user.last_login = now;
-      user.role = newRole;
+      user.role = effectiveRole;
     } else {
       // Create new user in Database
       const newId = 'usr_' + uid.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6);
-      const initialRole = decoded.role || (isSuperAdmin ? 'SUPER_ADMIN' : 'EMPLOYEE');
+      
+      // Determine initial role: Check token claim, or query Firebase Admin SDK directly
+      let initialRole = decoded.role || (decoded.rawClaims && decoded.rawClaims.role);
+      if (!initialRole && !isSuperAdmin) {
+        try {
+          const { admin } = require('../config/firebaseAdmin');
+          if (admin && admin.apps && admin.apps.length > 0 && uid && !uid.startsWith('usr_manual_')) {
+            const fbUser = await admin.auth().getUser(uid);
+            if (fbUser && fbUser.customClaims && fbUser.customClaims.role) {
+              initialRole = fbUser.customClaims.role;
+            }
+          }
+        } catch (claimFetchErr) {}
+      }
+
+      if (!initialRole) {
+        initialRole = isSuperAdmin ? 'SUPER_ADMIN' : 'EMPLOYEE';
+      }
 
       await db.query(
         `INSERT INTO users (id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at)

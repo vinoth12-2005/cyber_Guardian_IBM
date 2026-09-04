@@ -17,6 +17,30 @@ class UserService {
   }
 
   async createFirebaseUser(email, password, displayName) {
+    try {
+      const { admin } = require('../config/firebaseAdmin');
+      if (admin && admin.apps && admin.apps.length > 0) {
+        try {
+          const userRecord = await admin.auth().createUser({
+            email,
+            password,
+            displayName,
+          });
+          return { uid: userRecord.uid, email: userRecord.email, createdInFirebase: true };
+        } catch (adminErr) {
+          if (adminErr.code === 'auth/email-already-exists') {
+            try {
+              const existing = await admin.auth().getUserByEmail(email);
+              return { uid: existing.uid, email: existing.email, createdInFirebase: false, existsInFirebase: true, note: 'User already exists in Firebase Auth' };
+            } catch (e) {
+              return { email, createdInFirebase: false, existsInFirebase: true, note: 'User already exists in Firebase Auth' };
+            }
+          }
+          console.warn('[Firebase Admin] Note creating user:', adminErr.message);
+        }
+      }
+    } catch (e) {}
+
     const apiKey = process.env.VITE_FIREBASE_API_KEY || 'AIzaSyDjPVMc_frUBiZUFp5kR6emxRlJk53N5TQ';
     try {
       const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`, {
@@ -79,11 +103,31 @@ class UserService {
         firebaseStatus = { created: true, note: 'Account created in Firebase Auth' };
       } else if (fbResult && fbResult.existsInFirebase) {
         firebaseStatus = { created: false, alreadyExisted: true, note: 'User already existed in Firebase Auth' };
+        try {
+          const { admin } = require('../config/firebaseAdmin');
+          if (admin && admin.apps && admin.apps.length > 0) {
+            const existingFb = await admin.auth().getUserByEmail(email);
+            resolvedUid = existingFb.uid;
+          }
+        } catch (e) {}
       } else {
         firebaseStatus = { created: false, error: fbResult?.error || 'Could not provision in Firebase Auth' };
       }
     } else {
       firebaseStatus = { created: true, note: 'Supplied external Firebase UID' };
+    }
+
+    // Set custom user claims in Firebase Auth so role is cloud-synced across all machines
+    if (resolvedUid && !resolvedUid.startsWith('usr_manual_')) {
+      try {
+        const { admin } = require('../config/firebaseAdmin');
+        if (admin && admin.apps && admin.apps.length > 0) {
+          await admin.auth().setCustomUserClaims(resolvedUid, { role });
+          console.log(`[Firebase Auth] Synced custom claims for ${email}: { role: '${role}' }`);
+        }
+      } catch (claimErr) {
+        console.warn(`[Firebase Auth] Could not set custom claims for ${email}:`, claimErr.message);
+      }
     }
 
     const uid = resolvedUid || 'usr_manual_' + Math.random().toString(36).substring(2, 12);
@@ -190,7 +234,21 @@ class UserService {
       'UPDATE users SET role = $1, updated_at = $2 WHERE id = $3 RETURNING *',
       [newRole, now, userId]
     );
-    return res.rows[0] || null;
+    const updatedUser = res.rows[0] || null;
+
+    if (updatedUser && updatedUser.firebase_uid && !updatedUser.firebase_uid.startsWith('usr_manual_')) {
+      try {
+        const { admin } = require('../config/firebaseAdmin');
+        if (admin && admin.apps && admin.apps.length > 0) {
+          await admin.auth().setCustomUserClaims(updatedUser.firebase_uid, { role: newRole });
+          console.log(`[Firebase Auth] Updated custom claims for ${updatedUser.email}: { role: '${newRole}' }`);
+        }
+      } catch (claimErr) {
+        console.warn(`[Firebase Auth] Could not update custom claims for ${updatedUser.email}:`, claimErr.message);
+      }
+    }
+
+    return updatedUser;
   }
 
   async updateStatus(userId, newStatus) {
@@ -283,7 +341,14 @@ class UserService {
     return updatedUser;
   }
 
-  async listUsers({ page = 1, limit = 20, search = '', role = '', status = '' } = {}) {
+  async listUsers({ page = 1, limit = 20, search = '', role = '', status = '', triggerCloudSync = true } = {}) {
+    if (triggerCloudSync && (!this._lastFirebaseSync || Date.now() - this._lastFirebaseSync > 20000)) {
+      this._lastFirebaseSync = Date.now();
+      try {
+        await this.syncWithFirebaseUsers();
+      } catch (e) {}
+    }
+
     const offset = (Math.max(1, page) - 1) * limit;
     const conditions = [];
     const params = [];
@@ -408,6 +473,93 @@ class UserService {
         },
       },
     };
+  }
+
+  /**
+   * Synchronize users and roles between Firebase Auth Cloud and Local Database.
+   * Pulls any accounts created on other machines and syncs cloud custom claims.
+   */
+  async syncWithFirebaseUsers() {
+    try {
+      const { admin } = require('../config/firebaseAdmin');
+      if (!admin || !admin.apps || admin.apps.length === 0) {
+        return { synced: false, reason: 'Firebase Admin not initialized' };
+      }
+
+      const listResult = await admin.auth().listUsers(1000);
+      const fbUsers = listResult.users;
+      let imported = 0;
+      let updated = 0;
+
+      for (const fbUser of fbUsers) {
+        const email = (fbUser.email || '').trim().toLowerCase();
+        if (!email) continue;
+
+        const uid = fbUser.uid;
+        const roleInClaims = fbUser.customClaims?.role;
+        const displayName = fbUser.displayName || email.split('@')[0];
+
+        const existingRes = await db.query(
+          'SELECT id, firebase_uid, role, status FROM users WHERE firebase_uid = $1 OR (email IS NOT NULL AND LOWER(email) = $2)',
+          [uid, email]
+        );
+
+        const now = new Date().toISOString();
+
+        if (existingRes.rowCount > 0) {
+          const dbUser = existingRes.rows[0];
+          // If DB has a role and Firebase claims is empty, upload DB role to Firebase
+          if (dbUser.role && dbUser.role !== 'EMPLOYEE' && !roleInClaims) {
+            try {
+              await admin.auth().setCustomUserClaims(uid, { role: dbUser.role });
+              console.log(`[Firebase Auth] Backfilled cloud role for ${email}: ${dbUser.role}`);
+            } catch (e) {}
+          }
+          // If Firebase claims has a role and DB has a different role, update DB
+          else if (roleInClaims && roleInClaims !== dbUser.role) {
+            await db.query(
+              'UPDATE users SET role = $1, firebase_uid = $2, updated_at = $3 WHERE id = $4',
+              [roleInClaims, uid, now, dbUser.id]
+            );
+            updated++;
+            console.log(`[Firebase Auth] Synced local DB role for ${email} from cloud: ${roleInClaims}`);
+          }
+        } else {
+          // New user created on another laptop: import into local DB!
+          const newId = 'usr_' + uid.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6);
+          const assignedRole = roleInClaims || (email.startsWith('admin@') ? 'SUPER_ADMIN' : 'EMPLOYEE');
+
+          await db.query(
+            `INSERT INTO users (id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+            [
+              newId,
+              uid,
+              displayName,
+              email,
+              fbUser.photoURL || null,
+              assignedRole,
+              fbUser.disabled ? 'SUSPENDED' : 'ACTIVE',
+              'Enterprise workforce security member.',
+              'Enterprise CyberGuardian Organization',
+              1,
+              0,
+              0,
+              fbUser.metadata?.lastSignInTime ? new Date(fbUser.metadata.lastSignInTime).toISOString() : null,
+              fbUser.metadata?.creationTime ? new Date(fbUser.metadata.creationTime).toISOString() : now,
+              now,
+            ]
+          );
+          imported++;
+          console.log(`[Firebase Auth] Imported new cloud user ${email} (${assignedRole}) into local database`);
+        }
+      }
+
+      return { synced: true, total: fbUsers.length, imported, updated };
+    } catch (err) {
+      console.warn('[Firebase Auth] Sync error:', err.message);
+      return { synced: false, error: err.message };
+    }
   }
 }
 
