@@ -15,6 +15,7 @@ import {
   UserPlus,
   Trash2,
   RotateCcw,
+  Cloud,
 } from 'lucide-react';
 
 export const UserListView: React.FC = () => {
@@ -101,6 +102,27 @@ export const UserListView: React.FC = () => {
     fetchUsers();
   }, [roleFilter, statusFilter]);
 
+  const [syncingCloud, setSyncingCloud] = useState(false);
+
+  const handleSyncFirebase = async () => {
+    setSyncingCloud(true);
+    const toastId = toast.loading('Syncing users & roles with Firebase Cloud...');
+    try {
+      const res = await adminApi.users.syncFirebase();
+      if (res.success && res.data) {
+        const { total, imported, updated } = res.data;
+        toast.success(`Cloud Synced: ${total} cloud accounts checked (${imported} new imported, ${updated} roles updated)`, { id: toastId, duration: 4000 });
+        fetchUsers();
+      } else {
+        toast.error(res.error?.message || 'Failed to sync with Firebase', { id: toastId });
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Error syncing with Firebase', { id: toastId });
+    } finally {
+      setSyncingCloud(false);
+    }
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchUsers();
@@ -117,6 +139,15 @@ export const UserListView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleSyncFirebase}
+            disabled={syncingCloud}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/60 text-xs font-medium text-indigo-300 border border-indigo-500/30 transition-colors disabled:opacity-50"
+            title="Pull and synchronize all users and roles created on teammate laptops via Firebase Auth"
+          >
+            <Cloud className={`h-3.5 w-3.5 ${syncingCloud ? 'animate-pulse text-indigo-400' : ''}`} />
+            <span>Sync Cloud Users</span>
+          </button>
           <button
             onClick={fetchUsers}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition-colors"

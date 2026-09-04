@@ -157,6 +157,8 @@ export const adminApi = {
       adminFetch(`/api/admin/users/${userId}?force=${force}&permanent=${permanent}`, { method: 'DELETE' }),
     purge: (userId: string) =>
       adminFetch(`/api/admin/users/${userId}?force=true&permanent=true`, { method: 'DELETE' }),
+    syncFirebase: () =>
+      adminFetch('/api/admin/users/sync-firebase', { method: 'POST' }),
   },
 
   // Course Management
