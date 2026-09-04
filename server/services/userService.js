@@ -245,14 +245,22 @@ class UserService {
 
       await db.query('DELETE FROM users WHERE id = $1', [userId]);
 
+      let firebaseDeleted = false;
+      let firebaseError = null;
+
       try {
         const { admin } = require('../config/firebaseAdmin');
-        if (admin && admin.apps.length > 0 && user.firebase_uid) {
+        if (admin && admin.apps.length > 0 && user.firebase_uid && !user.firebase_uid.startsWith('usr_manual_')) {
           await admin.auth().deleteUser(user.firebase_uid);
+          firebaseDeleted = true;
+          console.log(`[Firebase Admin] Successfully deleted user ${user.firebase_uid} (${user.email}) from Firebase Cloud.`);
         }
-      } catch (fbErr) {}
+      } catch (fbErr) {
+        firebaseError = fbErr.message;
+        console.warn(`[Firebase Admin] Could not delete user from Firebase Cloud (${fbErr.message}). Place serviceAccountKey.json in root to auto-delete from Firebase Auth.`);
+      }
 
-      return { ...user, status: 'PURGED' };
+      return { ...user, status: 'PURGED', firebaseDeleted, firebaseError };
     }
 
     // Standard deletion: Convert status to DELETED (Soft Delete)

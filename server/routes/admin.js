@@ -290,7 +290,12 @@ router.delete('/users/:id', requireRole('SUPER_ADMIN', 'PLATFORM_ADMIN', 'USER_A
         email: previous.email,
         name: previous.name,
         status: result?.status || (permanent ? 'PURGED' : 'DELETED'),
-        message: permanent ? `User ${previous.email} permanently purged from database.` : `User ${previous.email} marked as DELETED.`,
+        firebaseDeleted: result?.firebaseDeleted || false,
+        message: permanent
+          ? (result?.firebaseDeleted
+              ? `User ${previous.email} permanently purged from both local Database and Firebase Auth.`
+              : `User ${previous.email} purged from Database. Note: To auto-delete from Firebase Auth, add serviceAccountKey.json to root.`)
+          : `User ${previous.email} marked as DELETED.`,
       },
     });
   } catch (err) {

@@ -53,7 +53,7 @@ export const UserListView: React.FC = () => {
     try {
       const res = await adminApi.users.purge(userId);
       if (res.success) {
-        toast.success(`User ${email} permanently purged from database`, { id: toastId });
+        toast.success(res.data?.message || `User ${email} permanently purged from database`, { id: toastId, duration: 5000 });
         fetchUsers();
       } else {
         toast.error(res.error?.message || 'Failed to purge user', { id: toastId });

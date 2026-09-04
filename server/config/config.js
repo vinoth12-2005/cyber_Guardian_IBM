@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
@@ -30,7 +31,11 @@ const config = {
     projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'ibmhack-c98c2',
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-    serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+    serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || (
+      fs.existsSync(path.resolve(__dirname, '../../serviceAccountKey.json'))
+        ? path.resolve(__dirname, '../../serviceAccountKey.json')
+        : undefined
+    ),
   },
 
   // FlotBot AI / Ollama Configuration

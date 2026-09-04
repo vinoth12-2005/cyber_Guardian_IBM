@@ -94,7 +94,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ userId, onClos
     try {
       const res = await adminApi.users.purge(userId);
       if (res.success) {
-        toast.success(`User permanently erased from database`, { id: toastId });
+        toast.success(res.data?.message || `User permanently erased from database`, { id: toastId, duration: 5000 });
         onUserUpdated();
         onClose();
       } else {
