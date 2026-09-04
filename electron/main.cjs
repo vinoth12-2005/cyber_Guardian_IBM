@@ -96,6 +96,16 @@ function createMainWindow() {
 
   mainWindow.loadURL(startUrl);
 
+  mainWindow.webContents.on('did-fail-load', () => {
+    if (startUrl.startsWith('http')) {
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.loadURL(startUrl);
+        }
+      }, 1000);
+    }
+  });
+
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });

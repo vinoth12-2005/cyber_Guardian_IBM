@@ -394,6 +394,17 @@ function createWindow() {
         mainWindow.loadFile(path.join(__dirname, "renderer/index.html"));
     }
 
+    // Automatically retry connecting if Vite server is still initializing
+    mainWindow.webContents.on("did-fail-load", (event, errorCode, errorDescription) => {
+        if (process.env.VITE_DEV === "true") {
+            setTimeout(() => {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.loadURL(devUrl);
+                }
+            }, 1000);
+        }
+    });
+
     // Show window once it is fully loaded and ready
     mainWindow.once("ready-to-show", () => {
         mainWindow.show();

@@ -38,6 +38,26 @@ async function checkOllamaHttp() {
     });
 }
 
+function checkHttpUrl(targetUrl, timeoutMs = 2000) {
+    return new Promise((resolve) => {
+        try {
+            const u = new URL(targetUrl);
+            const req = http.get({
+                hostname: u.hostname,
+                port: u.port,
+                path: u.pathname,
+                timeout: timeoutMs,
+            }, (res) => {
+                resolve(res.statusCode < 500);
+            });
+            req.on("error", () => resolve(false));
+            req.on("timeout", () => { req.destroy(); resolve(false); });
+        } catch {
+            resolve(false);
+        }
+    });
+}
+
 async function main() {
     // Step 1: Ensure .env file exists
     console.log("[1/5] Checking environment configuration (.env)...");
@@ -150,27 +170,88 @@ async function main() {
         console.warn("  ⚠️ Could not connect to local Ollama server. Starting FlotBot in offline fallback mode.");
     }
 
-    // Step 5: Launch FlotBot Application
+    // Step 5: Launch Unified CyberGuardian Ecosystem & FlotBot
     if (process.argv.includes("--start") || process.argv.includes("-s") || process.argv.length <= 2) {
         const mainRootDir = path.resolve(ROOT_DIR, "..");
-        const distPath = path.join(mainRootDir, "dist/index.html");
-        if (!fs.existsSync(distPath)) {
-            console.log("  ➜ Building CyberGuardian AI dashboard...");
-            try {
-                execSync("npm run build", { cwd: mainRootDir, stdio: "inherit" });
-                console.log("  ✔ Dashboard built successfully!");
-            } catch (e) {
-                console.warn("  ⚠️ Could not build dashboard. Will load renderer fallback.");
-            }
+        const childProcesses = [];
+
+        console.log("\n[5/5] 🚀 Starting CyberGuardian Enterprise Ecosystem...\n");
+
+        // 5a. Start Unified Express Backend Server (Port 5000)
+        const isBackendUp = await checkHttpUrl("http://127.0.0.1:5000/health", 1000);
+        if (!isBackendUp) {
+            console.log("  ➜ [1/3] Starting Unified Backend API Server on Port 5000...");
+            const serverProc = spawn("node", ["server/server.js"], {
+                cwd: mainRootDir,
+                stdio: "inherit",
+                env: { ...process.env, FORCE_COLOR: "true" }
+            });
+            childProcesses.push(serverProc);
+        } else {
+            console.log("  ✔ [1/3] Backend API Server is already active (http://localhost:5000)");
         }
 
-        console.log("\n[5/5] 🚀 Launching FlotBot AI Security Assistant...\n");
-        const electronBin = path.join(ROOT_DIR, "node_modules/.bin/electron");
-        const electronCmd = fs.existsSync(electronBin) ? electronBin : "electron";
-        const electronApp = spawn(electronCmd, ["."], { cwd: ROOT_DIR, stdio: "inherit" });
-        electronApp.on("exit", (code) => {
-            console.log(`[FlotBot] Application exited with code ${code}`);
+        // 5b. Start Vite Frontend Server (Port 5173)
+        const isViteUp = await checkHttpUrl("http://127.0.0.1:5173", 1000);
+        if (!isViteUp) {
+            console.log("  ➜ [2/3] Starting Vite Web Development Server on Port 5173...");
+            const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
+            const viteProc = spawn(npxCmd, ["vite", "--port", "5173"], {
+                cwd: mainRootDir,
+                stdio: "pipe",
+                env: { ...process.env, FORCE_COLOR: "true" }
+            });
+            childProcesses.push(viteProc);
+        } else {
+            console.log("  ✔ [2/3] Vite Web Server is already active (http://localhost:5173)");
+        }
+
+        // 5c. Wait briefly for Vite & Backend to accept connections
+        console.log("  ➜ Waiting for web interface to initialize...");
+        for (let i = 0; i < 15; i++) {
+            const viteReady = await checkHttpUrl("http://127.0.0.1:5173", 800);
+            if (viteReady) break;
+            await new Promise(r => setTimeout(r, 600));
+        }
+
+        // 5d. Launch Electron Desktop Application pointing to http://localhost:5173
+        console.log("  ➜ [3/3] Launching Electron Desktop Shell & Floating FlotBot AI...\n");
+        const electronBin = path.join(ROOT_DIR, "node_modules/.bin", process.platform === "win32" ? "electron.cmd" : "electron");
+        const electronCmd = fs.existsSync(electronBin) ? electronBin : (process.platform === "win32" ? "electron.cmd" : "electron");
+
+        const electronApp = spawn(electronCmd, ["."], {
+            cwd: ROOT_DIR,
+            stdio: "inherit",
+            env: {
+                ...process.env,
+                VITE_DEV: "true",
+                VITE_DEV_SERVER_URL: "http://localhost:5173"
+            }
         });
+
+        // Clean shutdown: Terminate child backend and vite servers when Electron closes
+        const cleanup = () => {
+            childProcesses.forEach(proc => {
+                try {
+                    if (!proc.killed) {
+                        if (process.platform === "win32") {
+                            execSync(`taskkill /pid ${proc.pid} /T /F`, { stdio: "ignore" });
+                        } else {
+                            proc.kill("SIGTERM");
+                        }
+                    }
+                } catch (e) {}
+            });
+        };
+
+        electronApp.on("exit", (code) => {
+            console.log(`[FlotBot] Desktop application closed (code ${code}). Stopping services...`);
+            cleanup();
+            process.exit(code || 0);
+        });
+
+        process.on("SIGINT", () => { cleanup(); process.exit(0); });
+        process.on("SIGTERM", () => { cleanup(); process.exit(0); });
     } else {
         console.log("\n[5/5] ✔ All requirements verified successfully!");
     }
