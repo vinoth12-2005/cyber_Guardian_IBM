@@ -4,8 +4,10 @@ const path = require("path");
 const http = require("http");
 
 const ROOT_DIR = path.resolve(__dirname, "..");
+const MAIN_ROOT_DIR = path.resolve(ROOT_DIR, "..");
 const ENV_FILE = path.join(ROOT_DIR, ".env");
 const ENV_EXAMPLE = path.join(ROOT_DIR, ".env.example");
+const IS_WIN = process.platform === "win32";
 
 console.log("\n=======================================================");
 console.log(" 🛡️  FlotBot Cross-Platform Automated Setup & Launcher");
@@ -75,17 +77,46 @@ async function main() {
 
     // Step 2: Check NPM dependencies
     console.log("\n[2/5] Checking Node.js dependencies...");
-    const nodeModulesPath = path.join(ROOT_DIR, "node_modules");
-    if (!fs.existsSync(nodeModulesPath) || !fs.existsSync(path.join(nodeModulesPath, "electron"))) {
-        console.log("  ➜ Dependencies missing or incomplete. Installing npm packages...");
+
+    // Check Root dependencies (Vite, React, Express, etc.)
+    const rootNodeModules = path.join(MAIN_ROOT_DIR, "node_modules");
+    if (!fs.existsSync(rootNodeModules) || !fs.existsSync(path.join(rootNodeModules, "vite"))) {
+        console.log("  ➜ Root project dependencies missing. Installing npm packages...");
         try {
-            execSync("npm install", { cwd: ROOT_DIR, stdio: "inherit" });
-            console.log("  ✔ Dependencies installed successfully.");
+            execSync("npm install", { cwd: MAIN_ROOT_DIR, stdio: "inherit" });
+            console.log("  ✔ Root project dependencies installed successfully.");
         } catch (e) {
-            console.error("  ❌ npm install failed:", e.message);
+            console.error("  ❌ Root npm install failed:", e.message);
         }
     } else {
-        console.log("  ✔ All Node.js npm dependencies present (Skipping npm install)");
+        console.log("  ✔ Root project npm dependencies present");
+    }
+
+    // Check FlotBot dependencies (Electron, etc.)
+    const nodeModulesPath = path.join(ROOT_DIR, "node_modules");
+    if (!fs.existsSync(nodeModulesPath) || !fs.existsSync(path.join(nodeModulesPath, "electron"))) {
+        console.log("  ➜ FlotBot dependencies missing or incomplete. Installing npm packages...");
+        try {
+            execSync("npm install", { cwd: ROOT_DIR, stdio: "inherit" });
+            console.log("  ✔ FlotBot dependencies installed successfully.");
+        } catch (e) {
+            console.error("  ❌ FlotBot npm install failed:", e.message);
+        }
+    } else {
+        console.log("  ✔ All FlotBot npm dependencies present");
+    }
+
+    // Ensure Electron binary was actually downloaded (can be skipped by npm allow-scripts / ignore-scripts)
+    const electronDist = path.join(nodeModulesPath, "electron", "dist");
+    const electronInstallScript = path.join(nodeModulesPath, "electron", "install.js");
+    if (!fs.existsSync(electronDist) && fs.existsSync(electronInstallScript)) {
+        console.log("  ➜ Electron binary missing. Running electron install script...");
+        try {
+            execSync(`node "${electronInstallScript}"`, { cwd: path.join(nodeModulesPath, "electron"), stdio: "inherit" });
+            console.log("  ✔ Electron binary downloaded successfully.");
+        } catch (e) {
+            console.warn("  ⚠️ Could not download electron binary:", e.message);
+        }
     }
 
     // Step 3: Check Ollama installation
@@ -172,7 +203,6 @@ async function main() {
 
     // Step 5: Launch Unified CyberGuardian Ecosystem & FlotBot
     if (process.argv.includes("--start") || process.argv.includes("-s") || process.argv.length <= 2) {
-        const mainRootDir = path.resolve(ROOT_DIR, "..");
         const childProcesses = [];
 
         console.log("\n[5/5] 🚀 Starting CyberGuardian Enterprise Ecosystem...\n");
@@ -182,10 +212,12 @@ async function main() {
         if (!isBackendUp) {
             console.log("  ➜ [1/3] Starting Unified Backend API Server on Port 5000...");
             const serverProc = spawn("node", ["server/server.js"], {
-                cwd: mainRootDir,
+                cwd: MAIN_ROOT_DIR,
                 stdio: "inherit",
+                shell: IS_WIN,
                 env: { ...process.env, FORCE_COLOR: "true" }
             });
+            serverProc.on("error", (err) => console.error("  ❌ Backend server error:", err.message));
             childProcesses.push(serverProc);
         } else {
             console.log("  ✔ [1/3] Backend API Server is already active (http://localhost:5000)");
@@ -193,13 +225,19 @@ async function main() {
 
         // 5b. Start Vite Frontend Server (Port 5173)
         const isViteUp = await checkHttpUrl("http://127.0.0.1:5173", 1000);
+        let viteErrorOutput = "";
         if (!isViteUp) {
             console.log("  ➜ [2/3] Starting Vite Web Development Server on Port 5173...");
-            const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
+            const npxCmd = IS_WIN ? "npx.cmd" : "npx";
             const viteProc = spawn(npxCmd, ["vite", "--port", "5173"], {
-                cwd: mainRootDir,
+                cwd: MAIN_ROOT_DIR,
                 stdio: "pipe",
+                shell: IS_WIN,
                 env: { ...process.env, FORCE_COLOR: "true" }
+            });
+            viteProc.on("error", (err) => console.error("  ❌ Vite dev server error:", err.message));
+            viteProc.stderr?.on("data", (data) => {
+                viteErrorOutput += data.toString();
             });
             childProcesses.push(viteProc);
         } else {
@@ -208,20 +246,28 @@ async function main() {
 
         // 5c. Wait briefly for Vite & Backend to accept connections
         console.log("  ➜ Waiting for web interface to initialize...");
+        let viteReady = false;
         for (let i = 0; i < 15; i++) {
-            const viteReady = await checkHttpUrl("http://127.0.0.1:5173", 800);
+            viteReady = await checkHttpUrl("http://127.0.0.1:5173", 800);
             if (viteReady) break;
             await new Promise(r => setTimeout(r, 600));
+        }
+        if (!viteReady && viteErrorOutput) {
+            console.warn("  ⚠️ Vite server warnings/errors:\n" + viteErrorOutput.trim());
         }
 
         // 5d. Launch Electron Desktop Application pointing to http://localhost:5173
         console.log("  ➜ [3/3] Launching Electron Desktop Shell & Floating FlotBot AI...\n");
-        const electronBin = path.join(ROOT_DIR, "node_modules/.bin", process.platform === "win32" ? "electron.cmd" : "electron");
-        const electronCmd = fs.existsSync(electronBin) ? electronBin : (process.platform === "win32" ? "electron.cmd" : "electron");
+        const electronBin = path.join(ROOT_DIR, "node_modules/.bin", IS_WIN ? "electron.cmd" : "electron");
+        let electronCmd = fs.existsSync(electronBin) ? electronBin : (IS_WIN ? "electron.cmd" : "electron");
+        if (IS_WIN && electronCmd.includes(" ") && !electronCmd.startsWith('"')) {
+            electronCmd = `"${electronCmd}"`;
+        }
 
         const electronApp = spawn(electronCmd, ["."], {
             cwd: ROOT_DIR,
             stdio: "inherit",
+            shell: IS_WIN,
             env: {
                 ...process.env,
                 VITE_DEV: "true",
@@ -233,7 +279,7 @@ async function main() {
         const cleanup = () => {
             childProcesses.forEach(proc => {
                 try {
-                    if (!proc.killed) {
+                    if (!proc.killed && proc.pid) {
                         if (process.platform === "win32") {
                             execSync(`taskkill /pid ${proc.pid} /T /F`, { stdio: "ignore" });
                         } else {
@@ -243,6 +289,12 @@ async function main() {
                 } catch (e) {}
             });
         };
+
+        electronApp.on("error", (err) => {
+            console.error("  ❌ Electron failed to launch:", err.message);
+            cleanup();
+            process.exit(1);
+        });
 
         electronApp.on("exit", (code) => {
             console.log(`[FlotBot] Desktop application closed (code ${code}). Stopping services...`);
