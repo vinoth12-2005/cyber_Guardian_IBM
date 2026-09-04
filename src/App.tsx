@@ -89,7 +89,7 @@ import type {
 
 // Map tab IDs to human-readable page titles
 const PAGE_TITLES: Record<string, string> = {
-  dashboard:          'Security Command Center',
+  dashboard:          'Dashboard',
   'courses-training': 'Student Course Catalog Preview',
   training:           'Courses & Training',
   courses:            'Curriculum & Courses Studio',

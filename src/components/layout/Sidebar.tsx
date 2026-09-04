@@ -61,7 +61,7 @@ const ADMIN_NAV_SECTIONS: NavSectionDef[] = [
   {
     label: 'Overview',
     items: [
-      { id: 'dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
+      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     ],
   },
   {
@@ -183,24 +183,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     'ANALYST',
   ].includes(userRole);
 
-  const handleOpenAdminCenter = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    try {
-      const currentUser = auth.currentUser;
-      const token = currentUser ? await currentUser.getIdToken() : '';
-      const qs = new URLSearchParams();
-      if (token) qs.set('token', token);
-      if (authUser?.role) qs.set('role', authUser.role);
-      if (authUser?.email) qs.set('email', authUser.email);
-      if (authUser?.displayName) qs.set('name', authUser.displayName);
-
-      const targetUrl = `http://localhost:5174${qs.toString() ? `?${qs.toString()}` : ''}`;
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
-    } catch {
-      window.open('http://localhost:5174', '_blank', 'noopener,noreferrer');
-    }
-  };
-
   return (
     <>
       {/* Mobile backdrop */}
@@ -263,27 +245,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Nav groups */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-5 mt-2">
-          {isAdmin && (
-            <div className="pb-2 mb-2 border-b border-indigo-900/30">
-              <div
-                className="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.12em] uppercase text-indigo-400 font-mono"
-              >
-                Enterprise Portal
-              </div>
-              <button
-                onClick={handleOpenAdminCenter}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-indigo-200 hover:text-white bg-indigo-950/60 hover:bg-indigo-900/60 border border-indigo-700/50 shadow-sm transition-all text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-[12px] font-bold">Admin Center</span>
-                </div>
-                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-200 border border-indigo-400/40">
-                  5174
-                </span>
-              </button>
-            </div>
-          )}
           {(() => {
             const activeSections = isAdmin
               ? ADMIN_NAV_SECTIONS.map((sec) => ({
@@ -307,7 +268,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     const isActive = activeTab === item.id;
-                    const itemLabel = item.id === 'dashboard' && isAdmin ? 'Admin Command Center' : item.label;
+                    const itemLabel = item.label;
                     return (
                       <button
                         key={item.id}
@@ -322,12 +283,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           strokeWidth={isActive ? 2 : 1.75}
                         />
                         <span className="flex-1 text-left text-[13px]">{itemLabel}</span>
-
-                        {item.id === 'dashboard' && isAdmin && (
-                          <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
-                            ADMIN
-                          </span>
-                        )}
 
                         {'badge' in item && item.badge && (
                           <span
