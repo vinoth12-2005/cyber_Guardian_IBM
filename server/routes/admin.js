@@ -270,15 +270,16 @@ router.delete('/users/:id', requireRole('SUPER_ADMIN', 'PLATFORM_ADMIN', 'USER_A
     }
 
     const force = req.query.force === 'true';
-    await userService.deleteUser(targetId, { allowNonSuspended: force });
+    const permanent = req.query.permanent === 'true';
+    const result = await userService.deleteUser(targetId, { allowNonSuspended: force, permanent });
 
     // Audit log
     await logAdminAction(
       req.user,
-      'USER_DELETED',
+      permanent ? 'USER_PURGED' : 'USER_DELETED',
       'users',
       targetId,
-      { email: previous.email, name: previous.name, role: previous.role, previousStatus: previous.status },
+      { email: previous.email, name: previous.name, role: previous.role, previousStatus: previous.status, permanent },
       req.ip
     );
 
@@ -288,7 +289,8 @@ router.delete('/users/:id', requireRole('SUPER_ADMIN', 'PLATFORM_ADMIN', 'USER_A
         id: targetId,
         email: previous.email,
         name: previous.name,
-        message: `User ${previous.email} permanently removed.`,
+        status: result?.status || (permanent ? 'PURGED' : 'DELETED'),
+        message: permanent ? `User ${previous.email} permanently purged from database.` : `User ${previous.email} marked as DELETED.`,
       },
     });
   } catch (err) {

@@ -33,7 +33,7 @@ export const UserListView: React.FC = () => {
     }
     const toastId = toast.loading('Deleting user account...');
     try {
-      const res = await adminApi.users.delete(userId);
+      const res = await adminApi.users.delete(userId, true, false);
       if (res.success) {
         toast.success(`User ${email} status changed to DELETED`, { id: toastId });
         fetchUsers();
@@ -42,6 +42,24 @@ export const UserListView: React.FC = () => {
       }
     } catch (e: any) {
       toast.error(e.message || 'Error deleting user', { id: toastId });
+    }
+  };
+
+  const handlePurgeUser = async (userId: string, email: string) => {
+    if (!window.confirm(`⚠️ PERMANENT PURGE: Are you sure you want to completely erase user "${email}" and all associated progress from the database? This cannot be undone.`)) {
+      return;
+    }
+    const toastId = toast.loading('Purging user from database...');
+    try {
+      const res = await adminApi.users.purge(userId);
+      if (res.success) {
+        toast.success(`User ${email} permanently purged from database`, { id: toastId });
+        fetchUsers();
+      } else {
+        toast.error(res.error?.message || 'Failed to purge user', { id: toastId });
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Error purging user', { id: toastId });
     }
   };
 
@@ -234,24 +252,44 @@ export const UserListView: React.FC = () => {
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {u.status === 'SUSPENDED' && (
-                          <button
-                            onClick={() => handleDeleteUser(u.id, u.email)}
-                            title="Mark User as DELETED"
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-rose-950/60 hover:bg-rose-900/80 text-[11px] font-medium text-rose-300 border border-rose-800/60 transition-colors"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            <span>Delete</span>
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleDeleteUser(u.id, u.email)}
+                              title="Mark User as DELETED"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition-colors"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              <span>Delete</span>
+                            </button>
+                            <button
+                              onClick={() => handlePurgeUser(u.id, u.email)}
+                              title="Permanently Purge from DB"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-rose-950/60 hover:bg-rose-900/80 text-[11px] font-medium text-rose-300 border border-rose-800/60 transition-colors"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              <span>Purge</span>
+                            </button>
+                          </>
                         )}
                         {u.status === 'DELETED' && (
-                          <button
-                            onClick={() => handleRestoreUser(u.id, u.email)}
-                            title="Restore User to ACTIVE"
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-950/60 hover:bg-emerald-900/80 text-[11px] font-medium text-emerald-300 border border-emerald-800/60 transition-colors"
-                          >
-                            <RotateCcw className="h-3 w-3" />
-                            <span>Restore</span>
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleRestoreUser(u.id, u.email)}
+                              title="Restore User to ACTIVE"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-950/60 hover:bg-emerald-900/80 text-[11px] font-medium text-emerald-300 border border-emerald-800/60 transition-colors"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              <span>Restore</span>
+                            </button>
+                            <button
+                              onClick={() => handlePurgeUser(u.id, u.email)}
+                              title="Permanently Purge from DB"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-rose-950/60 hover:bg-rose-900/80 text-[11px] font-medium text-rose-300 border border-rose-800/60 transition-colors"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              <span>Purge</span>
+                            </button>
+                          </>
                         )}
                         <button
                           onClick={() => setSelectedUserId(u.id)}

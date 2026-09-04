@@ -233,6 +233,8 @@ class UserService {
         'certifications',
         'user_activity',
         'security_behavior',
+        'chat_messages',
+        'chat_sessions',
       ];
 
       for (const table of dependentTables) {

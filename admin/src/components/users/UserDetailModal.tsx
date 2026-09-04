@@ -31,6 +31,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ userId, onClos
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [purging, setPurging] = useState(false);
+  const [confirmPurge, setConfirmPurge] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -70,7 +72,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ userId, onClos
     setDeleting(true);
     const toastId = toast.loading('Marking user as DELETED...');
     try {
-      const res = await adminApi.users.delete(userId);
+      const res = await adminApi.users.delete(userId, true, false);
       if (res.success) {
         toast.success(`User status changed to DELETED`, { id: toastId });
         onUserUpdated();
@@ -83,6 +85,26 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ userId, onClos
     } finally {
       setDeleting(false);
       setConfirmDelete(false);
+    }
+  };
+
+  const handlePurge = async () => {
+    setPurging(true);
+    const toastId = toast.loading('Purging user from database...');
+    try {
+      const res = await adminApi.users.purge(userId);
+      if (res.success) {
+        toast.success(`User permanently erased from database`, { id: toastId });
+        onUserUpdated();
+        onClose();
+      } else {
+        toast.error(res.error?.message || 'Failed to purge user', { id: toastId });
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Error purging user', { id: toastId });
+    } finally {
+      setPurging(false);
+      setConfirmPurge(false);
     }
   };
 
@@ -217,36 +239,65 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({ userId, onClos
 
         {/* Footer Actions */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>
-            {(selectedStatus === 'SUSPENDED' || u.status === 'SUSPENDED') && (
-              confirmDelete ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-rose-400 font-medium">Permanently delete user?</span>
+          <div className="flex items-center gap-2">
+            {/* Permanent Purge Button */}
+            {confirmPurge ? (
+              <div className="flex items-center gap-2 p-1.5 rounded-lg bg-rose-950/80 border border-rose-800/80">
+                <span className="text-[11px] text-rose-300 font-medium">Permanently erase user & records?</span>
+                <button
+                  onClick={handlePurge}
+                  disabled={purging}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white transition-colors"
+                >
+                  {purging ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                  <span>Confirm Purge</span>
+                </button>
+                <button
+                  onClick={() => setConfirmPurge(false)}
+                  className="px-2 py-1 rounded text-xs text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : confirmDelete ? (
+              <div className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-900 border border-slate-700">
+                <span className="text-[11px] text-amber-300 font-medium">Mark as DELETED?</span>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-xs font-semibold text-white transition-colors"
+                >
+                  {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                  <span>Confirm Soft Delete</span>
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-2 py-1 rounded text-xs text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {u.status !== 'DELETED' && (
                   <button
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white transition-colors"
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 border border-slate-700 transition-colors"
                   >
-                    {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                    <span>Confirm Delete</span>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Soft Delete</span>
                   </button>
-                  <button
-                    onClick={() => setConfirmDelete(false)}
-                    className="px-2.5 py-1 rounded text-xs text-slate-400 hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
+                )}
                 <button
                   type="button"
-                  onClick={() => setConfirmDelete(true)}
+                  onClick={() => setConfirmPurge(true)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-950/50 hover:bg-rose-900/60 text-xs font-medium text-rose-300 border border-rose-800/50 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  <span>Delete Suspended Account</span>
+                  <span>Purge User (DB)</span>
                 </button>
-              )
+              </div>
             )}
           </div>
 

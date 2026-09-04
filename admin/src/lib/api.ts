@@ -153,8 +153,10 @@ export const adminApi = {
       adminFetch(`/api/admin/users/${userId}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
     updateStatus: (userId: string, status: string) =>
       adminFetch(`/api/admin/users/${userId}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
-    delete: (userId: string, force: boolean = false) =>
-      adminFetch(`/api/admin/users/${userId}${force ? '?force=true' : ''}`, { method: 'DELETE' }),
+    delete: (userId: string, force: boolean = false, permanent: boolean = false) =>
+      adminFetch(`/api/admin/users/${userId}?force=${force}&permanent=${permanent}`, { method: 'DELETE' }),
+    purge: (userId: string) =>
+      adminFetch(`/api/admin/users/${userId}?force=true&permanent=true`, { method: 'DELETE' }),
   },
 
   // Course Management

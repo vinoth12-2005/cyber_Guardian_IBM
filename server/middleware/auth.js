@@ -34,20 +34,43 @@ async function authenticate(req, res, next) {
 
     // Find or create user in unified Database
     let user = null;
+    const normalizedEmail = (email || '').trim().toLowerCase();
     const userQuery = await db.query(
-      'SELECT id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at FROM users WHERE firebase_uid = $1 OR (email IS NOT NULL AND email != \'\' AND email = $2)',
-      [uid, email || '']
+      'SELECT id, firebase_uid, name, email, profile_picture, role, status, bio, organization, level, xp, streak, last_login, created_at, updated_at FROM users WHERE firebase_uid = $1 OR (email IS NOT NULL AND email != \'\' AND LOWER(email) = $2)',
+      [uid, normalizedEmail]
     );
 
     const now = new Date().toISOString();
 
     const isSuperAdmin = (
-      (process.env.ADMIN_EMAILS && process.env.ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase()).includes((email || '').toLowerCase())) ||
-      (email && email.toLowerCase().startsWith('admin@'))
+      (process.env.ADMIN_EMAILS && process.env.ADMIN_EMAILS.split(',').map(e => e.trim().toLowerCase()).includes(normalizedEmail)) ||
+      (normalizedEmail && normalizedEmail.startsWith('admin@'))
     );
 
     if (userQuery.rowCount > 0) {
       user = userQuery.rows[0];
+
+      // If this account was previously marked DELETED in the database:
+      // Check if it was recreated in Firebase with a NEW UID
+      if (user.status === 'DELETED') {
+        if (user.firebase_uid !== uid) {
+          // Re-registered in Firebase with a new UID: purge old deleted ghost record
+          await db.query('DELETE FROM user_activity WHERE user_id = $1', [user.id]);
+          await db.query('DELETE FROM users WHERE id = $1', [user.id]);
+          user = null;
+        } else {
+          return res.status(403).json({
+            success: false,
+            error: {
+              code: 'ACCOUNT_DELETED',
+              message: 'This account has been deleted. Please contact platform administrators.',
+            },
+          });
+        }
+      }
+    }
+
+    if (user) {
       // Update last_login, avatar, and role if admin role switch occurred
       const newRole = (decoded.role && isSuperAdmin) ? decoded.role : user.role;
       const userName = name || user.name;
