@@ -34,12 +34,14 @@ class UserService {
         return { uid: data.localId, email: data.email, createdInFirebase: true };
       } else if (data.error) {
         if (data.error.message === 'EMAIL_EXISTS') {
-          return { email, createdInFirebase: false, note: 'User already exists in Firebase Auth' };
+          return { email, createdInFirebase: false, existsInFirebase: true, note: 'User already exists in Firebase Auth' };
         }
         console.warn('[Firebase Auth] Note creating user:', data.error.message);
+        return { email, createdInFirebase: false, error: data.error.message };
       }
     } catch (e) {
       console.warn('[Firebase Auth] Error calling identitytoolkit:', e.message);
+      return { email, createdInFirebase: false, error: e.message };
     }
     return null;
   }
@@ -68,12 +70,20 @@ class UserService {
     // Provision in Firebase Authentication if password provided
     let resolvedUid = firebaseUid;
     const finalPassword = password || 'TempPass@' + Math.floor(1000 + Math.random() * 9000);
+    let firebaseStatus = { created: false, note: null };
 
     if (!resolvedUid) {
       const fbResult = await this.createFirebaseUser(email, finalPassword, name);
       if (fbResult && fbResult.uid) {
         resolvedUid = fbResult.uid;
+        firebaseStatus = { created: true, note: 'Account created in Firebase Auth' };
+      } else if (fbResult && fbResult.existsInFirebase) {
+        firebaseStatus = { created: false, alreadyExisted: true, note: 'User already existed in Firebase Auth' };
+      } else {
+        firebaseStatus = { created: false, error: fbResult?.error || 'Could not provision in Firebase Auth' };
       }
+    } else {
+      firebaseStatus = { created: true, note: 'Supplied external Firebase UID' };
     }
 
     const uid = resolvedUid || 'usr_manual_' + Math.random().toString(36).substring(2, 12);
@@ -128,6 +138,7 @@ class UserService {
     return {
       ...createdUser,
       tempPassword: finalPassword,
+      firebaseStatus,
     };
   }
 

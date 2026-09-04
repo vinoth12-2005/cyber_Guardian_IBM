@@ -57,7 +57,12 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string; role: string } | null>(null);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    email: string;
+    password: string;
+    role: string;
+    firebaseStatus?: any;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -111,6 +116,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
           email: formData.email.trim(),
           password: res.data?.tempPassword || effectivePassword,
           role: formData.role,
+          firebaseStatus: res.data?.firebaseStatus,
         });
         onUserCreated();
       } else {
@@ -171,15 +177,37 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
         {/* If user was created, display credentials card */}
         {createdCredentials ? (
           <div className="p-6 space-y-5">
-            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 space-y-1">
-              <div className="flex items-center gap-2 font-semibold text-sm text-emerald-400">
-                <CheckCircle className="h-4 w-4" />
-                <span>User Provisioned Successfully!</span>
+            {createdCredentials.firebaseStatus?.alreadyExisted ? (
+              <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 space-y-1">
+                <div className="flex items-center gap-2 font-semibold text-sm text-blue-400">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Existing Firebase Account Linked!</span>
+                </div>
+                <p className="text-xs text-blue-200/80">
+                  This email already exists in Firebase Authentication (project: <strong>ibmhack-c98c2</strong>). The profile and role (<span className="font-mono text-indigo-300">{createdCredentials.role}</span>) have been linked in the unified database.
+                </p>
               </div>
-              <p className="text-xs text-emerald-200/80">
-                The account has been created in Firebase Authentication and synchronized with the PostgreSQL database.
-              </p>
-            </div>
+            ) : createdCredentials.firebaseStatus?.created ? (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 space-y-1">
+                <div className="flex items-center gap-2 font-semibold text-sm text-emerald-400">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Account Created in Firebase Cloud & Database!</span>
+                </div>
+                <p className="text-xs text-emerald-200/80">
+                  The account has been created in Firebase Authentication (project: <strong>ibmhack-c98c2</strong>) and synchronized with the database.
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 space-y-1">
+                <div className="flex items-center gap-2 font-semibold text-sm text-amber-400">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Created as Local Database User</span>
+                </div>
+                <p className="text-xs text-amber-200/80">
+                  Firebase Notice: {createdCredentials.firebaseStatus?.error || 'Could not provision to Firebase Auth'}. Account was saved in the local database.
+                </p>
+              </div>
+            )}
 
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3 font-mono text-xs">
               <div className="flex items-center justify-between py-1 border-b border-slate-900 text-slate-400">
