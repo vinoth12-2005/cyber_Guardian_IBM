@@ -22,6 +22,19 @@ import {
   Sparkles,
   Activity,
   Award,
+  Users,
+  BookOpen,
+  Gamepad2,
+  HelpCircle,
+  Flame,
+  Database,
+  Sliders,
+  UserCheck,
+  FileText,
+  Settings2,
+  Megaphone,
+  UserCog,
+  ScrollText,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,7 +44,73 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-const navGroups = [
+interface NavItemDef {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; strokeWidth?: number }>;
+  badge?: string | number;
+  roles?: string[];
+}
+
+interface NavSectionDef {
+  label: string;
+  items: NavItemDef[];
+}
+
+const ADMIN_NAV_SECTIONS: NavSectionDef[] = [
+  {
+    label: 'Overview',
+    items: [
+      { id: 'dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
+    ],
+  },
+  {
+    label: 'Platform Management',
+    items: [
+      { id: 'users', label: 'Users Directory & RBAC', icon: Users, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'USER_ADMIN'] },
+      { id: 'courses', label: 'Courses & Curriculum', icon: BookOpen, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'] },
+      { id: 'assessments', label: 'Quizzes & Assessments', icon: HelpCircle, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'] },
+      { id: 'simulations', label: 'Simulation Cyber Range', icon: Gamepad2, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'SIMULATION_ADMIN'] },
+      { id: 'certifications', label: 'Credential Governance', icon: Award, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'CERTIFICATION_ADMIN'] },
+      { id: 'analytics', label: 'Learning Analytics', icon: BarChart3, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'ANALYST'] },
+    ],
+  },
+  {
+    label: 'FlotBot Security (EDR/XDR)',
+    items: [
+      { id: 'flotbot-dashboard', label: 'Security Dashboard', icon: Shield, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST'] },
+      { id: 'flotbot-alerts', label: 'Threat Alerts', icon: ShieldAlert, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST'] },
+      { id: 'flotbot-threats', label: 'Threat Detections', icon: Flame, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST'] },
+      { id: 'flotbot-monitoring', label: 'Live Telemetry', icon: Activity, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST'] },
+      { id: 'flotbot-iocs', label: 'IOC Management', icon: Database, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST'] },
+      { id: 'flotbot-rules', label: 'Threat Rules Engine', icon: Sliders, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN'] },
+      { id: 'flotbot-ai', label: 'AI Security Analysis', icon: Bot, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST'] },
+      { id: 'flotbot-behaviour', label: 'User Behaviour', icon: UserCheck, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST'] },
+      { id: 'flotbot-history', label: 'Alert History', icon: History, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST'] },
+      { id: 'flotbot-reports', label: 'Security Reports', icon: FileText, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'ANALYST'] },
+      { id: 'flotbot-config', label: 'FlotBot Config', icon: Settings2, roles: ['SUPER_ADMIN', 'FLOTBOT_SECURITY_ADMIN'] },
+    ],
+  },
+  {
+    label: 'Learner Preview',
+    items: [
+      { id: 'courses-training', label: 'Student Course View', icon: GraduationCap, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'] },
+      { id: 'simulation', label: 'Student Lab View', icon: FlaskConical, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'SIMULATION_ADMIN'] },
+      { id: 'ai-assistant', label: 'AI Security Assistant', icon: Sparkles, roles: ['SUPER_ADMIN', 'SECURITY_ANALYST', 'FLOTBOT_SECURITY_ADMIN'] },
+    ],
+  },
+  {
+    label: 'System & Governance',
+    items: [
+      { id: 'announcements', label: 'Announcements', icon: Megaphone, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN'] },
+      { id: 'roles', label: 'Admin Roles & RBAC', icon: UserCog, roles: ['SUPER_ADMIN'] },
+      { id: 'audit-logs', label: 'Audit Logs', icon: ScrollText, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'FLOTBOT_SECURITY_ADMIN'] },
+      { id: 'settings', label: 'Admin Settings', icon: Settings, roles: ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN', 'USER_ADMIN', 'SIMULATION_ADMIN', 'CERTIFICATION_ADMIN', 'FLOTBOT_SECURITY_ADMIN', 'SECURITY_ANALYST', 'ANALYST'] },
+    ],
+  },
+];
+
+const navGroups: NavSectionDef[] = [
   {
     label: 'Overview',
     items: [
@@ -91,7 +170,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     navigate("/login");
   };
 
-  const isAdmin = authUser?.role && [
+  const userRole = authUser?.role || 'EMPLOYEE';
+  const isAdmin = [
     'SUPER_ADMIN',
     'PLATFORM_ADMIN',
     'COURSE_ADMIN',
@@ -101,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     'FLOTBOT_SECURITY_ADMIN',
     'SECURITY_ANALYST',
     'ANALYST',
-  ].includes(authUser.role);
+  ].includes(userRole);
 
   const handleOpenAdminCenter = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -204,59 +284,70 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           )}
-          {navGroups.map((group) => (
-            <div key={group.label}>
-              <div
-                className="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.12em] uppercase"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {group.label}
-              </div>
+          {(() => {
+            const activeSections = isAdmin
+              ? ADMIN_NAV_SECTIONS.map((sec) => ({
+                  label: sec.label,
+                  items: sec.items.filter(
+                    (item) => !item.roles || userRole === 'SUPER_ADMIN' || item.roles.includes(userRole)
+                  ),
+                })).filter((sec) => sec.items.length > 0)
+              : navGroups;
 
-              <div className="space-y-0.5">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  const itemLabel = item.id === 'dashboard' && isAdmin ? 'Admin Dashboard' : item.label;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => { setActiveTab(item.id); onClose(); }}
-                      className={`nav-item group ${isActive ? 'nav-item-active' : ''}`}
-                    >
-                      <Icon
-                        className="w-3.5 h-3.5 flex-shrink-0 transition-colors duration-200"
-                        style={{
-                          color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
-                        }}
-                        strokeWidth={isActive ? 2 : 1.75}
-                      />
-                      <span className="flex-1 text-left text-[13px]">{itemLabel}</span>
+            return activeSections.map((group) => (
+              <div key={group.label}>
+                <div
+                  className="px-3 pb-1.5 text-[10px] font-semibold tracking-[0.12em] uppercase"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {group.label}
+                </div>
 
-                      {item.id === 'dashboard' && isAdmin && (
-                        <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
-                          ADMIN
-                        </span>
-                      )}
-
-                      {'badge' in item && item.badge && (
-                        <span
-                          className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.id;
+                    const itemLabel = item.id === 'dashboard' && isAdmin ? 'Admin Command Center' : item.label;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => { setActiveTab(item.id); onClose(); }}
+                        className={`nav-item group ${isActive ? 'nav-item-active' : ''}`}
+                      >
+                        <Icon
+                          className="w-3.5 h-3.5 flex-shrink-0 transition-colors duration-200"
                           style={{
-                            background: 'var(--accent-success-faint)',
-                            color: 'var(--accent-success)',
-                            border: '1px solid var(--accent-success-border)',
+                            color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
                           }}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                          strokeWidth={isActive ? 2 : 1.75}
+                        />
+                        <span className="flex-1 text-left text-[13px]">{itemLabel}</span>
+
+                        {item.id === 'dashboard' && isAdmin && (
+                          <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase">
+                            ADMIN
+                          </span>
+                        )}
+
+                        {'badge' in item && item.badge && (
+                          <span
+                            className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+                            style={{
+                              background: 'var(--accent-success-faint)',
+                              color: 'var(--accent-success)',
+                              border: '1px solid var(--accent-success-border)',
+                            }}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            ));
+          })()}
         </nav>
 
         {/* Status footer & Log out */}

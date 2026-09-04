@@ -69,12 +69,48 @@ const DEFAULT_SUPER_ADMIN: AdminUser = {
   permissions: ['*'],
 };
 
-export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AdminUser | null>(DEFAULT_SUPER_ADMIN);
+export interface AdminAuthProviderProps {
+  children: React.ReactNode;
+  initialUser?: AdminUser | null;
+  initialTab?: string;
+  onTabChange?: (tab: string) => void;
+}
+
+export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({
+  children,
+  initialUser,
+  initialTab,
+  onTabChange,
+}) => {
+  const [user, setUser] = useState<AdminUser | null>(initialUser || DEFAULT_SUPER_ADMIN);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTabState] = useState(initialTab || 'dashboard');
+
+  // Keep user in sync if initialUser updates from parent auth context
+  useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+    }
+  }, [initialUser]);
+
+  // Keep tab in sync if initialTab updates from parent router / sidebar
+  useEffect(() => {
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTabState(initialTab);
+    }
+  }, [initialTab]);
+
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    if (onTabChange) {
+      onTabChange(tab);
+    }
+  };
 
   useEffect(() => {
+    // If initialUser was already supplied, do not overwrite with fallback checkAuth
+    if (initialUser) return;
+
     // Attempt to verify existing token or URL session parameters from main application
     const checkAuth = async () => {
       let activeToken: string | null = null;
@@ -140,7 +176,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     };
     checkAuth();
-  }, []);
+  }, [initialUser]);
 
   const switchRole = async (newRole: string) => {
     const newToken = generateAdminDevToken(newRole);

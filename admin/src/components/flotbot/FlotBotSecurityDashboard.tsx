@@ -80,7 +80,7 @@ export const FlotBotSecurityDashboard: React.FC = () => {
             <Database className="h-4 w-4 text-cyan-400" />
           </div>
           <div className="mt-2 text-2xl font-bold text-cyan-400 font-mono">
-            {Object.values(iocs).reduce((a: any, b: any) => a + b, 0)}
+            {Number(Object.values(iocs).reduce((a: any, b: any) => a + b, 0))}
           </div>
           <div className="mt-1 text-[11px] text-slate-500 font-mono">Hashes, IPs, Domains</div>
         </div>

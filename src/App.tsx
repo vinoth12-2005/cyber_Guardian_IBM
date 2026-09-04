@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { auth } from './lib/firebase';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -18,7 +19,30 @@ import { WelcomeBanner } from './components/dashboard/WelcomeBanner';
 import { CyberAwarenessScore } from './components/dashboard/CyberAwarenessScore';
 import { QuickStats } from './components/dashboard/QuickStats';
 import { QuickActions } from './components/dashboard/QuickActions';
-import { RoleAdminDashboard } from './components/dashboard/RoleAdminDashboard';
+// Unified Admin Consoles (Embedded directly for administrative roles)
+import { AdminAuthProvider } from '@admin/context/AdminAuthContext';
+import type { AdminUser } from '@admin/context/AdminAuthContext';
+import { AdminDashboardView } from '@admin/components/dashboard/AdminDashboardView';
+import { UserListView } from '@admin/components/users/UserListView';
+import { CourseListView } from '@admin/components/courses/CourseListView';
+import { SimulationListView } from '@admin/components/simulations/SimulationListView';
+import { CertificationListView } from '@admin/components/certifications/CertificationListView';
+import { AssessmentQuizView } from '@admin/components/assessments/AssessmentQuizView';
+import { LearningAnalyticsView } from '@admin/components/analytics/LearningAnalyticsView';
+import { FlotBotSecurityDashboard } from '@admin/components/flotbot/FlotBotSecurityDashboard';
+import { FlotBotAlertsView } from '@admin/components/flotbot/FlotBotAlertsView';
+import { FlotBotMonitoringView } from '@admin/components/flotbot/FlotBotMonitoringView';
+import { FlotBotIOCManagement } from '@admin/components/flotbot/FlotBotIOCManagement';
+import { FlotBotThreatRules } from '@admin/components/flotbot/FlotBotThreatRules';
+import { FlotBotAIAnalysisView } from '@admin/components/flotbot/FlotBotAIAnalysisView';
+import { FlotBotUserBehaviourView } from '@admin/components/flotbot/FlotBotUserBehaviourView';
+import { FlotBotSecurityReports } from '@admin/components/flotbot/FlotBotSecurityReports';
+import { FlotBotConfigView } from '@admin/components/flotbot/FlotBotConfigView';
+import { AnnouncementsView } from '@admin/components/announcements/AnnouncementsView';
+import { RolesPermissionsView } from '@admin/components/roles/RolesPermissionsView';
+import { AuditLogsView } from '@admin/components/audit/AuditLogsView';
+import { AdminSettingsView } from '@admin/components/settings/AdminSettingsView';
+import { setAdminToken, generateAdminDevToken } from '@admin/lib/api';
 
 // Overview preview components
 import { AnalysisHistoryPreview } from './components/dashboard/AnalysisHistoryPreview';
@@ -66,9 +90,28 @@ import type {
 // Map tab IDs to human-readable page titles
 const PAGE_TITLES: Record<string, string> = {
   dashboard:          'Security Command Center',
-  'courses-training': 'Courses & Training',
+  'courses-training': 'Student Course Catalog Preview',
   training:           'Courses & Training',
-  courses:            'Courses & Training',
+  courses:            'Curriculum & Courses Studio',
+  assessments:        'Quizzes & Assessments Studio',
+  simulations:        'Simulation Cyber Range Studio',
+  certifications:     'Credential & Certificate Governance',
+  users:              'User Directory & RBAC Governance',
+  analytics:          'Learning & Security Analytics',
+  'flotbot-dashboard':'FlotBot EDR/XDR Security Dashboard',
+  'flotbot-alerts':   'Live Threat & Incident Alerts',
+  'flotbot-threats':  'Threat Detections Console',
+  'flotbot-monitoring':'Live Endpoint Telemetry',
+  'flotbot-iocs':     'Indicators of Compromise (IOC) Database',
+  'flotbot-rules':    'EDR Threat Rules Engine',
+  'flotbot-ai':       'AI Security Analysis Console',
+  'flotbot-behaviour':'User Security Behaviour Analytics',
+  'flotbot-history':  'Incident Handling History',
+  'flotbot-reports':  'Security & Compliance Reports',
+  'flotbot-config':   'FlotBot Endpoint Configuration',
+  announcements:      'Platform Announcements',
+  roles:              'Admin Roles & RBAC',
+  'audit-logs':       'Unified Audit Trails & Logs',
   simulation:         'Simulation Lab',
   'simulation-progress': 'Academy Progress Dashboard',
   achievements:       'Security Credentials & Achievements',
@@ -397,84 +440,101 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
     setActiveTab('ai-assistant');
   };
 
-  const isAdminRole = Boolean(
-    authUser?.role &&
-    [
-      'SUPER_ADMIN',
-      'PLATFORM_ADMIN',
-      'COURSE_ADMIN',
-      'USER_ADMIN',
-      'SIMULATION_ADMIN',
-      'CERTIFICATION_ADMIN',
-      'FLOTBOT_SECURITY_ADMIN',
-      'SECURITY_ANALYST',
-      'ANALYST',
-    ].includes(authUser.role)
-  );
+  const userRole = authUser?.role || 'EMPLOYEE';
+  const isAdminRole = [
+    'SUPER_ADMIN',
+    'PLATFORM_ADMIN',
+    'COURSE_ADMIN',
+    'USER_ADMIN',
+    'SIMULATION_ADMIN',
+    'CERTIFICATION_ADMIN',
+    'FLOTBOT_SECURITY_ADMIN',
+    'SECURITY_ANALYST',
+    'ANALYST',
+  ].includes(userRole);
+
+  useEffect(() => {
+    if (authUser) {
+      auth.currentUser?.getIdToken().then((tok: string | null) => {
+        if (tok) {
+          setAdminToken(tok);
+        } else {
+          setAdminToken(generateAdminDevToken(userRole, authUser.email, authUser.displayName));
+        }
+      }).catch(() => {
+        setAdminToken(generateAdminDevToken(userRole, authUser.email, authUser.displayName));
+      });
+    }
+  }, [authUser, userRole]);
+
+  const adminUser: AdminUser = {
+    id: authUser?.id || authUser?.uid || 'usr_admin',
+    name: authUser?.displayName || authUser?.email?.split('@')[0] || 'Administrator',
+    email: authUser?.email || 'admin@cyberguardian.local',
+    role: userRole,
+    avatarUrl: authUser?.avatarUrl,
+    permissions: authUser?.permissions && authUser.permissions.length > 0
+      ? authUser.permissions
+      : (userRole === 'SUPER_ADMIN' ? ['*'] : [`${userRole.toLowerCase()}:*`]),
+  };
 
   const pageTitle = PAGE_TITLES[activeTab] ?? activeTab;
   const isTrainingPage = activeTab === 'courses-training' || activeTab === 'training' || activeTab === 'courses';
   const isSimulationPage = activeTab === 'simulation' || activeTab === 'simulation-progress' || activeTab === 'achievements';
-  const hidePageTitle = isTrainingPage || isSimulationPage || (activeTab === 'dashboard' && isAdminRole);
+  const hidePageTitle = isTrainingPage || isSimulationPage || (activeTab === 'dashboard' && isAdminRole) || (isAdminRole && activeTab !== 'settings');
 
   return (
-    <div
-      className="dashboard-scope min-h-screen flex"
-      style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}
-    >
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-
-      <div className="flex-1 lg:pl-60 flex flex-col min-w-0">
-        <Header
-          user={currentUserProfile}
-          notifications={notifications}
-          onMarkAllAsRead={handleMarkAllAsRead}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          onOpenSettings={() => setActiveTab('settings')}
+    <AdminAuthProvider initialUser={adminUser} initialTab={activeTab} onTabChange={setActiveTab}>
+      <div
+        className="dashboard-scope min-h-screen flex"
+        style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}
+      >
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
         />
 
-        <main className={`flex-1 w-full mx-auto ${isTrainingPage ? 'p-4 sm:p-6 lg:p-8 max-w-[1440px] space-y-4' : 'p-4 sm:p-6 lg:p-8 max-w-[1440px] space-y-4'}`}>
+        <div className="flex-1 lg:pl-60 flex flex-col min-w-0">
+          <Header
+            user={currentUserProfile}
+            notifications={notifications}
+            onMarkAllAsRead={handleMarkAllAsRead}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            onOpenSettings={() => setActiveTab('settings')}
+          />
 
-          {/* Page title row */}
-          {!hidePageTitle && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up">
-              <div>
-                <h2 className="text-[18px] font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                  {pageTitle}
-                </h2>
-                <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  Real-time threat intelligence · AI Security Awareness Hub
-                </p>
+          <main className={`flex-1 w-full mx-auto ${isTrainingPage ? 'p-4 sm:p-6 lg:p-8 max-w-[1440px] space-y-4' : 'p-4 sm:p-6 lg:p-8 max-w-[1440px] space-y-4'}`}>
+
+            {/* Page title row */}
+            {!hidePageTitle && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up">
+                <div>
+                  <h2 className="text-[18px] font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                    {pageTitle}
+                  </h2>
+                  <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    Real-time threat intelligence · AI Security Awareness Hub
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ══════════════════════════════════════════
-              OVERVIEW / DASHBOARD
-              Role-tailored Admin Command Center for Admins,
-              or Awareness Score Hub for Employees/Students.
-          ══════════════════════════════════════════ */}
-          {activeTab === 'dashboard' && (
-            isAdminRole ? (
-              <RoleAdminDashboard
-                user={currentUserProfile}
-                quickStats={quickStats}
-                awarenessScore={awarenessScore}
-                suspiciousActivity={suspiciousActivity}
-                analysisHistory={analysisHistory}
-                simulationHistory={simulationHistory}
-                onNavigateTab={(tabId) => setActiveTab(tabId)}
-                onRefreshData={loadDatabaseData}
-              />
-            ) : (
-              <div className="space-y-4">
+            {/* ══════════════════════════════════════════
+                OVERVIEW / DASHBOARD
+                The EXACT same dashboard from the Admin Panel
+                is rendered directly for all Admin accounts!
+            ══════════════════════════════════════════ */}
+            {activeTab === 'dashboard' && (
+              isAdminRole ? (
+                <div className="animate-fade-in w-full">
+                  <AdminDashboardView />
+                </div>
+              ) : (
+                <div className="space-y-4">
 
                 {/* Row 1 — Welcome + Shield status */}
                 <div className="animate-fade-in-up">
@@ -606,9 +666,121 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
             </div>
           )}
 
-          {(activeTab === 'courses-training' || activeTab === 'training' || activeTab === 'courses') && (
+          {/* ══════════════════════════════════════════
+              ADMIN CONSOLES & WORKSPACES
+              (Directly renders planned admin views for admin roles)
+          ══════════════════════════════════════════ */}
+          {activeTab === 'users' && (
+            <div className="animate-fade-in w-full">
+              <UserListView />
+            </div>
+          )}
+
+          {activeTab === 'courses' && (
+            <div className="animate-fade-in w-full h-full flex-1 flex flex-col">
+              {isAdminRole ? <CourseListView /> : <TrainingCoursesPage />}
+            </div>
+          )}
+
+          {(activeTab === 'courses-training' || activeTab === 'training') && (
             <div className="animate-fade-in w-full h-full flex-1 flex flex-col">
               <TrainingCoursesPage />
+            </div>
+          )}
+
+          {activeTab === 'assessments' && (
+            <div className="animate-fade-in w-full">
+              <AssessmentQuizView />
+            </div>
+          )}
+
+          {activeTab === 'simulations' && (
+            <div className="animate-fade-in w-full">
+              <SimulationListView />
+            </div>
+          )}
+
+          {activeTab === 'certifications' && (
+            <div className="animate-fade-in w-full">
+              <CertificationListView />
+            </div>
+          )}
+
+          {activeTab === 'analytics' && (
+            <div className="animate-fade-in w-full">
+              <LearningAnalyticsView />
+            </div>
+          )}
+
+          {activeTab === 'flotbot-dashboard' && (
+            <div className="animate-fade-in w-full">
+              <FlotBotSecurityDashboard />
+            </div>
+          )}
+
+          {(activeTab === 'flotbot-alerts' || activeTab === 'flotbot-threats' || activeTab === 'flotbot-history') && (
+            <div className="animate-fade-in w-full">
+              <FlotBotAlertsView />
+            </div>
+          )}
+
+          {activeTab === 'flotbot-monitoring' && (
+            <div className="animate-fade-in w-full">
+              <FlotBotMonitoringView />
+            </div>
+          )}
+
+          {activeTab === 'flotbot-iocs' && (
+            <div className="animate-fade-in w-full">
+              <FlotBotIOCManagement />
+            </div>
+          )}
+
+          {activeTab === 'flotbot-rules' && (
+            <div className="animate-fade-in w-full">
+              <FlotBotThreatRules />
+            </div>
+          )}
+
+          {activeTab === 'flotbot-ai' && (
+            <div className="animate-fade-in w-full">
+              <FlotBotAIAnalysisView />
+            </div>
+          )}
+
+          {activeTab === 'flotbot-behaviour' && (
+            <div className="animate-fade-in w-full">
+              <FlotBotUserBehaviourView />
+            </div>
+          )}
+
+          {activeTab === 'flotbot-reports' && (
+            <div className="animate-fade-in w-full">
+              <FlotBotSecurityReports />
+            </div>
+          )}
+
+          {activeTab === 'flotbot-config' && (
+            <div className="animate-fade-in w-full">
+              <FlotBotConfigView />
+            </div>
+          )}
+
+          {activeTab === 'announcements' && (
+            <div className="animate-fade-in w-full">
+              <AnnouncementsView />
+            </div>
+          )}
+
+          {activeTab === 'roles' && (
+            <div className="animate-fade-in w-full">
+              <RolesPermissionsView />
+            </div>
+          )}
+
+          {activeTab === 'audit-logs' && (
+            <div className="animate-fade-in w-full">
+              <AuditLogsView />
             </div>
           )}
 
@@ -643,6 +815,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
         onClose={() => setSelectedItem(null)}
       />
     </div>
+    </AdminAuthProvider>
   );
 }
 
