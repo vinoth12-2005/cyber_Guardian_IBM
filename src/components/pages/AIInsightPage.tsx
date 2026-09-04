@@ -33,9 +33,9 @@ export const AIInsightPage: React.FC<AIInsightPageProps> = ({
       >
         <div
           className="p-2.5 rounded-xl"
-          style={{ background: 'var(--accent-primary-faint)', border: '1px solid var(--accent-primary-border)' }}
+          style={{ background: 'var(--accent-ai-faint)', border: '1px solid var(--accent-ai-border)' }}
         >
-          <Sparkles className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+          <Sparkles className="w-5 h-5" style={{ color: 'var(--accent-ai)' }} />
         </div>
         <div>
           <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>

@@ -13,13 +13,15 @@
 }
 
 .dark {
-  /* ── Backgrounds ── */
-  --bg-base:        #060608;
-  --bg-raised:      #0b0b0e;
-  --bg-elevated:    #111116;
-  --bg-card:        rgba(12, 12, 16, 0.90);
-  --bg-card-hover:  rgba(16, 16, 22, 0.96);
-  --bg-overlay:     rgba(0, 0, 0, 0.78);
+  color-scheme: dark;
+
+  /* ── Backgrounds (Navy-tinted Dark) ── */
+  --bg-base:        #070B14;
+  --bg-raised:      #0D1320;
+  --bg-elevated:    #121A28;
+  --bg-card:        rgba(13, 19, 32, 0.90);
+  --bg-card-hover:  rgba(18, 26, 40, 0.96);
+  --bg-overlay:     rgba(2, 6, 23, 0.78);
 
   /* ── Glass surfaces ── */
   --surface-1:      rgba(255, 255, 255, 0.030);
@@ -28,71 +30,79 @@
   --surface-hover:  rgba(255, 255, 255, 0.060);
 
   /* ── Borders ── */
-  --border-subtle:  rgba(255, 255, 255, 0.055);
-  --border-default: rgba(255, 255, 255, 0.080);
-  --border-medium:  rgba(255, 255, 255, 0.115);
-  --border-strong:  rgba(255, 255, 255, 0.180);
+  --border-subtle:  rgba(148, 163, 184, 0.08);
+  --border-default: rgba(148, 163, 184, 0.13);
+  --border-medium:  rgba(148, 163, 184, 0.20);
+  --border-strong:  rgba(148, 163, 184, 0.30);
 
   /* ── Text ── */
-  --text-primary:   #F2F2F5;
-  --text-secondary: #92929A;
-  --text-muted:     #5A5A64;
+  --text-primary:   #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted:     #64748B;
 
-  /* ── CyberGuardian accent system ── */
-  /* Primary — Electric Violet / identity */
-  --accent-primary:  #7C3AED;
-  --accent-primary-faint: rgba(124, 58, 237, 0.10);
-  --accent-primary-border: rgba(124, 58, 237, 0.22);
+  /* ── Semantic Accents ── */
+  /* Primary Brand — Electric Blue */
+  --accent-primary:        #3B82F6;
+  --accent-primary-faint:  rgba(59, 130, 246, 0.10);
+  --accent-primary-border: rgba(59, 130, 246, 0.22);
 
-  /* Success — Emerald green = Protected / Safe */
-  --accent-success:  #10B981;
-  --accent-success-faint: rgba(16, 185, 129, 0.10);
-  --accent-success-border: rgba(16, 185, 129, 0.22);
+  /* AI / Intelligence — Cyan */
+  --accent-ai:             #06B6D4;
+  --accent-ai-faint:       rgba(6, 182, 212, 0.10);
+  --accent-ai-border:      rgba(6, 182, 212, 0.22);
 
-  /* Warning — Amber */
-  --accent-warning:  #F59E0B;
-  --accent-warning-faint: rgba(245, 158, 11, 0.10);
+  /* Success / Protected — Emerald */
+  --accent-success:        #22C55E;
+  --accent-success-faint:  rgba(34, 197, 94, 0.10);
+  --accent-success-border: rgba(34, 197, 94, 0.22);
+
+  /* Warning / Suspicious — Amber */
+  --accent-warning:        #F59E0B;
+  --accent-warning-faint:  rgba(245, 158, 11, 0.10);
   --accent-warning-border: rgba(245, 158, 11, 0.22);
 
-  /* Danger — Magenta / Raspberry = Threat */
-  --accent-danger:   #E11D6B;
-  --accent-danger-faint: rgba(225, 29, 107, 0.10);
-  --accent-danger-border: rgba(225, 29, 107, 0.22);
+  /* Danger / Critical — Red */
+  --accent-danger:         #EF4444;
+  --accent-danger-faint:   rgba(239, 68, 68, 0.10);
+  --accent-danger-border:  rgba(239, 68, 68, 0.22);
 
-  /* Info — Sky blue */
-  --accent-info:     #38BDF8;
-  --accent-info-faint: rgba(56, 189, 248, 0.10);
-  --accent-info-border: rgba(56, 189, 248, 0.22);
+  /* Information — Sky blue */
+  --accent-info:           #38BDF8;
+  --accent-info-faint:     rgba(56, 189, 248, 0.10);
+  --accent-info-border:    rgba(56, 189, 248, 0.22);
 
   /* Simulation / Activity — Orange */
-  --accent-activity: #F97316;
+  --accent-activity:        #F97316;
+  --accent-activity-faint:  rgba(249, 115, 22, 0.10);
+  --accent-activity-border: rgba(249, 115, 22, 0.22);
 
-  /* Legacy compat */
-  --accent-cyan:    #38BDF8;
-  --accent-blue:    #3B82F6;
-  --accent-purple:  #7C3AED;
-  --accent-pink:    #E11D6B;
-  --accent-emerald: #10B981;
-  --accent-amber:   #F59E0B;
-  --accent-red:     #E11D6B;
+  /* Legacy compat mappings */
+  --accent-blue:    var(--accent-primary);
+  --accent-cyan:    var(--accent-ai);
+  --accent-purple:  var(--accent-primary);
+  --accent-pink:    var(--accent-danger);
+  --accent-emerald: var(--accent-success);
+  --accent-amber:   var(--accent-warning);
+  --accent-red:     var(--accent-danger);
 
   /* ── Shadows ── */
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.6);
-  --shadow-md:  0 4px 20px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.4);
-  --shadow-lg:  0 12px 40px rgba(0,0,0,0.65), 0 4px 16px rgba(0,0,0,0.45);
-  --shadow-xl:  0 24px 60px rgba(0,0,0,0.75), 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-sm:  0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md:  0 4px 14px 0 rgba(0, 0, 0, 0.45), 0 2px 6px 0 rgba(0, 0, 0, 0.35);
+  --shadow-lg:  0 10px 28px 0 rgba(0, 0, 0, 0.55), 0 4px 12px 0 rgba(0, 0, 0, 0.40);
+  --shadow-xl:  0 20px 40px 0 rgba(0, 0, 0, 0.65), 0 8px 20px 0 rgba(0, 0, 0, 0.45);
 
-  /* ── Subtle glows (only used sparingly on key elements) ── */
-  --glow-primary: 0 0 20px rgba(124, 58, 237, 0.18);
-  --glow-success: 0 0 16px rgba(16, 185, 129, 0.18);
-  --glow-cyan:    0 0 20px rgba(56, 189, 248, 0.14);
-  --glow-blue:    0 0 20px rgba(59, 130, 246, 0.14);
-  --glow-purple:  0 0 20px rgba(124, 58, 237, 0.18);
+  /* ── Subtle glows ── */
+  --glow-primary: 0 0 24px rgba(59, 130, 246, 0.18);
+  --glow-ai:      0 0 24px rgba(6, 182, 212, 0.18);
+  --glow-success: 0 0 24px rgba(34, 197, 94, 0.16);
+  --glow-cyan:    0 0 24px rgba(6, 182, 212, 0.18);
+  --glow-blue:    0 0 24px rgba(59, 130, 246, 0.18);
+  --glow-purple:  0 0 24px rgba(59, 130, 246, 0.18);
 
   /* ── Scrollbar ── */
-  --scrollbar-track: #060608;
-  --scrollbar-thumb: #1a1a22;
-  --scrollbar-thumb-hover: #26262e;
+  --scrollbar-track: #070B14;
+  --scrollbar-thumb: #1E293B;
+  --scrollbar-thumb-hover: #334155;
 
   /* ── Blur ── */
   --blur: blur(20px) saturate(1.3);
@@ -108,77 +118,92 @@
 .light {
   color-scheme: light;
 
-  /* ── Backgrounds ── */
-  --bg-base:        #F4F5F8;
+  /* ── Backgrounds (Clean SaaS) ── */
+  --bg-base:        #F6F8FC;
   --bg-raised:      #FFFFFF;
   --bg-elevated:    #FFFFFF;
   --bg-card:        #FFFFFF;
-  --bg-card-hover:  #FAFAFA;
+  --bg-card-hover:  #F8FAFC;
   --bg-overlay:     rgba(15, 23, 42, 0.40);
 
   /* ── Glass surfaces ── */
-  --surface-1:      rgba(0, 0, 0, 0.035);
-  --surface-2:      rgba(0, 0, 0, 0.055);
-  --surface-3:      rgba(0, 0, 0, 0.085);
-  --surface-hover:  rgba(0, 0, 0, 0.065);
+  --surface-1:      rgba(15, 23, 42, 0.03);
+  --surface-2:      rgba(15, 23, 42, 0.05);
+  --surface-3:      rgba(15, 23, 42, 0.08);
+  --surface-hover:  rgba(15, 23, 42, 0.04);
 
   /* ── Borders ── */
-  --border-subtle:  rgba(0, 0, 0, 0.08);
-  --border-default: rgba(0, 0, 0, 0.12);
-  --border-medium:  rgba(0, 0, 0, 0.20);
-  --border-strong:  rgba(0, 0, 0, 0.30);
+  --border-subtle:  rgba(15, 23, 42, 0.06);
+  --border-default: rgba(15, 23, 42, 0.10);
+  --border-medium:  rgba(15, 23, 42, 0.16);
+  --border-strong:  rgba(15, 23, 42, 0.24);
 
   /* ── Text ── */
   --text-primary:   #0F172A;
   --text-secondary: #475569;
   --text-muted:     #64748B;
 
-  /* ── Accents (same semantic meaning, adjusted for light) ── */
-  --accent-primary:  #6D28D9;
-  --accent-primary-faint: rgba(109, 40, 217, 0.08);
-  --accent-primary-border: rgba(109, 40, 217, 0.18);
+  /* ── Semantic Accents (High-contrast for light surfaces) ── */
+  /* Primary Brand — Electric Blue */
+  --accent-primary:        #2563EB;
+  --accent-primary-faint:  rgba(37, 99, 235, 0.08);
+  --accent-primary-border: rgba(37, 99, 235, 0.20);
 
-  --accent-success:  #059669;
-  --accent-success-faint: rgba(5, 150, 105, 0.08);
-  --accent-success-border: rgba(5, 150, 105, 0.18);
+  /* AI / Intelligence — Deep Cyan */
+  --accent-ai:             #0891B2;
+  --accent-ai-faint:       rgba(8, 145, 178, 0.08);
+  --accent-ai-border:      rgba(8, 145, 178, 0.20);
 
-  --accent-warning:  #D97706;
-  --accent-warning-faint: rgba(217, 119, 6, 0.08);
-  --accent-warning-border: rgba(217, 119, 6, 0.18);
+  /* Success / Protected — Emerald */
+  --accent-success:        #16A34A;
+  --accent-success-faint:  rgba(22, 163, 74, 0.08);
+  --accent-success-border: rgba(22, 163, 74, 0.20);
 
-  --accent-danger:   #C2185B;
-  --accent-danger-faint: rgba(194, 24, 91, 0.08);
-  --accent-danger-border: rgba(194, 24, 91, 0.18);
+  /* Warning / Suspicious — Amber */
+  --accent-warning:        #D97706;
+  --accent-warning-faint:  rgba(217, 119, 6, 0.08);
+  --accent-warning-border: rgba(217, 119, 6, 0.20);
 
-  --accent-info:     #0284C7;
-  --accent-info-faint: rgba(2, 132, 199, 0.08);
-  --accent-info-border: rgba(2, 132, 199, 0.18);
+  /* Danger / Critical — Red */
+  --accent-danger:         #DC2626;
+  --accent-danger-faint:   rgba(220, 38, 38, 0.08);
+  --accent-danger-border:  rgba(220, 38, 38, 0.20);
 
-  --accent-activity: #EA580C;
+  /* Information — Sky blue */
+  --accent-info:           #0284C7;
+  --accent-info-faint:     rgba(2, 132, 199, 0.08);
+  --accent-info-border:    rgba(2, 132, 199, 0.20);
 
-  /* Legacy compat */
-  --accent-cyan:    #0284C7;
-  --accent-blue:    #2563EB;
-  --accent-purple:  #6D28D9;
-  --accent-pink:    #C2185B;
-  --accent-emerald: #059669;
-  --accent-amber:   #D97706;
-  --accent-red:     #C2185B;
+  /* Simulation / Activity — Orange */
+  --accent-activity:        #EA580C;
+  --accent-activity-faint:  rgba(234, 88, 12, 0.08);
+  --accent-activity-border: rgba(234, 88, 12, 0.20);
+
+  /* Legacy compat mappings */
+  --accent-blue:    var(--accent-primary);
+  --accent-cyan:    var(--accent-ai);
+  --accent-purple:  var(--accent-primary);
+  --accent-pink:    var(--accent-danger);
+  --accent-emerald: var(--accent-success);
+  --accent-amber:   var(--accent-warning);
+  --accent-red:     var(--accent-danger);
 
   /* ── Shadows ── */
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md:  0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
-  --shadow-lg:  0 12px 36px rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.05);
-  --shadow-xl:  0 24px 56px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.06);
+  --shadow-sm:  0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md:  0 4px 12px rgba(15, 23, 42, 0.07), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-lg:  0 10px 25px rgba(15, 23, 42, 0.08), 0 3px 8px rgba(15, 23, 42, 0.04);
+  --shadow-xl:  0 20px 40px rgba(15, 23, 42, 0.10), 0 8px 16px rgba(15, 23, 42, 0.05);
 
-  --glow-primary: 0 0 20px rgba(109, 40, 217, 0.12);
-  --glow-success: 0 0 16px rgba(5, 150, 105, 0.12);
-  --glow-cyan:    0 0 20px rgba(2, 132, 199, 0.10);
-  --glow-blue:    0 0 20px rgba(37, 99, 235, 0.10);
-  --glow-purple:  0 0 20px rgba(109, 40, 217, 0.12);
+  /* ── Subtle glows ── */
+  --glow-primary: 0 0 16px rgba(37, 99, 235, 0.12);
+  --glow-ai:      0 0 16px rgba(8, 145, 178, 0.12);
+  --glow-success: 0 0 16px rgba(22, 163, 74, 0.12);
+  --glow-cyan:    0 0 16px rgba(8, 145, 178, 0.10);
+  --glow-blue:    0 0 16px rgba(37, 99, 235, 0.10);
+  --glow-purple:  0 0 16px rgba(37, 99, 235, 0.10);
 
   /* ── Scrollbar ── */
-  --scrollbar-track: #F4F5F8;
+  --scrollbar-track: #F6F8FC;
   --scrollbar-thumb: #CBD5E1;
   --scrollbar-thumb-hover: #94A3B8;
 
@@ -448,99 +473,9 @@
 
 
 /* ─────────────────────────────────────────────
-   DASHBOARD SCOPE — minimal, premium overrides
-   Applied only inside .dashboard-scope.
-   Login / Register pages are untouched.
+   DASHBOARD SCOPE — Component enhancements
+   Inherits standardized tokens from .dark / .light
 ───────────────────────────────────────────── */
-
-/* ── Dark theme overrides ── */
-.dark .dashboard-scope {
-  /* Single accent: calm indigo-blue replaces loud violet */
-  --accent-primary:        #4F7FFA;
-  --accent-primary-faint:  rgba(79, 127, 250, 0.07);
-  --accent-primary-border: rgba(79, 127, 250, 0.15);
-
-  /* Muted semantic — same hue, much lower saturation/opacity */
-  --accent-success:        #34C77B;
-  --accent-success-faint:  rgba(52, 199, 123, 0.07);
-  --accent-success-border: rgba(52, 199, 123, 0.14);
-
-  --accent-warning:        #E8A020;
-  --accent-warning-faint:  rgba(232, 160, 32, 0.07);
-  --accent-warning-border: rgba(232, 160, 32, 0.14);
-
-  --accent-danger:         #E05050;
-  --accent-danger-faint:   rgba(224, 80, 80, 0.07);
-  --accent-danger-border:  rgba(224, 80, 80, 0.14);
-
-  /* Info → same as primary (no extra cyan) */
-  --accent-info:           #4F7FFA;
-  --accent-info-faint:     rgba(79, 127, 250, 0.07);
-  --accent-info-border:    rgba(79, 127, 250, 0.15);
-
-  /* Activity → neutral warm-grey instead of orange */
-  --accent-activity:       #8A8A94;
-
-  /* Legacy aliases → all point to the same blue */
-  --accent-cyan:    #4F7FFA;
-  --accent-blue:    #4F7FFA;
-  --accent-purple:  #4F7FFA;
-  --accent-pink:    #E05050;
-  --accent-emerald: #34C77B;
-  --accent-amber:   #E8A020;
-  --accent-red:     #E05050;
-
-  /* Kill all glows in the dashboard */
-  --glow-primary: none;
-  --glow-success: none;
-  --glow-cyan:    none;
-  --glow-blue:    none;
-  --glow-purple:  none;
-
-  /* Slightly tighter shadows */
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.45);
-  --shadow-md:  0 3px 12px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.25);
-  --shadow-lg:  0 8px 28px rgba(0,0,0,0.45), 0 3px 10px rgba(0,0,0,0.3);
-}
-
-/* ── Light theme overrides ── */
-.light .dashboard-scope {
-  --accent-primary:        #2563EB;
-  --accent-primary-faint:  rgba(37, 99, 235, 0.06);
-  --accent-primary-border: rgba(37, 99, 235, 0.14);
-
-  --accent-success:        #16A34A;
-  --accent-success-faint:  rgba(22, 163, 74, 0.06);
-  --accent-success-border: rgba(22, 163, 74, 0.13);
-
-  --accent-warning:        #B45309;
-  --accent-warning-faint:  rgba(180, 83, 9, 0.06);
-  --accent-warning-border: rgba(180, 83, 9, 0.13);
-
-  --accent-danger:         #C53030;
-  --accent-danger-faint:   rgba(197, 48, 48, 0.06);
-  --accent-danger-border:  rgba(197, 48, 48, 0.13);
-
-  --accent-info:           #2563EB;
-  --accent-info-faint:     rgba(37, 99, 235, 0.06);
-  --accent-info-border:    rgba(37, 99, 235, 0.14);
-
-  --accent-activity:       #64748B;
-
-  --accent-cyan:    #2563EB;
-  --accent-blue:    #2563EB;
-  --accent-purple:  #2563EB;
-  --accent-pink:    #C53030;
-  --accent-emerald: #16A34A;
-  --accent-amber:   #B45309;
-  --accent-red:     #C53030;
-
-  --glow-primary: none;
-  --glow-success: none;
-  --glow-cyan:    none;
-  --glow-blue:    none;
-  --glow-purple:  none;
-}
 
 /* ── Dashboard glass-card: flat, no blur noise ── */
 .dashboard-scope .glass-card,

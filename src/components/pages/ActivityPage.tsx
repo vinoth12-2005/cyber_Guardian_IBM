@@ -49,9 +49,9 @@ export const ActivityPage: React.FC = () => {
       >
         <div
           className="p-2.5 rounded-xl"
-          style={{ background: 'var(--accent-info-faint)', border: '1px solid var(--accent-info-border)' }}
+          style={{ background: 'var(--accent-activity-faint)', border: '1px solid var(--accent-activity-border)' }}
         >
-          <Activity className="w-5 h-5" style={{ color: 'var(--accent-info)' }} />
+          <Activity className="w-5 h-5" style={{ color: 'var(--accent-activity)' }} />
         </div>
         <div>
           <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>

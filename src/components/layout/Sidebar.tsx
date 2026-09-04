@@ -226,7 +226,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 CyberGuardian
               </span>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase font-semibold">
+                <span
+                  className="text-[9px] font-mono px-1.5 py-0.5 rounded uppercase font-semibold"
+                  style={{
+                    background: 'var(--accent-primary-faint)',
+                    color: 'var(--accent-primary)',
+                    border: '1px solid var(--accent-primary-border)',
+                  }}
+                >
                   {authUser?.role || 'EMPLOYEE'}
                 </span>
               </div>
@@ -328,7 +335,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-colors"
+            style={{
+              color: 'var(--accent-danger)',
+              background: 'var(--accent-danger-faint)',
+              border: '1px solid var(--accent-danger-border)',
+            }}
           >
             <LogOut className="w-3.5 h-3.5" />
             Sign Out

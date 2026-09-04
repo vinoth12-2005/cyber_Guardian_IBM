@@ -50,9 +50,9 @@ export function HeroSection() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] max-w-5xl"
       >
-        <span className="text-white">Adversary Threat &</span>
+        <span style={{ color: 'var(--text-primary)' }}>Adversary Threat &</span>
         <br />
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-500">
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-400">
           Defense Simulation Range
         </span>
       </motion.h1>
@@ -62,7 +62,8 @@ export function HeroSection() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="text-slate-300 dark:text-slate-400 text-sm md:text-lg max-w-3xl mt-6 leading-relaxed"
+        className="text-sm md:text-lg max-w-3xl mt-6 leading-relaxed"
+        style={{ color: 'var(--text-secondary)' }}
       >
         Experience realistic phishing drills, ransomware attacks, MITM network intercepts, cloud breaches, and multi-stage adversary tactics in a safe, sandboxed Cyber Range. Master live defense through hands-on combat scenarios.
       </motion.p>
@@ -76,22 +77,26 @@ export function HeroSection() {
       >
         <button
           onClick={scrollToSims}
-          className="w-full sm:w-auto font-bold px-8 py-3.5 rounded-xl transition-all duration-300 font-mono tracking-wider flex items-center justify-center gap-2.5 cursor-pointer text-slate-950 shadow-lg group hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full sm:w-auto font-bold px-8 py-3.5 rounded-xl transition-all duration-300 font-mono tracking-wider flex items-center justify-center gap-2.5 cursor-pointer text-white shadow-lg group hover:scale-[1.02] active:scale-[0.98]"
           style={{
-            background: 'linear-gradient(135deg, #38BDF8 0%, #0284C7 100%)',
-            boxShadow: '0 8px 30px rgba(56, 189, 248, 0.35)',
+            background: 'var(--accent-primary)',
+            boxShadow: 'var(--glow-primary)',
           }}
         >
-          <Crosshair className="w-4 h-4 stroke-[2.5] text-slate-950 group-hover:rotate-45 transition-transform duration-300" />
+          <Crosshair className="w-4 h-4 stroke-[2.5] group-hover:rotate-45 transition-transform duration-300" />
           <span>DEPLOY THREAT RANGE</span>
           <ChevronRight className="w-4 h-4 stroke-[2.5]" />
         </button>
         <button
           onClick={scrollToSims}
-          className="w-full sm:w-auto border border-slate-700 hover:border-cyan-500/50 text-slate-200 hover:text-white px-8 py-3.5 rounded-xl transition-all duration-300 font-mono tracking-wider flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md hover:bg-cyan-500/10"
-          style={{ background: 'rgba(255,255,255,0.03)' }}
+          className="w-full sm:w-auto px-8 py-3.5 rounded-xl transition-all duration-300 font-mono tracking-wider flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md"
+          style={{
+            background: 'var(--surface-1)',
+            border: '1px solid var(--border-default)',
+            color: 'var(--text-primary)',
+          }}
         >
-          <Terminal className="w-4 h-4 text-cyan-400" />
+          <Terminal className="w-4 h-4" style={{ color: 'var(--accent-ai)' }} />
           <span>EXPLORE ALL {totalSims} DRILLS</span>
         </button>
       </motion.div>
@@ -108,16 +113,16 @@ export function HeroSection() {
             key={i}
             className="p-4 rounded-2xl border backdrop-blur-md transition-all duration-300 hover:border-cyan-500/30"
             style={{
-              background: 'rgba(12, 12, 18, 0.65)',
-              borderColor: 'rgba(255, 255, 255, 0.08)',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              background: 'var(--bg-card)',
+              borderColor: 'var(--border-default)',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+            <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">
               {s.value}
             </div>
-            <div className="text-xs text-slate-200 font-bold mt-1 tracking-wide">{s.label}</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">{s.sub}</div>
+            <div className="text-xs font-bold mt-1 tracking-wide" style={{ color: 'var(--text-primary)' }}>{s.label}</div>
+            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.sub}</div>
           </div>
         ))}
       </motion.div>
@@ -127,9 +132,14 @@ export function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.6 }}
-        className="flex items-center gap-2 mt-8 text-xs text-slate-400 border border-emerald-500/20 bg-emerald-950/20 px-4 py-2 rounded-full backdrop-blur-sm"
+        className="flex items-center gap-2 mt-8 text-xs px-4 py-2 rounded-full backdrop-blur-sm"
+        style={{
+          background: 'var(--accent-success-faint)',
+          border: '1px solid var(--accent-success-border)',
+          color: 'var(--text-secondary)',
+        }}
       >
-        <Shield className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+        <Shield className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent-success)' }} />
         <span>All environments are strictly sandboxed & isolated. Zero real data collected. All targets use .test / .invalid TLDs.</span>
       </motion.div>
     </section>

@@ -409,10 +409,10 @@ export const mockWeeklyReport: WeeklyReportData = {
     { week: "W5", score: 88 },
   ],
   pieChartData: [
-    { name: "Phishing URLs", value: 42, color: "#06B6D4" },
-    { name: "Fake Logins", value: 24, color: "#3B82F6" },
-    { name: "Malware Docs", value: 18, color: "#8B5CF6" },
-    { name: "Scam QR Codes", value: 16, color: "#EC4899" },
+    { name: "Phishing URLs", value: 42, color: "var(--accent-danger, #EF4444)" },
+    { name: "Fake Logins", value: 24, color: "var(--accent-warning, #F59E0B)" },
+    { name: "Malware Docs", value: 18, color: "var(--accent-primary, #3B82F6)" },
+    { name: "Scam QR Codes", value: 16, color: "var(--accent-info, #38BDF8)" },
   ]
 };
 

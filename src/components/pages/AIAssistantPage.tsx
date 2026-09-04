@@ -482,22 +482,46 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="p-6 rounded-2xl bg-slate-900/80 border border-cyan-500/30 relative overflow-hidden">
+      <div
+        className="p-6 rounded-2xl relative overflow-hidden"
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--accent-ai-border)',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-3.5">
-            <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-lg shadow-cyan-500/10">
+            <div
+              className="p-3 rounded-2xl flex items-center justify-center"
+              style={{
+                background: 'var(--accent-ai-faint)',
+                color: 'var(--accent-ai)',
+                border: '1px solid var(--accent-ai-border)',
+                boxShadow: 'var(--glow-ai)',
+              }}
+            >
               <Bot className="w-8 h-8 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-white tracking-tight">
+                <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                   FlotBot AI Security Assistant & Threat Interceptor
                 </h1>
-                <span className="badge bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px] font-bold">
+                <span
+                  className="badge"
+                  style={{
+                    background: 'var(--accent-success-faint)',
+                    color: 'var(--accent-success)',
+                    border: '1px solid var(--accent-success-border)',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                  }}
+                >
                   ACTIVE DEFENSE
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                 Multi-layer protection using VirusTotal v3, Google Safe Browsing, Hybrid Analysis, and local heuristics.
               </p>
             </div>
@@ -508,12 +532,25 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
       {/* Grid: Left Chat / Right Threat Engine Simulator */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Chat Conversation (7 cols) */}
-        <div className="lg:col-span-7 flex flex-col rounded-2xl bg-slate-900/70 border border-slate-800 overflow-hidden h-[640px]">
+        <div
+          className="lg:col-span-7 flex flex-col rounded-2xl overflow-hidden h-[640px]"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-default)',
+            boxShadow: 'var(--shadow-sm)',
+          }}
+        >
           {/* Chat Header */}
-          <div className="px-5 py-3 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between">
+          <div
+            className="px-5 py-3 flex items-center justify-between"
+            style={{
+              background: 'var(--surface-1)',
+              borderBottom: '1px solid var(--border-subtle)',
+            }}
+          >
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">
+              <Sparkles className="w-4 h-4" style={{ color: 'var(--accent-ai)' }} />
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
                 {activeSessionId ? 'Ongoing Security Consultation' : 'Interactive Security Consultation'}
               </span>
             </div>
@@ -521,23 +558,41 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
               <button
                 type="button"
                 onClick={handleStartNewChat}
-                className="text-[11px] px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                className="text-[11px] px-2.5 py-1 rounded-lg font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                style={{
+                  background: 'var(--accent-ai-faint)',
+                  color: 'var(--accent-ai)',
+                  border: '1px solid var(--accent-ai-border)',
+                }}
                 title="Start a fresh conversation thread"
               >
                 + New Chat
               </button>
-              <span className="text-[11px] text-slate-400 font-mono">Online</span>
+              <span className="text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>Online</span>
             </div>
           </div>
 
           {/* Course Study Companion Banner */}
           {studyContext && studyContext.hasEnrollments && (
-            <div className="px-4 py-2 bg-indigo-950/50 border-b border-indigo-500/30 flex flex-wrap items-center justify-between gap-2 animate-fade-in">
+            <div
+              className="px-4 py-2 border-b flex flex-wrap items-center justify-between gap-2 animate-fade-in"
+              style={{
+                background: 'var(--accent-primary-faint)',
+                borderColor: 'var(--accent-primary-border)',
+              }}
+            >
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/30 text-indigo-300 font-bold border border-indigo-500/40 shrink-0">
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded font-bold shrink-0"
+                  style={{
+                    background: 'var(--accent-primary-faint)',
+                    color: 'var(--accent-primary)',
+                    border: '1px solid var(--accent-primary-border)',
+                  }}
+                >
                   🎓 COURSE STUDY TUTOR
                 </span>
-                <span className="text-[11px] text-slate-300 truncate max-w-sm">
+                <span className="text-[11px] truncate max-w-sm" style={{ color: 'var(--text-secondary)' }}>
                   Studying: {studyContext.courses.map((c: any) => c.title).join(', ')}
                 </span>
               </div>
@@ -545,14 +600,24 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
                 <button
                   type="button"
                   onClick={() => handleSendMessage("What should I study next according to my enrolled courses?")}
-                  className="text-[10px] px-2 py-0.5 rounded bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 border border-indigo-500/30 transition-colors cursor-pointer"
+                  className="text-[10px] px-2 py-0.5 rounded transition-colors cursor-pointer"
+                  style={{
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-default)',
+                  }}
                 >
                   Next Lesson Advice
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSendMessage("Give me a quick scenario quiz based on my course!")}
-                  className="text-[10px] px-2 py-0.5 rounded bg-indigo-600/30 hover:bg-indigo-600/60 text-indigo-200 border border-indigo-500/30 transition-colors cursor-pointer"
+                  className="text-[10px] px-2 py-0.5 rounded transition-colors cursor-pointer"
+                  style={{
+                    background: 'var(--surface-2)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-default)',
+                  }}
                 >
                   Quiz Me
                 </button>
@@ -561,29 +626,49 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
           )}
 
           {/* Messages Area */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3.5">
+          <div className="flex-1 p-4 overflow-y-auto space-y-3.5" style={{ background: 'var(--bg-card)' }}>
             {messages.map((m) => (
               <div
                 key={m.id}
                 className={`flex gap-3 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {m.sender === 'flotbot' && (
-                  <div className="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                    style={{
+                      background: 'var(--accent-ai-faint)',
+                      border: '1px solid var(--accent-ai-border)',
+                      color: 'var(--accent-ai)',
+                    }}
+                  >
                     <Bot className="w-4 h-4" />
                   </div>
                 )}
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                    m.sender === 'user'
-                      ? 'bg-cyan-600 text-white font-medium rounded-tr-none'
-                      : 'bg-slate-800/90 text-slate-200 border border-slate-700/60 rounded-tl-none whitespace-pre-line'
-                  }`}
+                  className="max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed"
+                  style={{
+                    ...(m.sender === 'user'
+                      ? {
+                          background: 'var(--accent-primary)',
+                          color: '#FFFFFF',
+                          borderTopRightRadius: '0px',
+                        }
+                      : {
+                          background: 'var(--surface-1)',
+                          color: 'var(--text-primary)',
+                          border: '1px solid var(--border-default)',
+                          borderTopLeftRadius: '0px',
+                          whiteSpace: 'pre-line',
+                        }),
+                  }}
                 >
                   {m.text}
                   <div
-                    className={`text-[9px] mt-1.5 ${
-                      m.sender === 'user' ? 'text-cyan-200 text-right' : 'text-slate-400'
-                    }`}
+                    className="text-[9px] mt-1.5"
+                    style={{
+                      color: m.sender === 'user' ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)',
+                      textAlign: m.sender === 'user' ? 'right' : 'left',
+                    }}
                   >
                     {m.timestamp}
                   </div>
@@ -593,13 +678,24 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
           </div>
 
           {/* Quick Prompts Chips */}
-          <div className="p-2.5 bg-slate-950/40 border-t border-slate-800/80 overflow-x-auto flex gap-2">
+          <div
+            className="p-2.5 border-t overflow-x-auto flex gap-2"
+            style={{
+              background: 'var(--surface-1)',
+              borderColor: 'var(--border-subtle)',
+            }}
+          >
             {SUGGESTED_QUESTIONS.map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(q)}
                 disabled={isSendingChat}
-                className="text-[11px] px-3 py-1.5 rounded-xl bg-slate-800/70 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 whitespace-nowrap transition-all cursor-pointer"
+                className="text-[11px] px-3 py-1.5 rounded-xl whitespace-nowrap transition-all cursor-pointer"
+                style={{
+                  background: 'var(--surface-2)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-default)',
+                }}
               >
                 {q}
               </button>
@@ -612,19 +708,32 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
               e.preventDefault();
               handleSendMessage();
             }}
-            className="p-3 bg-slate-950/80 border-t border-slate-800 flex gap-2"
+            className="p-3 border-t flex gap-2"
+            style={{
+              background: 'var(--surface-1)',
+              borderColor: 'var(--border-subtle)',
+            }}
           >
             <input
               type="text"
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
               placeholder="Ask FlotBot, scan a link (e.g. http://...), or inquire about security..."
-              className="flex-1 text-xs px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+              className="flex-1 text-xs px-4 py-2.5 rounded-xl focus:outline-none transition-colors"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
             />
             <button
               type="submit"
               disabled={!inputPrompt.trim() || isSendingChat}
-              className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-4 py-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+              style={{
+                background: 'var(--accent-ai)',
+                color: '#FFFFFF',
+              }}
             >
               <Send className="w-3.5 h-3.5" />
               Send
@@ -634,35 +743,59 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
 
         {/* Right: Live Threat Interception & Scanner Sandbox (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-5 rounded-2xl bg-slate-900/70 border border-amber-500/30 space-y-4">
+          <div
+            className="p-5 rounded-2xl space-y-4"
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-default)',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
             {/* Mode Switcher Tabs */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                <div
+                  className="p-1.5 rounded-lg flex items-center justify-center"
+                  style={{
+                    background: 'var(--accent-warning-faint)',
+                    color: 'var(--accent-warning)',
+                    border: '1px solid var(--accent-warning-border)',
+                  }}
+                >
                   <ShieldAlert className="w-4 h-4" />
                 </div>
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
                   Threat Interception Sandbox
                 </h3>
               </div>
 
               {/* URL vs File Toggle */}
-              <div className="flex p-0.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-bold">
+              <div
+                className="flex p-0.5 rounded-lg text-[10px] font-bold"
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border-default)',
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setScannerMode('url')}
-                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    scannerMode === 'url' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className="px-2.5 py-1 rounded-md transition-all cursor-pointer"
+                  style={{
+                    background: scannerMode === 'url' ? 'var(--accent-ai)' : 'transparent',
+                    color: scannerMode === 'url' ? '#FFFFFF' : 'var(--text-muted)',
+                  }}
                 >
                   URL Scanner
                 </button>
                 <button
                   type="button"
                   onClick={() => setScannerMode('file')}
-                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    scannerMode === 'file' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className="px-2.5 py-1 rounded-md transition-all cursor-pointer"
+                  style={{
+                    background: scannerMode === 'file' ? 'var(--accent-ai)' : 'transparent',
+                    color: scannerMode === 'file' ? '#FFFFFF' : 'var(--text-muted)',
+                  }}
                 >
                   File Scanner
                 </button>
@@ -672,13 +805,13 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
             {/* URL Scanner Mode */}
             {scannerMode === 'url' && (
               <div className="space-y-4 animate-fade-in">
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   Enter a URL or click samples to trigger <strong>Google Safe Browsing</strong>, <strong>VirusTotal</strong>, and <strong>URLEngine</strong>.
                 </p>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <Globe className="w-3.5 h-3.5 text-cyan-400" />
+                  <label className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                    <Globe className="w-3.5 h-3.5" style={{ color: 'var(--accent-ai)' }} />
                     Custom URL to Test
                   </label>
                   <div className="flex gap-2">
@@ -687,13 +820,22 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
                       value={testUrl}
                       onChange={(e) => setTestUrl(e.target.value)}
                       placeholder="e.g. http://paypa1-security.xyz/login"
-                      className="flex-1 text-xs px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
+                      className="flex-1 text-xs px-3 py-2 rounded-xl focus:outline-none font-mono transition-colors"
+                      style={{
+                        background: 'var(--surface-1)',
+                        border: '1px solid var(--border-default)',
+                        color: 'var(--text-primary)',
+                      }}
                     />
                     <button
                       type="button"
                       onClick={() => handleRunUrlInterception(testUrl)}
                       disabled={!testUrl.trim() || isAnalyzing}
-                      className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                      className="px-3.5 py-2 rounded-xl disabled:opacity-50 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                      style={{
+                        background: 'var(--accent-warning)',
+                        color: '#FFFFFF',
+                      }}
                     >
                       <Play className="w-3.5 h-3.5" />
                       Test Intercept
@@ -702,8 +844,8 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
                 </div>
 
                 {/* Preset URL Threats */}
-                <div className="space-y-2 pt-2 border-t border-slate-800">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="space-y-2 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                  <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                     Click Sample Links to Test:
                   </span>
                   <div className="space-y-2">
@@ -714,17 +856,21 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
                           setTestUrl(item.url);
                           handleRunUrlInterception(item.url);
                         }}
-                        className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/40 transition-all cursor-pointer group"
+                        className="p-2.5 rounded-xl transition-all cursor-pointer group"
+                        style={{
+                          background: 'var(--surface-1)',
+                          border: '1px solid var(--border-default)',
+                        }}
                       >
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">
+                          <span className="text-xs font-bold transition-colors" style={{ color: 'var(--text-primary)' }}>
                             {item.label}
                           </span>
                           <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase border ${item.badgeColor}`}>
                             {item.badge}
                           </span>
                         </div>
-                        <div className="text-[10px] font-mono text-slate-400 truncate group-hover:text-slate-300">
+                        <div className="text-[10px] font-mono truncate" style={{ color: 'var(--text-muted)' }}>
                           {item.url}
                         </div>
                       </div>
@@ -737,18 +883,22 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
             {/* File Scanner Mode */}
             {scannerMode === 'file' && (
               <div className="space-y-4 animate-fade-in">
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   Upload any file or click samples to scan SHA-256 against <strong>VirusTotal</strong> and <strong>Hybrid Analysis</strong> sandbox.
                 </p>
 
                 {/* Upload Box */}
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-5 rounded-xl bg-slate-950/90 border-2 border-dashed border-slate-700 hover:border-cyan-500 text-center transition-all cursor-pointer group"
+                  className="p-5 rounded-xl text-center transition-all cursor-pointer group"
+                  style={{
+                    background: 'var(--surface-1)',
+                    border: '2px dashed var(--border-medium)',
+                  }}
                 >
-                  <UploadCloud className="w-8 h-8 text-cyan-400 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                  <p className="text-xs font-bold text-white">Click or Drag & Drop File to Scan</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Calculates SHA-256 and Shannon Entropy locally</p>
+                  <UploadCloud className="w-8 h-8 mx-auto mb-2 group-hover:scale-110 transition-transform" style={{ color: 'var(--accent-ai)' }} />
+                  <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>Click or Drag & Drop File to Scan</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Calculates SHA-256 and Shannon Entropy locally</p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -758,8 +908,8 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
                 </div>
 
                 {/* Preset File Threats */}
-                <div className="space-y-2 pt-2 border-t border-slate-800">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="space-y-2 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                  <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                     Click Sample Files to Test:
                   </span>
                   <div className="space-y-2">
@@ -767,18 +917,22 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
                       <div
                         key={idx}
                         onClick={() => handleRunFileInterception(item)}
-                        className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/40 transition-all cursor-pointer group"
+                        className="p-2.5 rounded-xl transition-all cursor-pointer group"
+                        style={{
+                          background: 'var(--surface-1)',
+                          border: '1px solid var(--border-default)',
+                        }}
                       >
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors flex items-center gap-1.5">
-                            <FileCode className="w-3.5 h-3.5 text-cyan-400" />
+                          <span className="text-xs font-bold transition-colors flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                            <FileCode className="w-3.5 h-3.5" style={{ color: 'var(--accent-ai)' }} />
                             {item.fileName}
                           </span>
                           <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase border ${item.badgeColor}`}>
                             {item.badge}
                           </span>
                         </div>
-                        <div className="text-[10px] font-mono text-slate-400 truncate">
+                        <div className="text-[10px] font-mono truncate" style={{ color: 'var(--text-muted)' }}>
                           SHA: {item.sha256.slice(0, 20)}... · Entropy: {item.entropy}
                         </div>
                       </div>

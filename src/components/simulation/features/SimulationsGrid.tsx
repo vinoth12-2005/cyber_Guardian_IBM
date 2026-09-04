@@ -468,31 +468,34 @@ export function SimulationsGrid() {
 
                 {/* Scenario Title */}
                 <div>
-                  <h3 className="text-sm font-extrabold text-white leading-snug group-hover:text-cyan-400 transition-colors duration-200 line-clamp-1">
+                  <h3
+                    className="text-sm font-extrabold leading-snug transition-colors duration-200 line-clamp-1"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     {sim.title}
                   </h3>
                   {sim.brand && (
-                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Target: {sim.brand}</p>
+                    <p className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>Target: {sim.brand}</p>
                   )}
                 </div>
 
                 {/* Goal Briefing */}
-                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {sim.goal}
                 </p>
               </div>
 
               {/* Card Footer: Metadata & Launch Button */}
-              <div className="space-y-3 pt-3 border-t border-slate-800/80">
+              <div className="space-y-3 pt-3 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
                 <div className="flex items-center justify-between text-[11px] font-mono">
                   <span className={`px-2 py-0.5 rounded border flex items-center gap-1.5 ${diffStyle.color}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${diffStyle.dot}`} />
                     {sim.difficulty}
                   </span>
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Clock className="w-3 h-3 text-slate-500" /> {sim.duration}m
+                  <span className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                    <Clock className="w-3 h-3" style={{ color: 'var(--text-muted)' }} /> {sim.duration}m
                   </span>
-                  <span className="text-cyan-400 font-bold">
+                  <span className="font-bold" style={{ color: 'var(--accent-primary)' }}>
                     +{sim.xp} XP
                   </span>
                 </div>
@@ -501,9 +504,14 @@ export function SimulationsGrid() {
                   to={`/simulation/${sim.numericId}`}
                   className={`w-full text-center py-2.5 font-bold rounded-xl text-xs transition duration-200 flex items-center justify-center gap-2 font-mono tracking-wider cursor-pointer border ${
                     isCompleted
-                      ? 'bg-emerald-950/60 hover:bg-emerald-600 text-emerald-300 hover:text-white border-emerald-700/60 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
-                      : 'bg-slate-900 hover:bg-cyan-500 hover:text-slate-950 text-slate-200 border-slate-800 group-hover:border-cyan-500/50 group-hover:bg-gradient-to-r group-hover:from-cyan-500 group-hover:to-blue-500 group-hover:text-slate-950 shadow-sm'
+                      ? 'bg-emerald-500/10 hover:bg-emerald-600 text-emerald-500 hover:text-white border-emerald-500/30'
+                      : 'hover:opacity-90'
                   }`}
+                  style={!isCompleted ? {
+                    background: 'var(--accent-primary)',
+                    color: '#FFFFFF',
+                    borderColor: 'var(--accent-primary-border)',
+                  } : undefined}
                 >
                   {isCompleted ? (
                     <>

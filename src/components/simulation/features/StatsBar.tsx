@@ -76,10 +76,10 @@ export function StatsBar() {
               {/* Subtle top indicator bar */}
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div className="overflow-hidden">
-                  <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 truncate">
+                  <p className="text-[11px] font-mono uppercase tracking-wider truncate" style={{ color: 'var(--text-muted)' }}>
                     {stat.label}
                   </p>
-                  <p className="text-xl font-black text-white mt-0.5 tracking-tight truncate">
+                  <p className="text-xl font-black mt-0.5 tracking-tight truncate" style={{ color: 'var(--text-primary)' }}>
                     {stat.value}
                   </p>
                 </div>
@@ -90,13 +90,13 @@ export function StatsBar() {
 
               {/* Progress track */}
               <div className="space-y-1.5 pt-1">
-                <div className="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface-2)' }}>
                   <div 
                     className={`h-full bg-gradient-to-r ${stat.barColor} rounded-full transition-all duration-500`}
                     style={{ width: `${Math.max(4, stat.progress)}%` }}
                   />
                 </div>
-                <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                <div className="flex justify-between items-center text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
                   <span>{stat.sub}</span>
                   {stat.progress !== undefined && <span className={stat.color}>{stat.progress}%</span>}
                 </div>

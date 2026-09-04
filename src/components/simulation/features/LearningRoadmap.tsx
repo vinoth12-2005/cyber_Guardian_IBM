@@ -49,13 +49,13 @@ export function LearningRoadmap() {
           <Terminal className="w-3.5 h-3.5" />
           <span>CYBER RANGE DEFENSE PATHWAY</span>
         </div>
-        <h2 className="text-2xl md:text-3xl font-extrabold text-white">Adversary Defense Progression Tiers</h2>
-        <p className="text-xs text-slate-400 max-w-lg mx-auto">Advance systematically through structured attack defense tiers to level up your combat capability.</p>
+        <h2 className="text-2xl md:text-3xl font-extrabold" style={{ color: 'var(--text-primary)' }}>Adversary Defense Progression Tiers</h2>
+        <p className="text-xs max-w-lg mx-auto" style={{ color: 'var(--text-muted)' }}>Advance systematically through structured attack defense tiers to level up your combat capability.</p>
       </div>
 
       <div className="relative max-w-4xl mx-auto pl-6 md:pl-0">
         {/* Vertical Timeline Divider Line */}
-        <div className="absolute left-[17px] md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500/50 via-blue-500/30 to-rose-500/40" />
+        <div className="absolute left-[17px] md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500/50 via-sky-500/30 to-cyan-500/40" />
 
         <div className="space-y-10 relative">
           {steps.map((step, idx) => {
@@ -65,8 +65,15 @@ export function LearningRoadmap() {
             return (
               <div key={idx} className="flex flex-col md:flex-row items-start md:items-center">
                 {/* Timeline node dot */}
-                <div className="absolute left-0 md:left-1/2 -translate-x-[11px] md:-translate-x-1/2 w-6 h-6 rounded-full bg-slate-950 border-2 border-cyan-400 flex items-center justify-center z-10 shadow-[0_0_12px_rgba(56,189,248,0.5)]">
-                  <div className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                <div
+                  className="absolute left-0 md:left-1/2 -translate-x-[11px] md:-translate-x-1/2 w-6 h-6 rounded-full border-2 flex items-center justify-center z-10"
+                  style={{
+                    background: 'var(--bg-card)',
+                    borderColor: 'var(--accent-primary)',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  <div className="w-2 h-2 rounded-full animate-ping" style={{ background: 'var(--accent-primary)' }} />
                 </div>
 
                 {/* Left/Right pane content */}
@@ -76,11 +83,11 @@ export function LearningRoadmap() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: idx * 0.1 }}
-                    className="p-5 rounded-2xl border backdrop-blur-md w-full max-w-md shadow-lg space-y-3 transition-all duration-300 hover:border-cyan-500/40 hover:-translate-y-0.5"
+                    className="p-5 rounded-2xl border backdrop-blur-md w-full max-w-md shadow-lg space-y-3 transition-all duration-300 hover:-translate-y-0.5"
                     style={{
-                      background: 'var(--bg-card, rgba(12, 12, 18, 0.8))',
-                      borderColor: 'var(--border-default, rgba(255, 255, 255, 0.08))',
-                      boxShadow: 'var(--shadow-sm, 0 4px 20px rgba(0,0,0,0.3))',
+                      background: 'var(--bg-card)',
+                      borderColor: 'var(--border-default)',
+                      boxShadow: 'var(--shadow-sm)',
                     }}
                   >
                     <div className="flex items-center justify-between">
@@ -92,8 +99,8 @@ export function LearningRoadmap() {
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white leading-tight">{step.title}</h3>
-                      <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">{step.desc}</p>
+                      <h3 className="text-sm font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{step.title}</h3>
+                      <p className="text-xs mt-1.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{step.desc}</p>
                     </div>
                   </motion.div>
                 </div>

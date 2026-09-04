@@ -32,9 +32,9 @@ export const AIRecommendations: React.FC<AIRecommendationsProps> = ({
         <div className="flex items-center gap-2">
           <div
             className="p-1.5 rounded-lg"
-            style={{ background: 'var(--accent-primary-faint)', border: '1px solid var(--accent-primary-border)' }}
+            style={{ background: 'var(--accent-ai-faint)', border: '1px solid var(--accent-ai-border)' }}
           >
-            <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent-primary)' }} />
+            <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent-ai)' }} />
           </div>
           <h3
             className="text-[13px] font-bold"

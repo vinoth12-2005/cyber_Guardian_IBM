@@ -16,17 +16,17 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
     >
       {/* ── Ambient background blobs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Violet top-left blob */}
+        {/* Electric Blue top-left blob */}
         <motion.div
           className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(124,58,237,0.13) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)" }}
           animate={{ scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
-        {/* Sky bottom-right blob */}
+        {/* Cyan bottom-right blob */}
         <motion.div
           className="absolute -bottom-32 -right-32 w-[480px] h-[480px] rounded-full"
-          style={{ background: "radial-gradient(circle, rgba(56,189,248,0.09) 0%, transparent 70%)" }}
+          style={{ background: "radial-gradient(circle, rgba(6,182,212,0.10) 0%, transparent 70%)" }}
           animate={{ scale: [1, 1.06, 1], opacity: [0.6, 0.9, 0.6] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
         />

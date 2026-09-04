@@ -137,44 +137,63 @@ export const FlotBotWidget: React.FC = () => {
 
   return (
     <div
-      className="w-full h-full flex flex-col rounded-2xl shadow-2xl overflow-hidden border border-cyan-500/30 select-none"
+      className="w-full h-full flex flex-col rounded-2xl shadow-2xl overflow-hidden select-none"
       style={{
-        backgroundColor: 'rgba(11, 17, 32, 0.95)',
-        backdropFilter: 'blur(16px)',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--accent-ai-border)',
+        backdropFilter: 'var(--blur)',
         WebkitAppRegion: 'drag', // Allows dragging the floating window
       } as any}
     >
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-white/10">
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{
+          background: 'var(--surface-1)',
+          borderColor: 'var(--border-default)',
+        }}
+      >
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 animate-pulse">
+          <div
+            className="p-1.5 rounded-lg flex items-center justify-center animate-pulse"
+            style={{
+              background: 'var(--accent-ai-faint)',
+              color: 'var(--accent-ai)',
+              border: '1px solid var(--accent-ai-border)',
+            }}
+          >
             <Bot className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold text-white tracking-wider uppercase">FlotBot AI</h3>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <h3 className="text-xs font-bold tracking-wider uppercase" style={{ color: 'var(--text-primary)' }}>FlotBot AI</h3>
+              <span className="w-2 h-2 rounded-full animate-ping" style={{ background: 'var(--accent-success)' }} />
             </div>
-            <p className="text-[10px] text-slate-400">Endpoint Security Overlay</p>
+            <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Endpoint Security Overlay</p>
           </div>
         </div>
 
         <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button
             onClick={() => setActiveTab(activeTab === 'chat' ? 'alerts' : 'chat')}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-cyan-400 transition-colors relative"
+            className="p-1.5 rounded-lg transition-colors relative"
+            style={{ color: 'var(--text-secondary)' }}
             title="Toggle Alerts"
           >
             <ShieldAlert className="w-4 h-4" />
             {alerts.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+              <span
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[9px] font-bold flex items-center justify-center"
+                style={{ background: 'var(--accent-danger)' }}
+              >
                 {alerts.length}
               </span>
             )}
           </button>
           <button
             onClick={handleCloseWidget}
-            className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: 'var(--text-muted)' }}
             title="Minimize to System Tray"
           >
             <X className="w-4 h-4" />
@@ -186,25 +205,49 @@ export const FlotBotWidget: React.FC = () => {
       {activeTab === 'chat' ? (
         <div className="flex-1 flex flex-col min-h-0" style={{ WebkitAppRegion: 'no-drag' } as any}>
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs" style={{ background: 'var(--bg-elevated)' }}>
             {messages.map((m, i) => (
               <div
                 key={i}
                 className={`flex gap-2 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {m.sender === 'flotbot' && (
-                  <div className="w-6 h-6 rounded-full bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0 mt-0.5">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                    style={{
+                      background: 'var(--accent-ai-faint)',
+                      border: '1px solid var(--accent-ai-border)',
+                      color: 'var(--accent-ai)',
+                    }}
+                  >
                     <Bot className="w-3.5 h-3.5" />
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed ${
-                    m.sender === 'user'
-                      ? 'bg-cyan-600 text-white rounded-tr-none'
+                  className="max-w-[80%] p-2.5 rounded-xl whitespace-pre-wrap leading-relaxed"
+                  style={{
+                    ...(m.sender === 'user'
+                      ? {
+                          background: 'var(--accent-primary)',
+                          color: '#FFFFFF',
+                          borderTopRightRadius: '0px',
+                        }
                       : m.alert
-                      ? 'bg-red-950/80 border border-red-500/50 text-red-200 rounded-tl-none font-mono text-[11px]'
-                      : 'bg-slate-800/80 border border-white/10 text-slate-200 rounded-tl-none'
-                  }`}
+                      ? {
+                          background: 'var(--accent-danger-faint)',
+                          border: '1px solid var(--accent-danger-border)',
+                          color: 'var(--accent-danger)',
+                          borderTopLeftRadius: '0px',
+                          fontFamily: 'monospace',
+                          fontSize: '11px',
+                        }
+                      : {
+                          background: 'var(--surface-1)',
+                          border: '1px solid var(--border-default)',
+                          color: 'var(--text-primary)',
+                          borderTopLeftRadius: '0px',
+                        }),
+                  }}
                 >
                   {m.text}
                 </div>
@@ -213,17 +256,33 @@ export const FlotBotWidget: React.FC = () => {
           </div>
 
           {/* Input Box */}
-          <form onSubmit={handleSend} className="p-2.5 bg-slate-900/90 border-t border-white/10 flex gap-2">
+          <form
+            onSubmit={handleSend}
+            className="p-2.5 border-t flex gap-2"
+            style={{
+              background: 'var(--surface-1)',
+              borderColor: 'var(--border-default)',
+            }}
+          >
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask FlotBot or check status..."
-              className="flex-1 bg-slate-800/60 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500/50"
+              className="flex-1 rounded-xl px-3 py-1.5 text-xs focus:outline-none transition-colors"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-primary)',
+              }}
             />
             <button
               type="submit"
-              className="p-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold transition-colors"
+              className="p-2 rounded-xl font-semibold transition-colors cursor-pointer"
+              style={{
+                background: 'var(--accent-ai)',
+                color: '#FFFFFF',
+              }}
             >
               <Send className="w-3.5 h-3.5" />
             </button>
@@ -233,28 +292,42 @@ export const FlotBotWidget: React.FC = () => {
         /* Alerts Tab */
         <div
           className="flex-1 overflow-y-auto p-3 space-y-2 text-xs"
-          style={{ WebkitAppRegion: 'no-drag' } as any}
+          style={{
+            WebkitAppRegion: 'no-drag',
+            background: 'var(--bg-elevated)',
+          } as any}
         >
-          <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Detected System Alerts
+          <h4 className="text-[11px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+            <AlertTriangle className="w-3.5 h-3.5" style={{ color: 'var(--accent-warning)' }} /> Detected System Alerts
           </h4>
 
           {alerts.length === 0 ? (
-            <div className="p-6 text-center text-slate-500 border border-dashed border-white/10 rounded-xl">
-              <ShieldAlert className="w-8 h-8 mx-auto mb-2 text-emerald-400/60" />
+            <div
+              className="p-6 text-center rounded-xl"
+              style={{
+                border: '1px dashed var(--border-medium)',
+                color: 'var(--text-muted)',
+              }}
+            >
+              <ShieldAlert className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--accent-success)' }} />
               No active security threats detected.
             </div>
           ) : (
             alerts.map((alt) => (
               <div
                 key={alt.id}
-                className="p-2.5 rounded-xl bg-red-950/40 border border-red-500/30 text-red-200 space-y-1"
+                className="p-2.5 rounded-xl space-y-1"
+                style={{
+                  background: 'var(--accent-danger-faint)',
+                  border: '1px solid var(--accent-danger-border)',
+                  color: 'var(--accent-danger)',
+                }}
               >
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-red-400 text-xs">{alt.title}</span>
-                  <span className="text-[10px] text-slate-400">{alt.timestamp}</span>
+                  <span className="font-bold text-xs" style={{ color: 'var(--accent-danger)' }}>{alt.title}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{alt.timestamp}</span>
                 </div>
-                <p className="text-[11px] text-slate-300 leading-snug">{alt.message}</p>
+                <p className="text-[11px] leading-snug" style={{ color: 'var(--text-secondary)' }}>{alt.message}</p>
               </div>
             ))
           )}
