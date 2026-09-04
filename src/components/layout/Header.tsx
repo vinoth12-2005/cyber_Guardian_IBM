@@ -74,19 +74,31 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right — Controls */}
       <div className="flex items-center gap-1">
-        {/* Theme toggle */}
+        {/* Dual Theme Toggle */}
         <button
           onClick={toggleTheme}
-          title={isDark ? 'Switch to Light' : 'Switch to Dark'}
-          className="p-2 rounded-xl transition-all duration-200"
-          style={{ color: 'var(--text-secondary)' }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          title={isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+          aria-label="Toggle visual theme"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[12px] font-medium transition-all duration-200 border cursor-pointer group"
+          style={{
+            background: 'var(--surface-2)',
+            borderColor: 'var(--border-medium)',
+            color: 'var(--text-primary)',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent-primary)')}
+          onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-medium)')}
         >
-          {isDark
-            ? <Sun   className="w-4 h-4" style={{ color: 'var(--accent-warning)' }} strokeWidth={1.75} />
-            : <Moon  className="w-4 h-4" style={{ color: 'var(--accent-primary)' }} strokeWidth={1.75} />
-          }
+          {isDark ? (
+            <>
+              <Sun className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform duration-300" style={{ color: 'var(--accent-warning)' }} strokeWidth={2} />
+              <span className="text-[11px] font-mono font-semibold" style={{ color: 'var(--accent-warning)' }}>Dark</span>
+            </>
+          ) : (
+            <>
+              <Moon className="w-3.5 h-3.5 group-hover:-rotate-12 transition-transform duration-300" style={{ color: 'var(--accent-primary)' }} strokeWidth={2} />
+              <span className="text-[11px] font-mono font-semibold" style={{ color: 'var(--accent-primary)' }}>Light</span>
+            </>
+          )}
         </button>
 
         {/* Notifications */}

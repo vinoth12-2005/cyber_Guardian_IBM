@@ -61,24 +61,28 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* Right — Shield status (no glow, no colour fill) */}
+        {/* Right — Shield status */}
         <div className="flex-shrink-0 flex flex-col items-center gap-2">
           <div
-            className="w-16 h-16 flex items-center justify-center rounded-2xl"
-            style={{ background: 'var(--surface-2)', border: '1px solid var(--border-medium)' }}
+            className="w-16 h-16 flex items-center justify-center rounded-2xl relative group transition-transform"
+            style={{
+              background: 'var(--accent-success-faint)',
+              border: '1px solid var(--accent-success-border)',
+              boxShadow: 'var(--glow-success)',
+            }}
           >
             <ShieldCheck
-              className="w-8 h-8"
+              className="w-8 h-8 transition-transform group-hover:scale-105"
               style={{ color: 'var(--accent-success)' }}
-              strokeWidth={1.5}
+              strokeWidth={1.75}
             />
           </div>
           <div className="text-center">
-            <span className="block text-[11px] font-semibold" style={{ color: 'var(--accent-success)' }}>
+            <span className="block text-[11px] font-bold tracking-tight" style={{ color: 'var(--accent-success)' }}>
               All Systems
             </span>
-            <span className="block text-[10px]" style={{ color: 'var(--text-muted)' }}>
-              Operational
+            <span className="block text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+              Protected & Active
             </span>
           </div>
         </div>

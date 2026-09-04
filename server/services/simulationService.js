@@ -220,7 +220,9 @@ class SimulationService {
   async getUserHistory(userId) {
     const res = await db.query(
       `SELECT a.*, s.title as sim_title, s.category as sim_category, s.difficulty as sim_difficulty, s.icon as sim_icon
-       FROM simulation_attempts WHERE user_id = $1
+       FROM simulation_attempts a
+       LEFT JOIN simulations s ON a.simulation_id = s.id
+       WHERE a.user_id = $1
        ORDER BY a.created_at DESC`,
       [userId]
     );

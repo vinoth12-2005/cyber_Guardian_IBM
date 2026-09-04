@@ -15,12 +15,17 @@ export const CyberAwarenessScore: React.FC<CyberAwarenessScoreProps> = ({ scoreD
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
-  // All category bars use the single accent — colour communicates "score" not "category type"
+  const gaugeColor = overallScore >= 80
+    ? 'var(--accent-success)'
+    : overallScore >= 50
+    ? 'var(--accent-warning)'
+    : 'var(--accent-danger)';
+
   const categories = [
-    { label: 'Phishing Defense', value: categoryScores.phishingDefense },
-    { label: 'Password Hygiene', value: categoryScores.passwordHygiene },
-    { label: 'Network Security', value: categoryScores.networkSecurity },
-    { label: 'Threat Detection', value: categoryScores.threatDetection },
+    { label: 'Phishing Defense', value: categoryScores.phishingDefense, color: 'var(--accent-ai)' },
+    { label: 'Password Hygiene', value: categoryScores.passwordHygiene, color: 'var(--accent-success)' },
+    { label: 'Network Security', value: categoryScores.networkSecurity, color: 'var(--accent-primary)' },
+    { label: 'Threat Detection', value: categoryScores.threatDetection, color: 'var(--accent-warning)' },
   ];
 
   return (
@@ -39,14 +44,18 @@ export const CyberAwarenessScore: React.FC<CyberAwarenessScoreProps> = ({ scoreD
               Cyber Awareness
             </h3>
             <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Security Score
+              Security Score & Resilience
             </p>
           </div>
         </div>
 
         <span
-          className="badge"
-          style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)', borderColor: 'var(--border-default)' }}
+          className="badge font-mono"
+          style={{
+            background: overallScore >= 80 ? 'var(--accent-success-faint)' : overallScore >= 50 ? 'var(--accent-warning-faint)' : 'var(--accent-danger-faint)',
+            color: gaugeColor,
+            borderColor: gaugeColor,
+          }}
         >
           {level}
         </span>
@@ -54,26 +63,26 @@ export const CyberAwarenessScore: React.FC<CyberAwarenessScoreProps> = ({ scoreD
 
       {/* Gauge row */}
       <div className="flex items-center gap-5 flex-1">
-        {/* SVG donut — single accent colour, no multi-stop gradient */}
+        {/* SVG donut with dynamic semantic score coloring */}
         <div className="relative flex items-center justify-center flex-shrink-0">
           <svg width="148" height="148" className="-rotate-90">
             <circle cx="74" cy="74" r={radius} stroke="var(--border-default)" strokeWidth={strokeWidth} fill="none" />
             <circle
               cx="74" cy="74" r={radius}
-              stroke="var(--accent-primary)"
+              stroke={gaugeColor}
               strokeWidth={strokeWidth}
               fill="none"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
-              style={{ transition: 'stroke-dashoffset 1.1s cubic-bezier(0.4,0,0.2,1)' }}
+              style={{ transition: 'stroke-dashoffset 1.1s cubic-bezier(0.4,0,0.2,1), stroke 0.3s ease' }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-3xl font-bold leading-none" style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+            <span className="text-3xl font-bold leading-none font-mono" style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
               {overallScore}
             </span>
-            <span className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <span className="text-[11px] mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>
               / {maxScore}
             </span>
           </div>
@@ -92,7 +101,7 @@ export const CyberAwarenessScore: React.FC<CyberAwarenessScoreProps> = ({ scoreD
             </span>
           </div>
 
-          {/* Category bars — single accent fill, label text for context */}
+          {/* Category bars with distinctive semantic colors */}
           <div className="space-y-2.5">
             {categories.map((cat) => (
               <div key={cat.label}>
@@ -100,14 +109,14 @@ export const CyberAwarenessScore: React.FC<CyberAwarenessScoreProps> = ({ scoreD
                   <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                     {cat.label}
                   </span>
-                  <span className="text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <span className="text-[11px] font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {cat.value}%
                   </span>
                 </div>
-                <div className="progress-track h-1">
+                <div className="progress-track h-1.5" style={{ background: 'var(--surface-2)' }}>
                   <div
                     className="h-full rounded-full animate-progress"
-                    style={{ width: `${cat.value}%`, background: 'var(--accent-primary)', opacity: 0.7 }}
+                    style={{ width: `${cat.value}%`, background: cat.color }}
                   />
                 </div>
               </div>

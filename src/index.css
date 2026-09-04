@@ -8,32 +8,29 @@
    DESIGN TOKENS — CyberGuardian Premium
    Near-black dark · Warm-white light
 ───────────────────────────────────────────── */
-:root {
-  color-scheme: dark;
-}
-
+:root,
 .dark {
   color-scheme: dark;
 
-  /* ── Backgrounds (Navy-tinted Dark) ── */
-  --bg-base:        #070B14;
-  --bg-raised:      #0D1320;
-  --bg-elevated:    #121A28;
-  --bg-card:        rgba(13, 19, 32, 0.90);
-  --bg-card-hover:  rgba(18, 26, 40, 0.96);
-  --bg-overlay:     rgba(2, 6, 23, 0.78);
+  /* ── Backgrounds (Deep Obsidian Base · Rich Cyber-Slate Cards) ── */
+  --bg-base:        #060913;
+  --bg-card:        #0D1527;
+  --bg-card-hover:  #131E35;
+  --bg-raised:      #141F36;
+  --bg-elevated:    #182540;
+  --bg-overlay:     rgba(2, 6, 23, 0.82);
 
   /* ── Glass surfaces ── */
-  --surface-1:      rgba(255, 255, 255, 0.030);
-  --surface-2:      rgba(255, 255, 255, 0.050);
-  --surface-3:      rgba(255, 255, 255, 0.075);
-  --surface-hover:  rgba(255, 255, 255, 0.060);
+  --surface-1:      rgba(255, 255, 255, 0.035);
+  --surface-2:      rgba(255, 255, 255, 0.065);
+  --surface-3:      rgba(255, 255, 255, 0.100);
+  --surface-hover:  rgba(255, 255, 255, 0.085);
 
-  /* ── Borders ── */
-  --border-subtle:  rgba(148, 163, 184, 0.08);
-  --border-default: rgba(148, 163, 184, 0.13);
-  --border-medium:  rgba(148, 163, 184, 0.20);
-  --border-strong:  rgba(148, 163, 184, 0.30);
+  /* ── Borders (Subtle electric-blue cybersecurity perimeter) ── */
+  --border-subtle:  rgba(148, 163, 184, 0.12);
+  --border-default: rgba(59, 130, 246, 0.18);
+  --border-medium:  rgba(59, 130, 246, 0.32);
+  --border-strong:  rgba(59, 130, 246, 0.50);
 
   /* ── Text ── */
   --text-primary:   #F8FAFC;
@@ -119,12 +116,12 @@
   color-scheme: light;
 
   /* ── Backgrounds (Clean SaaS) ── */
-  --bg-base:        #F6F8FC;
+  --bg-base:        #F4F6FB;
   --bg-raised:      #FFFFFF;
   --bg-elevated:    #FFFFFF;
   --bg-card:        #FFFFFF;
   --bg-card-hover:  #F8FAFC;
-  --bg-overlay:     rgba(15, 23, 42, 0.40);
+  --bg-overlay:     rgba(15, 23, 42, 0.50);
 
   /* ── Glass surfaces ── */
   --surface-1:      rgba(15, 23, 42, 0.03);
@@ -134,9 +131,9 @@
 
   /* ── Borders ── */
   --border-subtle:  rgba(15, 23, 42, 0.06);
-  --border-default: rgba(15, 23, 42, 0.10);
-  --border-medium:  rgba(15, 23, 42, 0.16);
-  --border-strong:  rgba(15, 23, 42, 0.24);
+  --border-default: #E2E8F0;
+  --border-medium:  rgba(37, 99, 235, 0.22);
+  --border-strong:  rgba(37, 99, 235, 0.38);
 
   /* ── Text ── */
   --text-primary:   #0F172A;
@@ -477,21 +474,25 @@
    Inherits standardized tokens from .dark / .light
 ───────────────────────────────────────────── */
 
-/* ── Dashboard glass-card: flat, no blur noise ── */
 .dashboard-scope .glass-card,
 .dashboard-scope .glass-panel {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: var(--shadow-sm);
-}
-.dashboard-scope .glass-card:hover {
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
   box-shadow: var(--shadow-md);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
-/* ── Dashboard badge: rectangular, not pill ── */
+.dashboard-scope .glass-card:hover,
+.dashboard-scope .glass-panel:hover {
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Dashboard badge: clean, readable ── */
 .dashboard-scope .badge {
-  border-radius: 5px;
-  font-weight: 500;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 11px;
 }
 
 /* ── Dashboard nav active: uses new accent ── */
@@ -501,7 +502,86 @@
   border-color: var(--accent-primary-border);
 }
 
-/* ── Suppress gradient-border pseudo in dashboard ── */
-.dashboard-scope .gradient-border::before { display: none; }
-.dashboard-scope .btn-glow:hover { box-shadow: none; }
+/* ─────────────────────────────────────────────
+   DUAL THEME COMPATIBILITY FOR ADMIN & SLATE VIEWS
+   Ensures all 39 admin dashboards and views adapt automatically
+───────────────────────────────────────────── */
+.light .bg-slate-950,
+.light .bg-slate-950\/60,
+.light .bg-slate-950\/80 {
+  background-color: var(--bg-base) !important;
+}
+
+.light .bg-slate-900,
+.light .bg-slate-900\/70,
+.light .bg-slate-900\/80,
+.light .bg-slate-900\/90 {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-default) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.light .bg-slate-800,
+.light .bg-slate-800\/80,
+.light .bg-slate-800\/70,
+.light .bg-slate-800\/60,
+.light .bg-slate-800\/50,
+.light .bg-slate-800\/30 {
+  background-color: var(--surface-2) !important;
+}
+
+.light .hover\:bg-slate-800:hover,
+.light .hover\:bg-slate-800\/30:hover,
+.light .hover\:bg-slate-700:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+.light .border-slate-800,
+.light .border-slate-800\/80,
+.light .border-slate-800\/60,
+.light .border-slate-700 {
+  border-color: var(--border-default) !important;
+}
+
+.light .text-white,
+.light .text-slate-100,
+.light .text-slate-200 {
+  color: var(--text-primary) !important;
+}
+
+.light .text-slate-300,
+.light .text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+
+.light .text-slate-500 {
+  color: var(--text-muted) !important;
+}
+
+.light .divide-slate-800,
+.light .divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-subtle) !important;
+}
+
+/* Dark theme polish for Admin views */
+.dark .bg-slate-950,
+.dark .bg-slate-950\/60,
+.dark .bg-slate-950\/80 {
+  background-color: var(--bg-base) !important;
+}
+
+.dark .bg-slate-900,
+.dark .bg-slate-900\/70,
+.dark .bg-slate-900\/80,
+.dark .bg-slate-900\/90 {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-default) !important;
+  box-shadow: var(--shadow-md);
+}
+
+.dark .border-slate-800,
+.dark .border-slate-800\/80,
+.dark .border-slate-800\/60 {
+  border-color: var(--border-default) !important;
+}
 
