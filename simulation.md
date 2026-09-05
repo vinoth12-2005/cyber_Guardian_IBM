@@ -137,15 +137,22 @@ To contain the threat and unlock the lab's Root Flag, click **"Investigate & Rep
 ### Step 5: Room Clearance & Performance Grading (Task 3)
 1. Navigate to **Task 3: Root Defense Flag** in the left panel.
 2. Paste the copied Root Flag into the submission box and click **"Submit Flag"**.
-3. **Grading & Scoring Breakdown:**
-   - **Maximum Lab Score:** 200 Marks.
-   - **Question Marks:** Awarded per correct question.
-   - **Penalties:** -15 marks per incorrect flag or question attempt.
-   - **Star Rating:**
-     - ⭐⭐⭐ **3 Stars:** 180+ marks (Flawless defense, zero deductions).
-     - ⭐⭐ **2 Stars:** 140–179 marks (Successful containment with minor deductions).
-     - ⭐ **1 Star:** Under 140 marks (Room cleared with multiple retries).
-4. Progress, badges, and defensive metrics are updated in your Cyber Guardian user profile.
+3. **Single Course / Lab Grading Model (Standardized 100-Mark Scale):**
+   - **Maximum Single Lab Score:** **100 Marks** (100% scale).
+   - **Scenario Task Questions:** 40 Marks total (allocated across MCQs and analytical tasks).
+   - **Root Defense Flag:** 60 Marks (awarded upon valid canonical flag submission).
+   - **Warning Penalties:** **-5 marks** per incorrect question submission or invalid flag attempt.
+   - **Single Lab Star Rating:**
+     - ⭐⭐⭐ **3 Stars:** **90–100 Marks** (Flawless defense, 0–2 minor errors; awards **+100 XP**).
+     - ⭐⭐ **2 Stars:** **70–89 Marks** (Solid containment with minor deductions; awards **+70 XP**).
+     - ⭐ **1 Star:** **Under 70 Marks** (Room cleared with deductions; awards **+50 XP**).
+4. **Overall Academy Aggregation vs. Single Lab Score:**
+   - **Single Lab Score:** Reflects performance in that specific module strictly out of **100 Marks**.
+   - **Overall Academy Progress:** Displays cumulative progress across the entire platform:
+     - **Completed Modules Ledger:** Logs all finished labs with their individual `/ 100` scores and star ratings.
+     - **Cumulative Total XP:** Aggregates overall XP across all courses, lessons, and completed labs.
+     - **Overall Average Score:** Calculates your platform-wide accuracy average (`/ 100`) across all cleared nodes.
+   - Progress, badges, and defensive metrics are permanently saved in your Cyber Guardian profile.
 
 ---
 

@@ -1386,11 +1386,11 @@ export default function SimulationClient({ sim }: { sim: SESimulation }) {
     toast.info(`${sim.id}: ${sim.title} — Simulation started`);
   };
 
-  const handleComplete = useCallback((outcome: 'safe' | 'compromised' | 'partial') => {
+  const handleComplete = useCallback((outcome: 'safe' | 'compromised' | 'partial', labScore?: number) => {
     completeSession(outcome);
     // Award XP and record result
     const sess = useSimulationStore.getState().session;
-    const score = sess?.score ?? 60;
+    const score = typeof labScore === 'number' ? labScore : (sess?.score ?? 80);
     const stars = score >= 90 ? 3 : score >= 70 ? 2 : 1;
     completeSimulation({
       id: sim.id,

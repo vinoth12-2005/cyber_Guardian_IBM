@@ -12,6 +12,9 @@ export default function ProgressPage() {
   const accuracy = completedList.length === 0
     ? 0
     : Math.round((completedList.filter(c => c.outcome === 'safe').length / completedList.length) * 100);
+  const avgScore = completedList.length === 0
+    ? 0
+    : Math.round(completedList.reduce((acc, c) => acc + (c.score || 0), 0) / completedList.length);
   const rank = getRank(xp);
   const level = getLevel(xp);
   const progressPercent = Math.round(getLevelProgress(xp) * 100);
@@ -96,6 +99,13 @@ export default function ProgressPage() {
             </div>
 
             <div className="flex justify-between items-center bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+              <span className="text-xs text-slate-300">Overall Average Score</span>
+              <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                {avgScore} / 100
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center bg-slate-900/60 p-3 rounded-lg border border-slate-800">
               <span className="text-xs text-slate-300">Total XP Accumulated</span>
               <span className="text-xs font-mono font-bold text-cyberPrimary bg-cyberPrimary/10 px-2 py-0.5 rounded border border-cyberPrimary/20">
                 {totalXp} XP
@@ -127,6 +137,7 @@ export default function ProgressPage() {
                 <tr className="border-b border-slate-800 text-slate-400">
                   <th className="pb-3 font-mono">Module Name</th>
                   <th className="pb-3 font-mono">Difficulty</th>
+                  <th className="pb-3 font-mono">Lab Score</th>
                   <th className="pb-3 font-mono">Stars Earned</th>
                   <th className="pb-3 font-mono">Completion Date</th>
                 </tr>
@@ -148,6 +159,9 @@ export default function ProgressPage() {
                           {sim.difficulty}
                         </span>
                       </td>
+                      <td className="py-3.5 font-mono font-bold text-emerald-400">
+                        {sim.score ?? 100} / 100
+                      </td>
                       <td className="py-3.5 text-cyberSecondary font-bold font-mono">
                         {Array.from({ length: sim.stars }).map((_, i) => (
                           <span key={i} className="mr-0.5">★</span>
@@ -163,7 +177,7 @@ export default function ProgressPage() {
 
                 {completedList.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-500 italic">
+                    <td colSpan={5} className="py-8 text-center text-slate-500 italic">
                       No simulations completed yet. Click below to launch your first challenge.
                     </td>
                   </tr>

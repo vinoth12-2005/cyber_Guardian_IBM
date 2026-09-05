@@ -62,7 +62,12 @@ export const useCyberStore = create<CyberStore>((set, get) => ({
 
   hydrate: () => {
     const profile = loadFromStorage('selab_profile', defaultProfile);
-    const completedList = loadFromStorage<SimulationResult[]>('selab_completed', []);
+    const rawCompleted = loadFromStorage<SimulationResult[]>('selab_completed', []);
+    // Normalize any legacy 200-scale scores to standard 100-mark single course/lab scale
+    const completedList = rawCompleted.map(c => ({
+      ...c,
+      score: c.score > 100 ? Math.min(100, Math.round(c.score / 2)) : c.score,
+    }));
     const settings = loadFromStorage('selab_settings', defaultSettings);
     const savedAchievements = loadFromStorage<Achievement[]>('selab_achievements', []);
 
@@ -87,7 +92,12 @@ export const useCyberStore = create<CyberStore>((set, get) => ({
       newCompleted = [...state.completedList, result];
     }
 
-    const xpReward = result.stars * 100;
+    // Standard single lab XP reward: 3★ = 100 XP, 2★ = 70 XP, 1★ = 50 XP
+    // On replay, award differential XP if user improves their star rating
+    const xpReward = existing
+      ? Math.max(0, (result.stars - existing.stars) * 30)
+      : (result.stars === 3 ? 100 : result.stars === 2 ? 70 : 50);
+
     const newXp = state.profile.xp + xpReward;
     const newProfile = {
       ...state.profile,

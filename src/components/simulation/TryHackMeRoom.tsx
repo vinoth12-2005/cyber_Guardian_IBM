@@ -18,11 +18,12 @@ import type { SESimulation } from '@/types';
 import { getScenarioDetail } from '@/data/simulation/detailed-explanations';
 import { toast } from 'sonner';
 import { useSimulationStore } from '@/store/simulation-store';
+import { useCyberStore } from '@/store/cyber-store';
 
 interface TryHackMeRoomProps {
   sim: SESimulation;
   children: React.ReactNode; // Embedded interactive VM machine
-  onComplete: (outcome: 'safe' | 'compromised' | 'partial') => void;
+  onComplete: (outcome: 'safe' | 'compromised' | 'partial', score?: number) => void;
   onOpenKnowMore: () => void;
 }
 
@@ -63,12 +64,12 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
     const isInter = simLevel.toLowerCase().includes('inter') || simLevel.toLowerCase().includes('medium');
 
     if (!isAdv && !isInter) {
-      // Beginner Mode: 3 practical interactive multiple-choice verification tasks
+      // Beginner Mode: 3 practical interactive multiple-choice verification tasks (Total: 40 Marks)
       return [
         {
           id: 'q1',
           label: `What attack technique or deceptive trick is used in "${sim.title}"?`,
-          marks: 40,
+          marks: 15,
           type: 'mcq' as const,
           correctAnswer: defaultAttack,
           options: [
@@ -83,7 +84,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
         {
           id: 'q2',
           label: `What is the key visual Red Flag (warning sign) that proves this is an attack?`,
-          marks: 30,
+          marks: 15,
           type: 'mcq' as const,
           correctAnswer: defaultRedFlag,
           options: [
@@ -98,7 +99,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
         {
           id: 'q3',
           label: `What is the safest practical action to neutralize this threat?`,
-          marks: 30,
+          marks: 10,
           type: 'mcq' as const,
           correctAnswer: defaultDefense,
           options: [
@@ -114,28 +115,32 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
     }
 
     if (isInter) {
-      // Intermediate Mode: 4 investigative tasks
+      // Intermediate Mode: 4 investigative tasks (Total: 40 Marks)
       return [
-        { id: 'q1', label: `What primary attack technique or spoofed indicator is exploited in "${sim.title}"?`, marks: 30, type: 'input' as const, hint: '💡 Hint: Check Know More → "Attack Breakdown" tab for the exact attack vector name.' },
-        { id: 'q2', label: `What primary defensive control or IoC mitigation prevents this ${sim.category} threat?`, marks: 30, type: 'input' as const, hint: '💡 Hint: Open Know More → "Defense Playbook" tab — the first item is the key control.' },
-        { id: 'q3', label: `What is the most critical red flag (IoC) that indicates this attack is happening?`, marks: 20, type: 'input' as const, hint: '💡 Hint: Open Know More → "Red Flags" tab. The first listed indicator is key.' },
-        { id: 'q4', label: `What real-world data or asset does the attacker steal or compromise in this attack?`, marks: 20, type: 'input' as const, hint: '💡 Hint: Know More → "Data Stolen" tab shows what data is harvested.' },
+        { id: 'q1', label: `What primary attack technique or spoofed indicator is exploited in "${sim.title}"?`, marks: 10, type: 'input' as const, hint: '💡 Hint: Check Know More → "Attack Breakdown" tab for the exact attack vector name.' },
+        { id: 'q2', label: `What primary defensive control or IoC mitigation prevents this ${sim.category} threat?`, marks: 10, type: 'input' as const, hint: '💡 Hint: Open Know More → "Defense Playbook" tab — the first item is the key control.' },
+        { id: 'q3', label: `What is the most critical red flag (IoC) that indicates this attack is happening?`, marks: 10, type: 'input' as const, hint: '💡 Hint: Open Know More → "Red Flags" tab. The first listed indicator is key.' },
+        { id: 'q4', label: `What real-world data or asset does the attacker steal or compromise in this attack?`, marks: 10, type: 'input' as const, hint: '💡 Hint: Know More → "Data Stolen" tab shows what data is harvested.' },
       ];
     }
 
-    // Advanced Mode: 6 technical SOC / threat analysis tasks
+    // Advanced Mode: 6 technical SOC / threat analysis tasks (Total: 40 Marks)
     return [
-      { id: 'q1', label: `What primary attack technique or spoofed indicator is exploited in "${sim.title}"?`, marks: 20, type: 'input' as const, hint: '💡 Hard Hint: Identify the exact attack vector and social engineering pretext.' },
-      { id: 'q2', label: `What primary defensive control or IoC mitigation prevents this ${sim.category} threat?`, marks: 20, type: 'input' as const, hint: '💡 Hard Hint: Check NIST/CISA playbook mitigation in Know More.' },
-      { id: 'q3', label: `What is the most critical red flag (IoC) that indicates this attack is happening?`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Identify forensic header anomalies or domain homoglyphs.' },
-      { id: 'q4', label: `What real-world data or asset does the attacker steal or compromise in this attack?`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Identify the exfiltrated credential or token asset.' },
-      { id: 'q5', label: `Describe the first action an attacker takes in the kill chain for this attack.`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Stage 1 reconnaissance / payload weaponization.' },
-      { id: 'q6', label: `What enterprise-level SOC control would have blocked this attack at the network perimeter?`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Identify perimeter DMARC, DNS sinkholing, or WebAuthn controls.' },
+      { id: 'q1', label: `What primary attack technique or spoofed indicator is exploited in "${sim.title}"?`, marks: 8, type: 'input' as const, hint: '💡 Hard Hint: Identify the exact attack vector and social engineering pretext.' },
+      { id: 'q2', label: `What primary defensive control or IoC mitigation prevents this ${sim.category} threat?`, marks: 8, type: 'input' as const, hint: '💡 Hard Hint: Check NIST/CISA playbook mitigation in Know More.' },
+      { id: 'q3', label: `What is the most critical red flag (IoC) that indicates this attack is happening?`, marks: 6, type: 'input' as const, hint: '💡 Hard Hint: Identify forensic header anomalies or domain homoglyphs.' },
+      { id: 'q4', label: `What real-world data or asset does the attacker steal or compromise in this attack?`, marks: 6, type: 'input' as const, hint: '💡 Hard Hint: Identify the exfiltrated credential or token asset.' },
+      { id: 'q5', label: `Describe the first action an attacker takes in the kill chain for this attack.`, marks: 6, type: 'input' as const, hint: '💡 Hard Hint: Stage 1 reconnaissance / payload weaponization.' },
+      { id: 'q6', label: `What enterprise-level SOC control would have blocked this attack at the network perimeter?`, marks: 6, type: 'input' as const, hint: '💡 Hard Hint: Identify perimeter DMARC, DNS sinkholing, or WebAuthn controls.' },
     ];
   };
 
   const currentQuestions = getQuestionBank();
   const questionCount = currentQuestions.length;
+
+  // Store data for overall Academy totals
+  const completedList = useCyberStore(s => s.completedList);
+  const profileTotalXp = useCyberStore(s => s.profile.totalXp);
 
   // Per-question state arrays
   const [qAnswers, setQAnswers] = useState<string[]>(Array(8).fill(''));
@@ -165,17 +170,16 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
   const totalTasks = questionCount + 1; // all questions + flag
   const progressPercent = Math.round((tasksCompleted / totalTasks) * 100);
 
-  // Per-question mark values + flag = sum up to 200
+  // Per-question mark values (40 marks) + root defense flag (60 marks) = 100 Max Score per course/lab
   const questionMarkTotal = currentQuestions.reduce((s, q) => s + q.marks, 0);
   const totalMarks = Math.max(0,
     activeQuestionsPassed.reduce((s, p, i) => s + (p ? (currentQuestions[i]?.marks ?? 0) : 0), 0)
-    + (flagPassed ? (200 - questionMarkTotal) : 0)
-    - (wrongAttempts * 15)
+    + (flagPassed ? (100 - questionMarkTotal) : 0)
+    - (wrongAttempts * 5)
   );
 
-  // Dynamic Star Rating
-  const earnedStars = (allQPassed && flagPassed && wrongAttempts === 0) ? 3
-    : (allQPassed && flagPassed && wrongAttempts <= 2) ? 2 : 1;
+  // Dynamic Star Rating based on standard 100-mark scale
+  const earnedStars = totalMarks >= 90 ? 3 : totalMarks >= 70 ? 2 : 1;
 
   // Risk color configuration
   const riskConfig = {
@@ -240,7 +244,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
       qw[idx] = (qw[idx] ?? 0) + 1;
       setQWrongAttempts(qw);
       setWrongAttempts(w => w + 1);
-      toast.error(`⚠️ Incorrect option selected! -15 Penalty. Read the hint or concept guide and try again.`, { duration: 4000 });
+      toast.error(`⚠️ Incorrect option selected! -5 Penalty. Read the hint or concept guide and try again.`, { duration: 4000 });
     }
   };
 
@@ -254,14 +258,14 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
       qw[idx] = (qw[idx] ?? 0) + 1;
       setQWrongAttempts(qw);
       setWrongAttempts(w => w + 1);
-      toast.error(`⚠️ Q${idx + 1}: Please enter a detailed answer (-15 Penalty). Read Know More or Concept Guide.`, { duration: 5000 });
+      toast.error(`⚠️ Q${idx + 1}: Please enter a detailed answer (-5 Penalty). Read Know More or Concept Guide.`, { duration: 5000 });
       return;
     }
 
     const next = [...qPassed];
     next[idx] = true;
     setQPassed(next);
-    toast.success(`✓ Question ${idx + 1} Correct! +${currentQuestions[idx]?.marks ?? 20} Marks Earned! ⭐`);
+    toast.success(`✓ Question ${idx + 1} Correct! +${currentQuestions[idx]?.marks ?? 10} Marks Earned! ⭐`);
     checkRoomCompletion(next.slice(0, questionCount).every(Boolean), flagPassed);
   };
 
@@ -269,7 +273,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
     e.preventDefault();
     if (!flagAnswer.trim()) {
       setWrongAttempts(w => w + 1);
-      toast.error('⚠️ Warning! No flag entered (-15 Penalty Marks). Complete the SOC Incident Report in the VM sandbox to generate the flag.');
+      toast.error('⚠️ Warning! No flag entered (-5 Penalty Marks). Complete the SOC Incident Report in the VM sandbox to generate the flag.');
       return;
     }
 
@@ -288,19 +292,19 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
 
     if (isMatch) {
       setFlagPassed(true);
-      const earnedFlagMarks = 200 - questionMarkTotal;
+      const earnedFlagMarks = 100 - questionMarkTotal;
       toast.success(`🎉 ROOT DEFENSE FLAG ACCEPTED! +${earnedFlagMarks} Marks Earned! ⭐⭐⭐`);
       checkRoomCompletion(activeQuestionsPassed.every(Boolean), true);
     } else {
       setWrongAttempts(w => w + 1);
-      toast.error(`⚠️ Invalid Flag! -15 Penalty. Follow the guided SOC report steps in the VM sandbox to get the valid root flag.`);
+      toast.error(`⚠️ Invalid Flag! -5 Penalty. Follow the guided SOC report steps in the VM sandbox to get the valid root flag.`);
     }
   };
 
   const checkRoomCompletion = (allQ: boolean, flag: boolean) => {
     if (allQ && flag) {
       setShowCompletionModal(true);
-      setTimeout(() => { onComplete('safe'); }, 500);
+      setTimeout(() => { onComplete('safe', totalMarks); }, 500);
     } else {
       const missing: string[] = [];
       activeQuestionsPassed.forEach((p, i) => { if (!p) missing.push(`Q${i + 1}`); });
@@ -405,11 +409,11 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
 
           {/* Marks Score Pill */}
           <div className="flex items-center gap-2 bg-[#090d14] px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
-            <span className="text-slate-400 hidden sm:inline">Score:</span>
-            <span className="text-emerald-400 font-bold">{totalMarks} / 200</span>
+            <span className="text-slate-400 hidden sm:inline">Lab Score:</span>
+            <span className="text-emerald-400 font-bold">{totalMarks} / 100</span>
             {wrongAttempts > 0 && (
               <span className="text-[10px] bg-amber-950 text-amber-400 border border-amber-800/80 px-1 py-0.5 rounded font-bold">
-                ⚠️ -{wrongAttempts * 15}
+                ⚠️ -{wrongAttempts * 5}
               </span>
             )}
           </div>
@@ -713,7 +717,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                             {/* Wrong attempt warning */}
                             {(qWrongAttempts[idx] ?? 0) > 0 && (
                               <div className="p-2 bg-red-950/60 border border-red-700/60 rounded text-[11px] text-red-300 font-mono flex items-center justify-between gap-2">
-                                <span>⚠️ {qWrongAttempts[idx]} wrong attempt{(qWrongAttempts[idx] ?? 0) > 1 ? 's' : ''} (-{(qWrongAttempts[idx] ?? 0) * 15} pts). Check <strong className="text-cyan-300">Know More</strong>.</span>
+                                <span>⚠️ {qWrongAttempts[idx]} wrong attempt{(qWrongAttempts[idx] ?? 0) > 1 ? 's' : ''} (-{(qWrongAttempts[idx] ?? 0) * 5} pts). Check <strong className="text-cyan-300">Know More</strong>.</span>
                                 <button type="button" onClick={onOpenKnowMore} className="text-[10px] bg-cyan-900/60 text-cyan-300 border border-cyan-700/60 px-2 py-0.5 rounded font-bold hover:bg-cyan-800 transition flex-shrink-0">Clues →</button>
                               </div>
                             )}
@@ -756,11 +760,16 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                         <Flag className="w-3.5 h-3.5 text-emerald-400" />
                         Task {questionCount + 1}: Submit Root Defense Flag
                       </label>
-                      {flagPassed && (
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-2 py-0.5 rounded font-mono font-bold">
-                          ✓ FLAG CAPTURED
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[10px] text-emerald-400/90 font-mono font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/60">
+                          +{100 - questionMarkTotal}pts
                         </span>
-                      )}
+                        {flagPassed && (
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-2 py-0.5 rounded font-mono font-bold">
+                            ✓ FLAG CAPTURED
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="text-[11px] text-slate-400">
@@ -1013,7 +1022,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
 
             {/* Glowing Star Rating & Marks Summary */}
             <div className="bg-[#090d14] border border-slate-800 rounded-xl p-4 space-y-3">
-              <div className="text-xs text-slate-400 uppercase font-mono font-bold">PERFORMANCE &amp; MARKS SUMMARY</div>
+              <div className="text-xs text-slate-400 uppercase font-mono font-bold">PERFORMANCE &amp; SCORE SUMMARY</div>
               <div className="flex items-center justify-center gap-2 text-amber-400">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Star
@@ -1026,17 +1035,37 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                 {earnedStars === 3 ? '⭐⭐⭐ PERFECT DEFENSE (3/3 STARS)' : earnedStars === 2 ? '⭐⭐ GREAT JOB (2/3 STARS)' : '⭐ LAB COMPLETED (1/3 STARS)'}
               </div>
 
-              {/* Marks & Warning Breakdown */}
+              {/* Single Lab Marks Breakdown */}
               <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
                 <div className="bg-emerald-950/40 border border-emerald-800/40 rounded p-2 text-center">
-                  <div className="text-slate-400 text-[10px]">TOTAL MARKS</div>
-                  <div className="text-emerald-400 font-extrabold text-sm">{totalMarks} / 200</div>
+                  <div className="text-slate-400 text-[10px] uppercase">THIS LAB SCORE</div>
+                  <div className="text-emerald-400 font-extrabold text-sm">{totalMarks} / 100</div>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 rounded p-2 text-center">
-                  <div className="text-slate-400 text-[10px]">WARNING DEDUCTIONS</div>
+                  <div className="text-slate-400 text-[10px] uppercase">WARNING DEDUCTIONS</div>
                   <div className={wrongAttempts > 0 ? 'text-amber-400 font-extrabold text-sm' : 'text-emerald-400 font-extrabold text-sm'}>
-                    {wrongAttempts > 0 ? `⚠️ ${wrongAttempts} (-${wrongAttempts * 15})` : '0 Deductions'}
+                    {wrongAttempts > 0 ? `⚠️ ${wrongAttempts} (-${wrongAttempts * 5} pts)` : '0 Deductions'}
                   </div>
+                </div>
+              </div>
+
+              {/* Overall Platform Total Progress */}
+              <div className="bg-[#0c121e] border border-cyan-900/40 rounded-lg p-2.5 font-mono text-[11px] text-left space-y-1.5">
+                <div className="text-[10px] uppercase font-bold text-cyan-400 flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span>Overall Academy Progress</span>
+                  <span className="text-emerald-400 font-extrabold">+{earnedStars === 3 ? 100 : earnedStars === 2 ? 70 : 50} XP Awarded</span>
+                </div>
+                <div className="flex justify-between text-slate-300 text-xs">
+                  <span>Completed Modules:</span>
+                  <span className="font-bold text-white">
+                    {completedList.some(c => c.id === sim.id) ? completedList.length : completedList.length + 1} / 40
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-300 text-xs">
+                  <span>Cumulative Academy XP:</span>
+                  <span className="font-bold text-cyan-400">
+                    {profileTotalXp + (completedList.some(c => c.id === sim.id) ? 0 : (earnedStars === 3 ? 100 : earnedStars === 2 ? 70 : 50))} XP
+                  </span>
                 </div>
               </div>
             </div>
