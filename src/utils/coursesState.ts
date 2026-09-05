@@ -49,13 +49,23 @@ export function buildInitialProgress(courses: Course[]): CourseProgressMap {
   const progress: CourseProgressMap = {};
   courses.forEach((c) => {
     const s = saved[c.id] || {};
+    const isCertified = Boolean(s.certified);
+    const doneSet = new Set<string>(Array.isArray(s.done) ? s.done : []);
+
+    // If course is certified, ensure all module lessons are present in doneSet
+    if (isCertified) {
+      c.modules.forEach((m) =>
+        m.lessons.forEach((l) => doneSet.add(m.title + '__' + l.title))
+      );
+    }
+
     progress[c.id] = {
-      done: new Set(Array.isArray(s.done) ? s.done : []),
+      done: doneSet,
       activitiesDone: new Set(Array.isArray(s.activitiesDone) ? s.activitiesDone : []),
       quizzesPassed: s.quizzesPassed || {},
       finalAssessmentScore: s.finalAssessmentScore ?? s.quizScore ?? undefined,
       quizScore: s.quizScore ?? undefined,
-      certified: s.certified || false,
+      certified: isCertified,
       certifiedAt: s.certifiedAt || undefined,
       credId: s.credId || undefined,
       timeSpentMinutes: s.timeSpentMinutes || 0,
@@ -110,10 +120,16 @@ export function lessonCount(course: Course): number {
 }
 
 export function doneCount(course: Course, progress: CourseProgressMap): number {
-  return progress[course.id]?.done.size ?? 0;
+  if (progress[course.id]?.certified) {
+    return lessonCount(course);
+  }
+  return progress[course.id]?.done?.size ?? 0;
 }
 
 export function pct(course: Course, progress: CourseProgressMap): number {
+  if (progress[course.id]?.certified) {
+    return 100;
+  }
   const t = lessonCount(course);
   return t ? Math.round((doneCount(course, progress) / t) * 100) : 0;
 }

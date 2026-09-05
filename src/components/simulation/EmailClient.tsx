@@ -4,8 +4,9 @@
 // ============================================================
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Flag, Trash2, Reply, Forward, Eye, ExternalLink, Paperclip, AlertTriangle, CheckCircle, Info, Mail, Search, Star } from 'lucide-react';
+import { ChevronDown, ChevronRight, Flag, Trash2, Reply, Forward, Eye, ExternalLink, Paperclip, AlertTriangle, CheckCircle, Info, Mail, Search, Star, ShieldAlert } from 'lucide-react';
 import { useSimulationStore } from '@/store/simulation-store';
+import { IncidentReportModal } from '@/components/simulation/IncidentReportModal';
 import { toast } from 'sonner';
 
 interface EmailMessage {
@@ -150,6 +151,7 @@ export function EmailClient({
   portalColor,
   onPortalSubmit,
   onDefend,
+  simulationId,
 }: EmailClientProps) {
   const [openEmail, setOpenEmail] = useState(false);
   const [showSender, setShowSender] = useState(false);
@@ -157,7 +159,11 @@ export function EmailClient({
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const [showPortal, setShowPortal] = useState(false);
   const [reportDone, setReportDone] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const { fireEvent } = useSimulationStore();
+
+  const cleanSimId = (simulationId || 'SE-001').toUpperCase();
+  const rootFlag = `FLAG{${cleanSimId}_PHISHING_DEFENDED}`;
 
   const handleOpenEmail = () => {
     if (!openEmail) {
@@ -179,7 +185,7 @@ export function EmailClient({
         riskDelta: -5,
         scoreDelta: 5,
         isInvestigative: true,
-        isDefensive: true,
+        isDefensive: false,
         attackerSees: 'Victim is checking sender identity (on guard)',
       });
       toast.info('Sender details expanded');
@@ -238,21 +244,30 @@ export function EmailClient({
     }
   };
 
-  const handleReport = () => {
-    if (!reportDone) {
-      setReportDone(true);
-      fireEvent('REPORT_FILED', {
-        label: 'Email reported to security team',
-        riskDelta: -20,
-        scoreDelta: 20,
-        isDefensive: true,
-        isBranch: true,
-        attackerSees: 'Campaign reported — account flagged as security-aware',
-        nextState: 'DEFENDED',
-      });
-      toast.success('Phishing email reported! Security team notified.');
-      if (onDefend) onDefend();
-    }
+  const handleOpenReportModal = () => {
+    setShowReportModal(true);
+  };
+
+  const handleReportSubmit = (reportData: {
+    threatSeverity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    attackClassification: string;
+    ioc: string;
+    containmentAction: string;
+    redFlags: string[];
+    notes: string;
+  }) => {
+    setReportDone(true);
+    fireEvent('REPORT_FILED', {
+      label: `SOC Incident Report filed for ${reportData.ioc}`,
+      riskDelta: -30,
+      scoreDelta: 25,
+      isDefensive: true,
+      isBranch: true,
+      attackerSees: `Target reported attack — ${reportData.ioc} sinkholed at firewall`,
+      nextState: 'DEFENDED',
+    });
+    if (onDefend) onDefend();
+    toast.success('🎉 Incident successfully contained! Submit your Root Flag in Task 3 to complete the lab!');
   };
 
   const allInbox = [
@@ -336,14 +351,19 @@ export function EmailClient({
                 <Forward className="w-3 h-3" /><span className="text-[10px]">Forward</span>
               </button>
               <button
-                onClick={handleReport}
+                onClick={handleOpenReportModal}
                 disabled={reportDone}
-                className={`flex items-center gap-1 px-2 py-1 rounded transition text-[10px] ${reportDone ? 'bg-green-900 text-green-400' : 'bg-rose-900/50 hover:bg-rose-800 text-rose-300'}`}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded transition text-[11px] font-bold ${
+                  reportDone
+                    ? 'bg-emerald-900/60 text-emerald-400 border border-emerald-700/60'
+                    : 'bg-rose-900/60 hover:bg-rose-800 text-rose-300 border border-rose-700/60 shadow-sm'
+                }`}
+                title="Open SOC incident report console to investigate and contain threat"
               >
-                <Flag className="w-3 h-3" />
-                {reportDone ? 'Reported ✓' : 'Report Phishing'}
+                <Flag className="w-3.5 h-3.5" />
+                {reportDone ? 'Incident Contained ✓' : 'Investigate & Report Phishing'}
               </button>
-              <button onClick={() => { fireEvent('DEFENSE_ACTION', { label: 'Email deleted', riskDelta: -5, scoreDelta: 5, isDefensive: true }); setOpenEmail(false); toast.info('Email deleted'); }} className="flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+              <button onClick={() => { fireEvent('DEFENSE_ACTION', { label: 'Email deleted', riskDelta: -5, scoreDelta: 5, isDefensive: false }); setOpenEmail(false); toast.info('Email deleted'); }} className="flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
                 <Trash2 className="w-3 h-3" /><span className="text-[10px]">Delete</span>
               </button>
             </div>
@@ -393,13 +413,22 @@ export function EmailClient({
                       {email.dkimStatus.toUpperCase()} {email.dkimStatus !== 'pass' && '⚠'}
                     </span>
                   </div>
-                  <button
-                    onClick={handleViewHeaders}
-                    className="mt-2 text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1"
-                  >
-                    <Eye className="w-3 h-3" />
-                    {showHeaders ? 'Hide' : 'View'} Full Headers
-                  </button>
+                  <div className="flex items-center gap-3 pt-1">
+                    <button
+                      onClick={handleViewHeaders}
+                      className="text-cyan-400 hover:text-cyan-300 transition flex items-center gap-1 text-[11px]"
+                    >
+                      <Eye className="w-3 h-3" />
+                      {showHeaders ? 'Hide' : 'View'} Full Headers
+                    </button>
+                    <button
+                      onClick={handleOpenReportModal}
+                      className="text-rose-400 hover:text-rose-300 transition flex items-center gap-1 text-[11px] font-bold"
+                    >
+                      <ShieldAlert className="w-3 h-3" />
+                      Report Threat to SOC
+                    </button>
+                  </div>
                   {showHeaders && (
                     <div className="mt-2 bg-slate-950 border border-slate-800 rounded p-2 text-[10px] text-slate-400 leading-relaxed">
                       <div>Received: from mail.suspicious-domain.test</div>
@@ -491,6 +520,18 @@ export function EmailClient({
           </div>
         )}
       </div>
+
+      {/* Hands-On SOC Incident Report & Threat Classification Console */}
+      {showReportModal && (
+        <IncidentReportModal
+          simId={simulationId || 'SE-001'}
+          simTitle={email.subject}
+          category="Phishing"
+          expectedFlag={rootFlag}
+          onClose={() => setShowReportModal(false)}
+          onSubmitReport={handleReportSubmit}
+        />
+      )}
     </div>
   );
 }

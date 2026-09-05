@@ -85,6 +85,19 @@ function createMainWindow() {
       };
     }
 
+    // Real-Time Threat Interception for Insecure HTTP or Suspicious domains
+    if (url.startsWith('http://') || url.includes('.xyz') || url.includes('.top')) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('new-alert', {
+          id: 'alt_' + Date.now(),
+          title: 'Insecure HTTP Destination Intercepted',
+          message: `Attempted navigation to unencrypted or high-risk URL: ${url}. Data would be transmitted in plaintext without TLS encryption.`,
+          severity: 'high',
+          timestamp: new Date().toLocaleTimeString(),
+        });
+      }
+    }
+
     // Otherwise, open external links in system browser
     shell.openExternal(url);
     return { action: 'deny' };

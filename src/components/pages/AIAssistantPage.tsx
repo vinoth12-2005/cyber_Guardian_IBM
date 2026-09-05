@@ -50,9 +50,23 @@ const PRESET_THREAT_LINKS = [
     badgeColor: 'text-red-400 bg-red-950/60 border-red-800',
   },
   {
+    label: 'IBM Security Portal Spoof',
+    url: 'http://ibm-security-login.xyz/auth/verify',
+    desc: 'IBM brand impersonation on abusive .xyz TLD + /auth path',
+    badge: 'CRITICAL RISK',
+    badgeColor: 'text-red-400 bg-red-950/60 border-red-800',
+  },
+  {
     label: 'Microsoft Account Harvester',
     url: 'http://micros0ft-support-portal.top/signin',
     desc: 'Zero substitution + Suspicious .top TLD + /signin path',
+    badge: 'HIGH RISK',
+    badgeColor: 'text-orange-400 bg-orange-950/60 border-orange-800',
+  },
+  {
+    label: 'Chase Banking Credential Harvester',
+    url: 'http://chase-online-banking-verify.com/login',
+    desc: 'Banking keyword combination + Credential harvesting login path',
     badge: 'HIGH RISK',
     badgeColor: 'text-orange-400 bg-orange-950/60 border-orange-800',
   },

@@ -30,20 +30,45 @@ export interface ClientUrlTelemetry {
 export class ClientURLEngine {
   static SUSPICIOUS_TLDS = new Set([
     '.zip', '.mov', '.top', '.xyz', '.work', '.click', '.country',
-    '.kim', '.gq', '.cf', '.tk', '.ml', '.icu', '.cam', '.rest'
+    '.kim', '.gq', '.cf', '.tk', '.ml', '.icu', '.cam', '.rest',
+    '.live', '.link', '.buzz', '.fit', '.surf', '.monster', '.cfd',
+    '.sbs', '.online', '.site', '.support', '.help', '.quest', '.beauty',
+    '.bar', '.pw', '.cc', '.su', '.tk', '.info'
   ]);
 
   static BRAND_TARGETS = [
     { brand: 'paypal', officialDomains: ['paypal.com'] },
     { brand: 'google', officialDomains: ['google.com', 'google.co.uk', 'accounts.google.com', 'drive.google.com'] },
-    { brand: 'microsoft', officialDomains: ['microsoft.com', 'live.com', 'office.com', 'login.microsoftonline.com', 'outlook.com'] },
+    { brand: 'microsoft', officialDomains: ['microsoft.com', 'live.com', 'office.com', 'login.microsoftonline.com', 'outlook.com', 'microsoftonline.com'] },
     { brand: 'apple', officialDomains: ['apple.com', 'icloud.com', 'appleid.apple.com'] },
     { brand: 'amazon', officialDomains: ['amazon.com', 'aws.amazon.com'] },
     { brand: 'github', officialDomains: ['github.com'] },
     { brand: 'netflix', officialDomains: ['netflix.com'] },
     { brand: 'facebook', officialDomains: ['facebook.com', 'fb.com'] },
+    { brand: 'meta', officialDomains: ['meta.com'] },
     { brand: 'instagram', officialDomains: ['instagram.com'] },
-    { brand: 'linkedin', officialDomains: ['linkedin.com'] }
+    { brand: 'linkedin', officialDomains: ['linkedin.com'] },
+    { brand: 'ibm', officialDomains: ['ibm.com'] },
+    { brand: 'chase', officialDomains: ['chase.com'] },
+    { brand: 'wellsfargo', officialDomains: ['wellsfargo.com'] },
+    { brand: 'bankofamerica', officialDomains: ['bankofamerica.com'] },
+    { brand: 'citibank', officialDomains: ['citi.com', 'citibank.com'] },
+    { brand: 'citi', officialDomains: ['citi.com', 'citibank.com'] },
+    { brand: 'dhl', officialDomains: ['dhl.com'] },
+    { brand: 'fedex', officialDomains: ['fedex.com'] },
+    { brand: 'ups', officialDomains: ['ups.com'] },
+    { brand: 'usps', officialDomains: ['usps.com'] },
+    { brand: 'dropbox', officialDomains: ['dropbox.com'] },
+    { brand: 'adobe', officialDomains: ['adobe.com'] },
+    { brand: 'yahoo', officialDomains: ['yahoo.com'] },
+    { brand: 'coinbase', officialDomains: ['coinbase.com'] },
+    { brand: 'binance', officialDomains: ['binance.com'] },
+    { brand: 'steam', officialDomains: ['steampowered.com', 'steamcommunity.com'] },
+    { brand: 'twitter', officialDomains: ['twitter.com', 'x.com'] },
+    { brand: 'zoom', officialDomains: ['zoom.us'] },
+    { brand: 'slack', officialDomains: ['slack.com'] },
+    { brand: 'whatsapp', officialDomains: ['whatsapp.com'] },
+    { brand: 'telegram', officialDomains: ['telegram.org', 't.me'] }
   ];
 
   static normalizeLeet(str: string): string {
@@ -54,7 +79,9 @@ export class ClientURLEngine {
       .replace(/4/g, 'a')
       .replace(/5/g, 's')
       .replace(/8/g, 'b')
-      .replace(/vv/g, 'w');
+      .replace(/vv/g, 'w')
+      .replace(/@/g, 'a')
+      .replace(/\$/g, 's');
   }
 
   static analyze(rawUrl: string): ClientUrlTelemetry {
@@ -157,13 +184,62 @@ export class ClientURLEngine {
       }
     }
 
-    // 7. Phishing Path / Credential Harvesting Keywords
-    if (/(\/login|\/signin|\/verify|\/account-update|\/billing|\/secure-banking|\/password-reset)/.test(pathname)) {
-      warnings.push('Credential authentication path found on unverified or non-standard domain.');
-      score += 25;
+    // Check if the domain is an official domain of recognized brands
+    const isAnyOfficialBrand = ClientURLEngine.BRAND_TARGETS.some((t) =>
+      t.officialDomains.some((d) => hostname === d || hostname.endsWith(`.${d}`))
+    );
+
+    // 7. Hostname Credential Harvesting & Phishing Keywords
+    const PHISHING_KEYWORDS = [
+      'login', 'signin', 'log-in', 'sign-in', 'verify', 'verification',
+      'security', 'secure', 'update', 'account', 'banking', 'auth',
+      'authenticate', 'portal', 'support', 'billing', 'invoice',
+      'password', 'reset', 'recovery', 'validate', 'confirm', 'wallet',
+      'helpdesk', 'service', 'passcode', 'credential'
+    ];
+
+    const matchedKeywords = PHISHING_KEYWORDS.filter((kw) => hostname.includes(kw));
+
+    if (!isAnyOfficialBrand && matchedKeywords.length > 0) {
+      if (matchedKeywords.length >= 2 || /(-|_)/.test(hostname)) {
+        warnings.push(
+          `Deceptive credential harvesting keywords detected in domain name: "${matchedKeywords.slice(0, 3).join(', ')}".`
+        );
+        score += 40;
+        mitre.push('T1566.002');
+      } else if (protocol === 'http:' || ClientURLEngine.SUSPICIOUS_TLDS.has(tld)) {
+        warnings.push(
+          `Sensitive keyword "${matchedKeywords[0]}" found on unverified or high-risk host.`
+        );
+        score += 30;
+        mitre.push('T1566.002');
+      }
     }
 
-    // 8. Open Redirect Indicator
+    // 8. Obfuscation: Excessive Hyphens & Deeply Nested Subdomains
+    const hyphenCount = (hostname.match(/-/g) || []).length;
+    if (hyphenCount >= 3 && !isAnyOfficialBrand) {
+      warnings.push(`Excessive hyphenation detected (${hyphenCount} hyphens), typical of deceptive phishing domains.`);
+      score += 25;
+      mitre.push('T1027');
+    }
+
+    if (parts.length >= 4 && !isAnyOfficialBrand) {
+      warnings.push(`Deeply nested subdomain structure (${parts.length} levels) used for mobile display deception.`);
+      score += 25;
+      mitre.push('T1566.002');
+    }
+
+    // 9. Phishing Path / Credential Harvesting Keywords in Path
+    if (/(\/login|\/signin|\/verify|\/account-update|\/billing|\/secure-banking|\/password-reset|\/auth|\/webscr|\/confirm|\/authenticate)/.test(pathname)) {
+      if (!isAnyOfficialBrand) {
+        warnings.push('Credential authentication path found on unverified or non-standard domain.');
+        score += 25;
+        mitre.push('T1566.002');
+      }
+    }
+
+    // 10. Open Redirect Indicator
     if (/(\?redirect=|\?url=|\?next=|\?destination=|\?return=)/.test(search)) {
       warnings.push('Open redirection parameter detected in URL query string.');
       score += 20;

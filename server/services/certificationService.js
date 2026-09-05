@@ -5,59 +5,147 @@ class CertificationService {
   /**
    * Issue a new certificate for user completing course
    */
-  async issueCertificate(userId, courseId, scorePct) {
-    const userRes = await db.query('SELECT name, email FROM users WHERE id = $1', [userId]);
-    if (userRes.rowCount === 0) throw new Error('User not found');
-    const user = userRes.rows[0];
+  async issueCertificate(userId, courseId, scorePct = 100, options = {}) {
+    const userRes = await db.query('SELECT id, name, email FROM users WHERE id = $1', [userId]);
+    let userName = options.recipientName || 'Security Professional';
+    let userEmail = options.userEmail || '';
+    if (userRes.rowCount > 0) {
+      userName = userRes.rows[0].name || userName;
+      userEmail = userRes.rows[0].email || userEmail;
+    }
 
     const courseRes = await db.query('SELECT title, cat, skills_gained, credential_name FROM courses WHERE id = $1', [courseId]);
-    if (courseRes.rowCount === 0) throw new Error('Course not found');
-    const course = courseRes.rows[0];
+    const course = courseRes.rowCount > 0 ? courseRes.rows[0] : null;
 
-    const credId = `CG-CERT-${courseId.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${Math.floor(10000 + Math.random() * 90000)}`;
+    const credId =
+      options.credId ||
+      `CG-CERT-${courseId.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${Math.floor(10000 + Math.random() * 90000)}`;
     const now = new Date().toISOString();
     const id = 'cert_' + Math.random().toString(36).substring(2, 10);
 
-    const skills = JSON.parse(course.skills_gained || '[]');
-    if (skills.length === 0) skills.push(course.cat || 'Cybersecurity Defense');
+    let skills = [];
+    if (course && course.skills_gained) {
+      try {
+        skills = typeof course.skills_gained === 'string' ? JSON.parse(course.skills_gained) : course.skills_gained;
+      } catch (e) {
+        skills = [];
+      }
+    }
+    if (skills.length === 0 && Array.isArray(options.skills)) {
+      skills = options.skills;
+    }
+    if (skills.length === 0) {
+      skills.push((course && course.cat) || 'Cybersecurity Defense');
+    }
 
     // Create cryptographic verification hash
-    const verificationPayload = `${credId}|${user.email}|${courseId}|${scorePct}|${now}`;
+    const verificationPayload = `${credId}|${userEmail}|${courseId}|${scorePct}|${now}`;
     const verificationHash = crypto.createHash('sha256').update(verificationPayload).digest('hex');
 
-    const title = course.credential_name || `${course.title} Specialist Certification`;
+    const title =
+      (course && course.credential_name) ||
+      (course
+        ? `${course.title} Specialist Certification`
+        : options.courseTitle
+        ? `${options.courseTitle} Specialist Certification`
+        : 'Cybersecurity Specialist Certification');
 
-    await db.query(
-      `INSERT INTO certifications (id, cred_id, user_id, course_id, title, recipient_name, score, issue_date, status, skills, verification_hash, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-      [
-        id,
-        credId,
-        userId,
-        courseId,
-        title,
-        user.name,
-        scorePct,
-        now,
-        'active',
-        JSON.stringify(skills),
-        verificationHash,
-        now,
-      ]
+    // Check if an active certificate already exists for this user and course
+    const existingRes = await db.query(
+      'SELECT * FROM certifications WHERE user_id = $1 AND course_id = $2 AND status = $3 LIMIT 1',
+      [userId, courseId, 'active']
     );
 
-    return {
-      id,
-      credId,
-      title,
-      recipientName: user.name,
-      courseId,
-      score: scorePct,
-      issueDate: now,
-      status: 'active',
-      skills,
-      verificationHash,
-    };
+    let certRecord;
+    if (existingRes.rowCount > 0) {
+      const existing = existingRes.rows[0];
+      const newScore = Math.max(existing.score || 0, scorePct);
+      await db.query(
+        'UPDATE certifications SET score = $1, recipient_name = $2 WHERE id = $3',
+        [newScore, userName, existing.id]
+      ).catch(() => {});
+
+      certRecord = this._formatCertificate({
+        ...existing,
+        score: newScore,
+        recipient_name: userName,
+        course_title: course ? course.title : options.courseTitle,
+      });
+    } else {
+      await db.query(
+        `INSERT INTO certifications (id, cred_id, user_id, course_id, title, recipient_name, score, issue_date, status, skills, verification_hash, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [
+          id,
+          credId,
+          userId,
+          courseId,
+          title,
+          userName,
+          scorePct,
+          now,
+          'active',
+          JSON.stringify(skills),
+          verificationHash,
+          now,
+        ]
+      );
+
+      certRecord = {
+        id,
+        credId,
+        title,
+        recipientName: userName,
+        courseId,
+        score: scorePct,
+        issueDate: now,
+        status: 'active',
+        skills,
+        verificationHash,
+        courseTitle: course ? course.title : options.courseTitle,
+      };
+    }
+
+    // Award XP (+200) to user
+    await db.query('UPDATE users SET xp = xp + 200, updated_at = $1 WHERE id = $2', [now, userId]).catch(() => {});
+
+    // Update enrollment status to completed
+    await db.query(
+      `INSERT INTO course_enrollments (id, user_id, course_id, status, enrolled_at, completed_at)
+       VALUES ($1, $2, $3, 'completed', $4, $4)
+       ON CONFLICT (user_id, course_id) DO UPDATE SET status = 'completed', completed_at = $4`,
+      [`enr_${userId}_${courseId}`, userId, courseId, now]
+    ).catch(() => {});
+
+    // Synchronize course_progress table
+    await db.query(
+      `INSERT INTO course_progress (id, user_id, course_id, quiz_score, final_assessment_score, certified, certified_at, cred_id, updated_at)
+       VALUES ($1, $2, $3, $4, $5, 1, $6, $7, $8)
+       ON CONFLICT (user_id, course_id) DO UPDATE SET
+         quiz_score = $4,
+         final_assessment_score = $5,
+         certified = 1,
+         certified_at = $6,
+         cred_id = $7,
+         updated_at = $8`,
+      [`prog_${userId}_${courseId}`, userId, courseId, scorePct, scorePct, now, certRecord.credId, now]
+    ).catch(() => {});
+
+    // Record user activity
+    await db.query(
+      `INSERT INTO user_activity (id, user_id, activity_type, label, detail, category, icon_type, metadata_json, timestamp)
+       VALUES ($1, $2, 'CERTIFICATION_EARNED', $3, $4, 'Training', 'award', $5, $6)`,
+      [
+        'act_' + Math.random().toString(36).substring(2, 10),
+        userId,
+        `Earned Certificate: ${title}`,
+        `Scored ${scorePct}% on final evaluation. Credential ID: ${certRecord.credId}`,
+        JSON.stringify({ courseId, scorePct, credId: certRecord.credId }),
+        now,
+      ]
+    ).catch(() => {});
+
+    return certRecord;
   }
 
   /**
@@ -170,6 +258,17 @@ class CertificationService {
   }
 
   _formatCertificate(row) {
+    let skills = [];
+    if (typeof row.skills === 'string') {
+      try {
+        skills = JSON.parse(row.skills);
+      } catch (e) {
+        skills = [row.skills];
+      }
+    } else if (Array.isArray(row.skills)) {
+      skills = row.skills;
+    }
+
     return {
       id: row.id,
       credId: row.cred_id,
@@ -181,7 +280,7 @@ class CertificationService {
       issueDate: row.issue_date,
       status: row.status,
       verified: row.status === 'active',
-      skills: JSON.parse(row.skills || '[]'),
+      skills,
       verificationHash: row.verification_hash,
       revocationReason: row.revocation_reason,
       revokedAt: row.revoked_at,

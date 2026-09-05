@@ -186,7 +186,7 @@ export function SmsClient({
         riskDelta: -5,
         scoreDelta: 5,
         isInvestigative: true,
-        isDefensive: true,
+        isDefensive: false,
         attackerSees: 'Victim checking sender number identity',
       });
       toast.info('Sender details expanded');

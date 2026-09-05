@@ -119,16 +119,22 @@ export function BrowserPortal({
   const currentPage = pages.find(p => p.id === currentPageId) || pages[0];
 
   const handleInspectUrl = () => {
+    if (typeof (window as any).triggerUrlInterception === 'function') {
+      (window as any).triggerUrlInterception(url);
+    } else {
+      window.dispatchEvent(new CustomEvent('flotbot-intercept-url', { detail: { url } }));
+    }
+
     if (!urlInspected) {
       setUrlInspected(true);
       fireEvent('URL_INSPECTED', {
-        label: 'Inspected browser address bar URL',
+        label: 'Inspected browser address bar URL with Real-Time Detection Engine',
         riskDelta: urlIsSafe ? 0 : -5,
         scoreDelta: 5,
         isInvestigative: true,
         attackerSees: 'Victim checking URL in address bar',
       });
-      toast.info('URL inspected — check the domain carefully');
+      toast.info('URL inspected across detection engines — check domain protocol carefully');
     }
   };
 

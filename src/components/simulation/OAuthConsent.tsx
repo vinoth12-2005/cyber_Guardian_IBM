@@ -56,7 +56,7 @@ export function OAuthConsent({ appName, appPublisher, publisherVerified, permiss
       fireEvent('SENDER_INSPECTED', {
         label: `Inspected app publisher: ${appPublisher}`,
         riskDelta: publisherVerified ? 0 : -5,
-        scoreDelta: 5, isInvestigative: true, isDefensive: !publisherVerified,
+        scoreDelta: 5, isInvestigative: true, isDefensive: false,
         attackerSees: 'Victim checking OAuth app publisher identity',
       });
       toast.info(publisherVerified ? 'Publisher is verified' : '⚠ Publisher is NOT verified');

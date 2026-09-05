@@ -119,6 +119,15 @@ export const api = {
   certifications: {
     getMy: () => apiRequest('/api/certifications/my'),
     verify: (credId: string) => apiRequest(`/api/certifications/verify/${credId}`),
+    claim: (data: {
+      courseId: string;
+      scorePct?: number;
+      credId?: string;
+      courseTitle?: string;
+      skills?: string[];
+      userName?: string;
+      userEmail?: string;
+    }) => apiRequest('/api/certifications/claim', { method: 'POST', body: JSON.stringify(data) }),
   },
 
   // Activity Timeline

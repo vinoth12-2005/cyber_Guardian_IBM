@@ -34,7 +34,7 @@ export function QRScanner({ qrLabel, decodedUrl, urlIsSafe, brandName = 'Unknown
       setUrlInspected(true);
       fireEvent('URL_INSPECTED', {
         label: `Inspected decoded QR URL: ${decodedUrl}`,
-        riskDelta: -5, scoreDelta: 8, isInvestigative: true, isDefensive: !urlIsSafe,
+        riskDelta: -5, scoreDelta: 8, isInvestigative: true, isDefensive: false,
         attackerSees: 'Victim inspecting QR destination URL',
       });
       toast.info('URL inspected — check domain carefully');

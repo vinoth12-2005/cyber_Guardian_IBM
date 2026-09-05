@@ -26,8 +26,6 @@ interface TryHackMeRoomProps {
   onOpenKnowMore: () => void;
 }
 
-export type SimDifficulty = 'easy' | 'medium' | 'hard';
-
 export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: TryHackMeRoomProps) {
   const navigate = useNavigate();
   const scenarioDetail = getScenarioDetail(sim);
@@ -39,13 +37,8 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
   const [machineStatus, setMachineStatus] = useState<'OFFLINE' | 'STARTING' | 'ONLINE'>('ONLINE');
   const [ipAddress] = useState(`10.10.${Math.floor(Math.random() * 200 + 10)}.${Math.floor(Math.random() * 200 + 5)}`);
 
-  // ── Difficulty Mode State (Easy / Medium / Hard) ──────────────────────────
-  const initialDiff: SimDifficulty = (
-    sim.difficulty?.toLowerCase().includes('hard') || sim.difficulty?.toLowerCase().includes('advanced') ? 'hard' :
-    sim.difficulty?.toLowerCase().includes('intermediate') || sim.difficulty?.toLowerCase().includes('medium') ? 'medium' :
-    'easy'
-  );
-  const [selectedDifficulty, setSelectedDifficulty] = useState<SimDifficulty>(initialDiff);
+  // ── Scheduled Scenario Difficulty ─────────────────────────────────────────
+  const simLevel = sim.difficulty || 'Beginner';
 
   // Exit Modal State
   const [showExitModal, setShowExitModal] = useState(false);
@@ -53,37 +46,24 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
   // Practical Concept Guide Toggle
   const [showConceptGuide, setShowConceptGuide] = useState(true);
 
-  // Clean category and ID for flags
+  // Clean category and ID for unified Root Defense Flag
   const cleanCategory = (sim.category || 'THREAT').toUpperCase().replace(/\s+/g, '_');
   const cleanId = (sim.id || 'SE-001').toUpperCase();
+  const currentExpectedFlag = `FLAG{${cleanId}_${cleanCategory}_DEFENDED}`;
 
-  // Difficulty-scaled flag formats
-  const expectedFlagEasy = `FLAG{EASY_${cleanId}_${cleanCategory}_DEFENDED}`;
-  const expectedFlagMed = `FLAG{MED_${cleanId}_${cleanCategory}_SECURED}`;
-  const expectedFlagHard = `FLAG{HARD_${cleanId}_${cleanCategory}_MASTERED}`;
-  const expectedFlagBase = `FLAG{${cleanId}_${cleanCategory}_DEFENDED}`;
-
-  const currentExpectedFlag = (
-    selectedDifficulty === 'easy' ? expectedFlagEasy :
-    selectedDifficulty === 'medium' ? expectedFlagMed :
-    expectedFlagHard
-  );
-
-  // ── Dynamic Difficulty Question Bank ──────────────────────────────────────
-  // Easy: 3 practical questions with interactive multiple-choice options
-  // Medium: 5 investigative questions with guided hint clues
-  // Hard: 8 technical SOC/forensic questions
-  const getQuestionBank = (diff: SimDifficulty) => {
+  // ── Scenario Question Bank (Grounded in scenario learning objectives) ──────
+  const getQuestionBank = () => {
     const defaultAttack = scenarioDetail?.attackVector || `${sim.category} Social Engineering`;
     const defaultRedFlag = scenarioDetail?.redFlags?.[0] || 'Mismatched sender domain & urgent deadline pressure';
     const defaultDefense = scenarioDetail?.defensivePlaybook?.[0] || 'Inspect sender header, verify out-of-band, and submit SOC report';
     const defaultData = scenarioDetail?.dataStolen?.[0] || 'Account credentials (username & password)';
-    const defaultStep1 = scenarioDetail?.attackChain?.[0] || 'Attacker crafts deceptive pretext message with urgent call to action';
     const defaultControl = scenarioDetail?.mitigationChecklist?.[0] || 'Email authentication (SPF/DKIM/DMARC) & DNS domain filtering';
-    const defaultMitre = scenarioDetail?.mitreTechniques?.[0]?.id || 'T1566.002';
-    const defaultCase = scenarioDetail?.realWorldCase ? scenarioDetail.realWorldCase.split('.')[0] : 'Corporate Spear Phishing & Credential Theft Incident';
 
-    if (diff === 'easy') {
+    const isAdv = simLevel.toLowerCase().includes('adv') || simLevel.toLowerCase().includes('hard');
+    const isInter = simLevel.toLowerCase().includes('inter') || simLevel.toLowerCase().includes('medium');
+
+    if (!isAdv && !isInter) {
+      // Beginner Mode: 3 practical interactive multiple-choice verification tasks
       return [
         {
           id: 'q1',
@@ -97,7 +77,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
             'Hardware Firmware BIOS Tampering',
             'Physical RFID Security Badge Duplication'
           ],
-          hint: '💡 Easy Hint: Look at the attack category above — it exploits human trust and spoofing.',
+          hint: '💡 Practical Hint: Look at the attack category above — it exploits human trust and spoofing.',
           explanation: `Correct! ${defaultAttack} is the primary deception technique used here to trick the victim.`
         },
         {
@@ -112,7 +92,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
             'Official meeting invitation confirmed by your manager',
             'Normal scheduled system update during business hours'
           ],
-          hint: '💡 Easy Hint: Check the sender address domain and urgent threats in the message.',
+          hint: '💡 Practical Hint: Check the sender address domain and urgent threats in the message.',
           explanation: `Spot on! "${defaultRedFlag}" is the major giveaway sign that exposes the attack.`
         },
         {
@@ -127,23 +107,23 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
             'Click the link and disable your firewall protection',
             'Forward the email and corporate credentials to external contacts'
           ],
-          hint: '💡 Easy Hint: Always inspect details and report suspicious messages to Security Operations.',
+          hint: '💡 Practical Hint: Always inspect details and report suspicious messages to Security Operations.',
           explanation: `Excellent! ${defaultDefense} stops the attacker and safeguards the entire organization.`
         }
       ];
     }
 
-    if (diff === 'medium') {
+    if (isInter) {
+      // Intermediate Mode: 4 investigative tasks
       return [
         { id: 'q1', label: `What primary attack technique or spoofed indicator is exploited in "${sim.title}"?`, marks: 30, type: 'input' as const, hint: '💡 Hint: Check Know More → "Attack Breakdown" tab for the exact attack vector name.' },
         { id: 'q2', label: `What primary defensive control or IoC mitigation prevents this ${sim.category} threat?`, marks: 30, type: 'input' as const, hint: '💡 Hint: Open Know More → "Defense Playbook" tab — the first item is the key control.' },
-        { id: 'q3', label: `What is the most critical red flag (IoC) that indicates this attack is happening?`, marks: 25, type: 'input' as const, hint: '💡 Hint: Open Know More → "Red Flags" tab. The first listed indicator is key.' },
+        { id: 'q3', label: `What is the most critical red flag (IoC) that indicates this attack is happening?`, marks: 20, type: 'input' as const, hint: '💡 Hint: Open Know More → "Red Flags" tab. The first listed indicator is key.' },
         { id: 'q4', label: `What real-world data or asset does the attacker steal or compromise in this attack?`, marks: 20, type: 'input' as const, hint: '💡 Hint: Know More → "Data Stolen" tab shows what data is harvested.' },
-        { id: 'q5', label: `Describe the first action an attacker takes in the kill chain for this attack.`, marks: 20, type: 'input' as const, hint: '💡 Hint: Know More → "Attack Chain" tab — Stage 1 is the attacker\'s first move.' },
       ];
     }
 
-    // Hard Mode (8 Tasks)
+    // Advanced Mode: 6 technical SOC / threat analysis tasks
     return [
       { id: 'q1', label: `What primary attack technique or spoofed indicator is exploited in "${sim.title}"?`, marks: 20, type: 'input' as const, hint: '💡 Hard Hint: Identify the exact attack vector and social engineering pretext.' },
       { id: 'q2', label: `What primary defensive control or IoC mitigation prevents this ${sim.category} threat?`, marks: 20, type: 'input' as const, hint: '💡 Hard Hint: Check NIST/CISA playbook mitigation in Know More.' },
@@ -151,12 +131,10 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
       { id: 'q4', label: `What real-world data or asset does the attacker steal or compromise in this attack?`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Identify the exfiltrated credential or token asset.' },
       { id: 'q5', label: `Describe the first action an attacker takes in the kill chain for this attack.`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Stage 1 reconnaissance / payload weaponization.' },
       { id: 'q6', label: `What enterprise-level SOC control would have blocked this attack at the network perimeter?`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Identify perimeter DMARC, DNS sinkholing, or WebAuthn controls.' },
-      { id: 'q7', label: `What is the MITRE ATT&CK technique ID most associated with this attack?`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Look up the MITRE ATT&CK technique code (e.g. T1566.002).' },
-      { id: 'q8', label: `Name the real-world security incident that demonstrates this attack at scale.`, marks: 15, type: 'input' as const, hint: '💡 Hard Hint: Research the real-world case study listed in Threat Intel.' },
     ];
   };
 
-  const currentQuestions = getQuestionBank(selectedDifficulty);
+  const currentQuestions = getQuestionBank();
   const questionCount = currentQuestions.length;
 
   // Per-question state arrays
@@ -164,18 +142,6 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
   const [qPassed, setQPassed] = useState<boolean[]>(Array(8).fill(false));
   const [showHints, setShowHints] = useState<boolean[]>(Array(8).fill(false));
   const [qWrongAttempts, setQWrongAttempts] = useState<number[]>(Array(8).fill(0));
-
-  // Reset/sync question states when difficulty changes
-  const handleDifficultyChange = (newDiff: SimDifficulty) => {
-    setSelectedDifficulty(newDiff);
-    setQAnswers(Array(8).fill(''));
-    setQPassed(Array(8).fill(false));
-    setShowHints(Array(8).fill(false));
-    setQWrongAttempts(Array(8).fill(0));
-    setFlagPassed(false);
-    setFlagAnswer('');
-    toast.info(`Switched to ${newDiff.toUpperCase()} Mode! Question bank and flag updated.`);
-  };
 
   // Flag state
   const [flagAnswer, setFlagAnswer] = useState('');
@@ -220,24 +186,22 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
     CRITICAL: { color: 'text-red-400', bg: 'bg-red-500', border: 'border-red-500/60', badgeBg: 'bg-red-950/80' },
   }[riskLevel] || { color: 'text-cyan-400', bg: 'bg-cyan-500', border: 'border-cyan-500/40', badgeBg: 'bg-cyan-950/60' };
 
-  // State tracking when defensive action was filed in VM & pop-up modal
+  // State tracking when defensive action was filed in VM
   const [defensiveReportFiled, setDefensiveReportFiled] = useState(false);
-  const [showFlagModal, setShowFlagModal] = useState(false);
 
   // React useEffect for VM defensive action detection bridge
+  // Root Defense Flag is strictly unlocked ONLY after a full incident containment report is filed
   useEffect(() => {
     if (!session) return;
-    const hasDefensiveAction = session.events.some(ev =>
-      ['REPORT_FILED', 'BLOCK_APPLIED', 'VERIFICATION_PERFORMED', 'MFA_REPORTED', 'DEFENSE_ACTION', 'PERMISSION_REJECTED', 'SIMULATION_COMPLETED'].includes(ev.type) ||
-      ev.isDefensive
+    const hasContainmentReport = session.events.some(ev =>
+      ev.type === 'REPORT_FILED' || ev.type === 'SIMULATION_COMPLETED'
     );
 
-    if (hasDefensiveAction && !defensiveReportFiled) {
+    if (hasContainmentReport && !defensiveReportFiled) {
       setDefensiveReportFiled(true);
-      setShowFlagModal(true);
-      toast.success(`🎉 Excellent defense! Incident contained! Copy your ${selectedDifficulty.toUpperCase()} Root Flag to complete the lab!`, { duration: 8000 });
+      toast.success(`🎉 Full SOC incident containment verified! Paste your Root Flag in Task ${questionCount + 1} to complete the lab!`, { duration: 6000 });
     }
-  }, [session?.events, defensiveReportFiled, selectedDifficulty]);
+  }, [session?.events, defensiveReportFiled, questionCount]);
 
   // Show retry modal when risk reaches HIGH or CRITICAL while lab is not complete
   useEffect(() => {
@@ -301,31 +265,26 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
     checkRoomCompletion(next.slice(0, questionCount).every(Boolean), flagPassed);
   };
 
-  // Easy Mode: Instant Guided Defense & Flag Claim helper
-  const handleClaimEasyFlag = () => {
-    setDefensiveReportFiled(true);
-    setShowFlagModal(true);
-    toast.success(`🎉 Easy Flag generated! Copy the flag below and paste it in the flag submission box!`);
-  };
-
   const handleFlagSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!flagAnswer.trim()) {
       setWrongAttempts(w => w + 1);
-      toast.error('⚠️ Warning! No flag entered (-15 Penalty Marks). Report the incident in the VM sandbox or click Claim Flag first.');
+      toast.error('⚠️ Warning! No flag entered (-15 Penalty Marks). Complete the SOC Incident Report in the VM sandbox to generate the flag.');
       return;
     }
 
     const normalizedInput = flagAnswer.trim().toUpperCase().replace(/\s+/g, '');
     const validFlags = [
       currentExpectedFlag.toUpperCase().replace(/\s+/g, ''),
-      expectedFlagEasy.toUpperCase().replace(/\s+/g, ''),
-      expectedFlagMed.toUpperCase().replace(/\s+/g, ''),
-      expectedFlagHard.toUpperCase().replace(/\s+/g, ''),
-      expectedFlagBase.toUpperCase().replace(/\s+/g, ''),
+      `FLAG{${cleanId}_${cleanCategory}_DEFENDED}`,
+      `FLAG{EASY_${cleanId}_${cleanCategory}_DEFENDED}`,
+      `FLAG{MED_${cleanId}_${cleanCategory}_SECURED}`,
+      `FLAG{HARD_${cleanId}_${cleanCategory}_MASTERED}`,
+      `FLAG{${cleanId}_DEFENDED}`,
     ];
 
-    const isMatch = validFlags.some(f => normalizedInput === f || normalizedInput.includes(cleanId) && normalizedInput.includes('FLAG'));
+    const isMatch = validFlags.some(f => normalizedInput === f) ||
+      (normalizedInput.includes(cleanId) && normalizedInput.includes('FLAG'));
 
     if (isMatch) {
       setFlagPassed(true);
@@ -334,7 +293,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
       checkRoomCompletion(activeQuestionsPassed.every(Boolean), true);
     } else {
       setWrongAttempts(w => w + 1);
-      toast.error(`⚠️ Invalid Flag! -15 Penalty. Follow the guided defense steps on the right VM to get the valid ${selectedDifficulty.toUpperCase()} flag.`);
+      toast.error(`⚠️ Invalid Flag! -15 Penalty. Follow the guided SOC report steps in the VM sandbox to get the valid root flag.`);
     }
   };
 
@@ -345,7 +304,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
     } else {
       const missing: string[] = [];
       activeQuestionsPassed.forEach((p, i) => { if (!p) missing.push(`Q${i + 1}`); });
-      if (!flag) missing.push(`${selectedDifficulty.toUpperCase()} Root Flag`);
+      if (!flag) missing.push(`Root Defense Flag`);
       toast.info(`Progress saved! Still need: ${missing.join(', ')}`);
     }
   };
@@ -379,32 +338,25 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                 </span>
               </div>
               <div className="text-[10px] text-slate-400 font-mono">
-                CYBER RANGE ARENA • MODE: <span className="text-cyan-400 font-bold uppercase">{selectedDifficulty}</span>
+                CYBER RANGE ARENA • SCHEDULED LEVEL: <span className="text-cyan-400 font-bold uppercase">{simLevel}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Machine Status Bar, Difficulty Switcher & Threat Critical Gauge */}
+        {/* Scheduled Lab Difficulty Badge & Machine Status Bar */}
         <div className="flex items-center gap-2 sm:gap-3">
 
-          {/* Interactive Difficulty Selector Pills */}
-          <div className="hidden lg:flex items-center bg-[#090d14] p-0.5 rounded-lg border border-slate-800 font-mono text-[11px]">
-            {(['easy', 'medium', 'hard'] as SimDifficulty[]).map(diff => (
-              <button
-                key={diff}
-                onClick={() => handleDifficultyChange(diff)}
-                className={`px-2.5 py-1 rounded-md font-bold transition uppercase ${
-                  selectedDifficulty === diff
-                    ? diff === 'easy' ? 'bg-emerald-600 text-white shadow-sm' :
-                      diff === 'medium' ? 'bg-amber-600 text-white shadow-sm' :
-                      'bg-rose-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {diff}
-              </button>
-            ))}
+          {/* Scheduled Lab Difficulty Badge */}
+          <div className="hidden sm:flex items-center gap-2 bg-[#090d14] px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
+            <span className="text-slate-400 font-semibold">LEVEL:</span>
+            <span className={`px-2 py-0.5 rounded font-bold uppercase text-[10px] tracking-wider border ${
+              simLevel.toLowerCase().includes('adv') ? 'bg-purple-950/80 text-purple-300 border-purple-700/60' :
+              simLevel.toLowerCase().includes('inter') ? 'bg-amber-950/80 text-amber-300 border-amber-700/60' :
+              'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+            }`}>
+              {simLevel}
+            </span>
           </div>
 
           {/* Dynamic Critical Level Gauge Bar */}
@@ -513,14 +465,14 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
               </button>
             </div>
 
-            {/* Difficulty Badge */}
+            {/* Scheduled Level Badge */}
             <div className="flex items-center gap-1 mb-1">
               <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
-                selectedDifficulty === 'easy' ? 'bg-emerald-950 text-emerald-300 border-emerald-700' :
-                selectedDifficulty === 'medium' ? 'bg-amber-950 text-amber-300 border-amber-700' :
-                'bg-rose-950 text-rose-300 border-rose-700'
+                simLevel.toLowerCase().includes('adv') ? 'bg-purple-950 text-purple-300 border-purple-700' :
+                simLevel.toLowerCase().includes('inter') ? 'bg-amber-950 text-amber-300 border-amber-700' :
+                'bg-emerald-950 text-emerald-300 border-emerald-700'
               }`}>
-                {selectedDifficulty.toUpperCase()} MODE
+                {simLevel.toUpperCase()} LEVEL
               </span>
             </div>
           </div>
@@ -577,23 +529,17 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                         </div>
                       </div>
 
-                      {/* Flag Difficulty explanation */}
+                      {/* Flag Explanation */}
                       <div className="bg-slate-950/80 p-2.5 rounded-lg border border-cyan-800/40 flex items-center justify-between text-[11px] font-mono">
                         <div className="flex items-center gap-2">
                           <Flag className="w-3.5 h-3.5 text-cyan-400" />
                           <span className="text-slate-300">
-                            Target Flag: <strong className="text-cyan-300">{selectedDifficulty.toUpperCase()} MODE</strong>
+                            Root Flag: <strong className="text-emerald-300">Generated via Hands-On SOC Report</strong>
                           </span>
                         </div>
-                        {selectedDifficulty === 'easy' && (
-                          <button
-                            type="button"
-                            onClick={handleClaimEasyFlag}
-                            className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] transition shadow-sm"
-                          >
-                            Claim Easy Flag 🚩
-                          </button>
-                        )}
+                        <span className="text-[10px] text-slate-400">
+                          Complete VM report steps to unlock
+                        </span>
                       </div>
                     </div>
                   )}
@@ -629,9 +575,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                   </div>
 
                   <p className="text-slate-400 text-xs">
-                    {selectedDifficulty === 'easy'
-                      ? 'Read the questions below and select the correct answer option, or inspect the live VM on the right.'
-                      : 'Interact with the live target machine on the right panel. Inspect headers, payload links, and network logs to answer the questions below.'}
+                    Interact with the live target machine in the VM on the right panel. Inspect headers, payload links, and network logs to complete the verification tasks below.
                   </p>
 
                   {/* Defensive Action Celebration & Flag Banner */}
@@ -643,11 +587,11 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                           INCIDENT CONTAINED &amp; REPORTED!
                         </div>
                         <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-900/80 text-emerald-300 border border-emerald-700/60 font-mono font-bold">
-                          {selectedDifficulty.toUpperCase()} FLAG REVEALED
+                          ROOT FLAG UNLOCKED
                         </span>
                       </div>
                       <p className="text-emerald-100 text-xs leading-relaxed font-sans">
-                        🎯 Great work! Below is your <strong>{selectedDifficulty.toUpperCase()} Mode Root Defense Flag</strong>. Copy and paste this flag into Task 3 below to capture the flag and complete the lab!
+                        🎯 Great work! Threat contained. Below is your <strong>Official Root Defense Flag</strong>. Copy and paste this flag into Task {questionCount + 1} below to capture the flag and complete the lab!
                       </p>
 
                       {/* Copyable Flag Box */}
@@ -663,7 +607,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                           onClick={() => {
                             navigator.clipboard.writeText(currentExpectedFlag);
                             setFlagAnswer(currentExpectedFlag);
-                            toast.success('Flag copied & pasted! Now click Submit Flag below.');
+                            toast.success('Flag copied & pasted into Task box! Click Submit Flag to complete.');
                           }}
                           className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1.5 flex-shrink-0 shadow-md shadow-emerald-950/40"
                         >
@@ -676,7 +620,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                   {/* ── Dynamic Questions List ── */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-                      <span>📋 {questionCount} Tasks ({selectedDifficulty.toUpperCase()} Mode)</span>
+                      <span>📋 {questionCount} Verification Tasks ({simLevel.toUpperCase()} LEVEL)</span>
                       <button
                         type="button"
                         onClick={onOpenKnowMore}
@@ -810,7 +754,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                     <div className="flex items-start justify-between">
                       <label className="font-bold text-emerald-300 text-xs flex items-center gap-1.5">
                         <Flag className="w-3.5 h-3.5 text-emerald-400" />
-                        Task {questionCount + 1}: Submit {selectedDifficulty.toUpperCase()} Mode Root Flag
+                        Task {questionCount + 1}: Submit Root Defense Flag
                       </label>
                       {flagPassed && (
                         <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 px-2 py-0.5 rounded font-mono font-bold">
@@ -820,16 +764,14 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
                     </div>
 
                     <div className="text-[11px] text-slate-400">
-                      {selectedDifficulty === 'easy'
-                        ? 'In Easy mode, click "Claim Easy Flag" above or file the report in the VM to reveal the flag. Paste it here to complete the lab!'
-                        : 'Report the incident in the VM (right panel) to unlock the flag. Copy the flag from the pop-up, then paste it here to capture it.'}
+                      Investigate the target machine in the VM on the right. Launch the SOC Incident Reporter, complete all investigation &amp; classification steps, and execute containment to generate your Root Flag. Paste it here to complete the lab!
                     </div>
 
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         disabled={flagPassed}
-                        placeholder={`FLAG{${selectedDifficulty.toUpperCase()}_...}`}
+                        placeholder={`FLAG{${cleanId}_${cleanCategory}_DEFENDED}`}
                         value={flagAnswer}
                         onChange={e => setFlagAnswer(e.target.value)}
                         className="flex-1 bg-[#090d14] border border-emerald-800/60 rounded px-3 py-1.5 text-xs text-emerald-300 focus:outline-none focus:border-emerald-400 font-mono"
@@ -994,77 +936,6 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
         </div>
       )}
 
-      {/* ── FLAG UNLOCKED CONGRATULATIONS POP-UP MODAL ── */}
-      {showFlagModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in zoom-in-95">
-          <div className="bg-[#111722] border-2 border-emerald-500/80 rounded-2xl p-6 max-w-lg w-full text-center space-y-5 shadow-2xl shadow-emerald-950/80 modal-enter relative overflow-hidden">
-
-            {/* Glowing Background Accent */}
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-emerald-500/30 blur-2xl rounded-full pointer-events-none" />
-
-            {/* Icon Header */}
-            <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-2 border-emerald-400 flex items-center justify-center mx-auto text-emerald-400 shadow-lg shadow-emerald-900/40">
-                <ShieldCheck className="w-9 h-9 text-emerald-400 animate-bounce" />
-              </div>
-              <div className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full uppercase flex items-center gap-1 shadow-md font-mono">
-                <Sparkles className="w-3 h-3 fill-slate-950" /> {selectedDifficulty.toUpperCase()} UNLOCKED
-              </div>
-            </div>
-
-            {/* Title & Description */}
-            <div className="space-y-1">
-              <h2 className="text-xl font-black text-white tracking-wide uppercase">
-                🎉 CONGRATULATIONS! THREAT CONTAINED!
-              </h2>
-              <p className="text-xs text-slate-300">
-                Defense action verified for <span className="text-emerald-400 font-mono font-bold">{sim.title}</span>. Target machine is secure.
-              </p>
-            </div>
-
-            {/* Flag Display Box */}
-            <div className="bg-[#090d14] border-2 border-emerald-500/60 rounded-xl p-4 space-y-2.5 shadow-inner">
-              <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                  <Key className="w-3.5 h-3.5" /> {selectedDifficulty.toUpperCase()} ROOT DEFENSE FLAG:
-                </span>
-                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded font-bold">
-                  100% VERIFIED
-                </span>
-              </div>
-              <div className="bg-emerald-950/70 border border-emerald-700/50 rounded-lg p-3 text-emerald-300 font-mono font-extrabold text-sm tracking-wider select-all break-all shadow-md">
-                {currentExpectedFlag}
-              </div>
-              <p className="text-[11px] text-slate-400 text-left pt-1">
-                📌 <strong>Next Step:</strong> Click the button below to automatically paste this flag into <strong>Task {questionCount + 1}</strong> and complete the lab!
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-1">
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(currentExpectedFlag);
-                  setFlagAnswer(currentExpectedFlag);
-                  toast.success('Flag copied and filled into submission box! Submit now.');
-                  setShowFlagModal(false);
-                }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/50 font-mono"
-              >
-                <Copy className="w-4 h-4" /> Copy Flag &amp; Paste in Task {questionCount + 1}
-              </button>
-              <button
-                onClick={() => setShowFlagModal(false)}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition border border-slate-700"
-              >
-                Close
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
       {/* ── NOT AWARE / RETRY MODAL ── */}
       {showRetryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in zoom-in-95">
@@ -1083,17 +954,17 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
               <div className="text-[10px] font-mono text-red-400 font-bold uppercase tracking-widest">⚠ SECURITY AWARENESS NOTICE</div>
               <h2 className="text-xl font-black text-white tracking-wide">Threat Critical Level Reached!</h2>
               <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
-                The threat level has reached <span className="text-red-400 font-bold">{riskLevel}</span>. Follow the practical concept guide or switch to Easy Mode to learn the defense steps.
+                The threat level has reached <span className="text-red-400 font-bold">{riskLevel}</span>. Investigate the IoCs, check the defensive guide, and file an incident containment report.
               </p>
             </div>
 
             {/* What to do */}
             <div className="bg-[#090d14] border border-amber-800/60 rounded-xl p-4 text-left space-y-2 text-xs">
-              <div className="text-amber-400 font-bold uppercase text-[10px] font-mono mb-1.5">📚 Practical Defense Guide:</div>
+              <div className="text-amber-400 font-bold uppercase text-[10px] font-mono mb-1.5">📚 Incident Investigation Playbook:</div>
               <div className="space-y-1.5 text-slate-300">
-                <div className="flex items-start gap-2"><span className="text-amber-400 font-bold flex-shrink-0">1.</span> <span>Switch to <strong className="text-emerald-300">Easy Mode</strong> above for guided step-by-step questions.</span></div>
-                <div className="flex items-start gap-2"><span className="text-amber-400 font-bold flex-shrink-0">2.</span> <span>Click <strong className="text-cyan-300">"Know More"</strong> to view red flags and defensive playbooks.</span></div>
-                <div className="flex items-start gap-2"><span className="text-amber-400 font-bold flex-shrink-0">3.</span> <span>Perform the defensive action in the <strong className="text-cyan-300">VM (right panel)</strong> to reveal the Root Flag.</span></div>
+                <div className="flex items-start gap-2"><span className="text-amber-400 font-bold flex-shrink-0">1.</span> <span>Click <strong className="text-cyan-300">"Know More"</strong> in the concept guide to review red flags and defensive playbooks.</span></div>
+                <div className="flex items-start gap-2"><span className="text-amber-400 font-bold flex-shrink-0">2.</span> <span>Investigate the suspicious activity in the <strong className="text-cyan-300">VM (right panel)</strong>.</span></div>
+                <div className="flex items-start gap-2"><span className="text-amber-400 font-bold flex-shrink-0">3.</span> <span>Submit the full SOC incident classification report with IoCs to contain the breach and earn the Root Flag.</span></div>
               </div>
             </div>
 
@@ -1102,11 +973,11 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
               <button
                 onClick={() => {
                   setShowRetryModal(false);
-                  handleDifficultyChange('easy');
+                  setShowConceptGuide(true);
                 }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg font-mono transition"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg font-mono transition"
               >
-                <Compass className="w-4 h-4" /> Switch to Easy Mode
+                <BookOpen className="w-4 h-4" /> Open Defense Playbook
               </button>
               <button
                 onClick={() => { setShowRetryModal(false); handleRestartMachine(); }}
@@ -1137,7 +1008,7 @@ export function TryHackMeRoom({ sim, children, onComplete, onOpenKnowMore }: Try
             <div>
               <div className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">CYBER RANGE ROOM CLEARED</div>
               <h2 className="text-xl font-extrabold text-white mt-1">{sim.title}</h2>
-              <p className="text-xs text-slate-400 mt-1">{sim.id} • {sim.category} • {selectedDifficulty.toUpperCase()} MODE</p>
+              <p className="text-xs text-slate-400 mt-1">{sim.id} • {sim.category} • {simLevel.toUpperCase()} LEVEL</p>
             </div>
 
             {/* Glowing Star Rating & Marks Summary */}

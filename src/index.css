@@ -558,6 +558,56 @@
   color: var(--text-muted) !important;
 }
 
+/* Certificate Canvas Immunity: Ensure luxury dark credential aesthetics in both Light & Dark modes */
+.light .certificate-canvas,
+.certificate-canvas {
+  color: #F8FAFC !important;
+}
+.light .certificate-canvas .text-white,
+.certificate-canvas .text-white {
+  color: #FFFFFF !important;
+}
+.light .certificate-canvas .text-slate-100,
+.certificate-canvas .text-slate-100 {
+  color: #F1F5F9 !important;
+}
+.light .certificate-canvas .text-slate-200,
+.certificate-canvas .text-slate-200 {
+  color: #E2E8F0 !important;
+}
+.light .certificate-canvas .text-slate-300,
+.certificate-canvas .text-slate-300 {
+  color: #CBD5E1 !important;
+}
+.light .certificate-canvas .text-slate-400,
+.certificate-canvas .text-slate-400 {
+  color: #94A3B8 !important;
+}
+.light .certificate-canvas .text-purple-300,
+.certificate-canvas .text-purple-300 {
+  color: #D8B4FE !important;
+}
+.light .certificate-canvas .text-purple-400,
+.certificate-canvas .text-purple-400 {
+  color: #C084FC !important;
+}
+.light .certificate-canvas .text-amber-400,
+.certificate-canvas .text-amber-400 {
+  color: #FBBF24 !important;
+}
+.light .certificate-canvas .text-emerald-400,
+.certificate-canvas .text-emerald-400 {
+  color: #34D399 !important;
+}
+.light .certificate-canvas .text-cyan-300,
+.certificate-canvas .text-cyan-300 {
+  color: #67E8F9 !important;
+}
+.light .certificate-canvas .text-cyan-400,
+.certificate-canvas .text-cyan-400 {
+  color: #38BDF8 !important;
+}
+
 .light .divide-slate-800,
 .light .divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]) {
   border-color: var(--border-subtle) !important;

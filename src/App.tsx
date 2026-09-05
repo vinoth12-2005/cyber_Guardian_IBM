@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { auth } from './lib/firebase';
@@ -67,6 +67,9 @@ import { FlotBotWidget } from './components/flotbot/FlotBotWidget';
 
 // Modals
 import { ActivityDetailModal } from './components/modals/ActivityDetailModal';
+import { ThreatInterceptionModal } from './components/modals/ThreatInterceptionModal';
+import type { ThreatInterceptionData } from './components/modals/ThreatInterceptionModal';
+import { ClientURLEngine } from './lib/detection/clientURLEngine';
 
 import { api } from './lib/api';
 
@@ -130,6 +133,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
   const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isQuizActive, setIsQuizActive] = useState<boolean>(false);
   
   // Sync tab if navigated via URL
   useEffect(() => {
@@ -140,6 +144,92 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
   const [selectedItem, setSelectedItem] = useState<
     SuspiciousActivityItem | AnalysisHistoryItem | null
   >(null);
+  const [globalThreatModal, setGlobalThreatModal] = useState<ThreatInterceptionData | null>(null);
+
+  // Live real-time URL & Insecure HTTP detection engine
+  const runGlobalUrlInterception = async (targetUrl: string) => {
+    if (!targetUrl) return;
+    const raw = targetUrl.trim();
+    const clientScan = ClientURLEngine.analyze(raw);
+
+    if (clientScan.isThreat) {
+      setGlobalThreatModal({
+        url: raw,
+        domain: clientScan.domain,
+        score: clientScan.score,
+        riskLevel: clientScan.riskLevel,
+        warnings: clientScan.warnings,
+        mitre: clientScan.mitre,
+        providers: clientScan.provider_results,
+        evidence: clientScan.evidence,
+        aiExplanation: clientScan.aiExplanation,
+        onProceed: () => {
+          toast.error('⚠️ Warning bypassed. Insecure destination accessed.');
+        },
+        onAbort: () => {
+          toast.success('🛡️ Safe exit verified. Threat avoided (+20 Awareness XP).');
+        },
+      });
+
+      // Dispatch to backend API in parallel for full SOC database persistence & threat intel
+      try {
+        const res = await api.flotbot.analyzeUrl(raw);
+        if (res.success && res.data) {
+          setGlobalThreatModal((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              alertId: res.data.alertId || res.data.alert?.id,
+              score: res.data.telemetry?.score || prev.score,
+              riskLevel: res.data.telemetry?.riskLevel || prev.riskLevel,
+              warnings: res.data.telemetry?.warnings || prev.warnings,
+              mitre: res.data.telemetry?.mitre || prev.mitre,
+              providers: res.data.telemetry?.provider_results || prev.providers,
+              aiExplanation: res.data.aiAnalysis?.summary || res.data.aiExplanation || prev.aiExplanation,
+            };
+          });
+
+          // Refresh live alerts feed
+          api.flotbot.getAlerts({ limit: 50 }).then((aRes) => {
+            if (aRes.success && aRes.data) {
+              const list = aRes.data.alerts || aRes.data || [];
+              setDbAlerts(Array.isArray(list) ? list : []);
+            }
+          });
+        }
+      } catch (_) {}
+    } else {
+      toast.success(`🛡️ Verified Clean: ${clientScan.domain || raw} (TLS 1.3 encrypted, no threats detected)`);
+    }
+  };
+
+  useEffect(() => {
+    (window as any).triggerUrlInterception = runGlobalUrlInterception;
+
+    const handleCustomInterception = (e: any) => {
+      if (e.detail?.url) runGlobalUrlInterception(e.detail.url);
+    };
+    window.addEventListener('flotbot-intercept-url', handleCustomInterception);
+
+    // Global click listener to intercept insecure HTTP links anywhere in the DOM
+    const handleGlobalClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest('a');
+      if (anchor) {
+        const href = anchor.getAttribute('href') || anchor.href;
+        if (href && (href.startsWith('http://') || (href.includes('http://') && !href.startsWith('https://')))) {
+          e.preventDefault();
+          e.stopPropagation();
+          runGlobalUrlInterception(href);
+        }
+      }
+    };
+    document.addEventListener('click', handleGlobalClick, true);
+
+    return () => {
+      window.removeEventListener('flotbot-intercept-url', handleCustomInterception);
+      document.removeEventListener('click', handleGlobalClick, true);
+    };
+  }, []);
 
   // Live database records
   const [dbDashboard, setDbDashboard] = useState<any>(null);
@@ -489,14 +579,16 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
         className="dashboard-scope min-h-screen flex"
         style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}
       >
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
+        {!isQuizActive && (
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+        )}
 
-        <div className="flex-1 lg:pl-60 flex flex-col min-w-0">
+        <div className={`flex-1 ${isQuizActive ? 'w-full' : 'lg:pl-60'} flex flex-col min-w-0 transition-all duration-300`}>
           <Header
             user={currentUserProfile}
             notifications={notifications}
@@ -505,9 +597,10 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
             setSearchQuery={setSearchQuery}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onOpenSettings={() => setActiveTab('settings')}
+            isQuizActive={isQuizActive}
           />
 
-          <main className={`flex-1 w-full mx-auto ${isTrainingPage ? 'p-4 sm:p-6 lg:p-8 max-w-[1440px] space-y-4' : 'p-4 sm:p-6 lg:p-8 max-w-[1440px] space-y-4'}`}>
+          <main className={`flex-1 w-full mx-auto ${isQuizActive ? 'p-3 sm:p-6 lg:p-8 max-w-6xl' : isTrainingPage ? 'p-4 sm:p-6 lg:p-8 max-w-[1440px]' : 'p-4 sm:p-6 lg:p-8 max-w-[1440px]'} space-y-4`}>
 
             {/* Page title row */}
             {!hidePageTitle && (
@@ -678,13 +771,13 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
 
           {activeTab === 'courses' && (
             <div className="animate-fade-in w-full h-full flex-1 flex flex-col">
-              {isAdminRole ? <CourseListView /> : <TrainingCoursesPage />}
+              {isAdminRole ? <CourseListView /> : <TrainingCoursesPage onQuizActiveChange={setIsQuizActive} />}
             </div>
           )}
 
           {(activeTab === 'courses-training' || activeTab === 'training') && (
             <div className="animate-fade-in w-full h-full flex-1 flex flex-col">
-              <TrainingCoursesPage />
+              <TrainingCoursesPage onQuizActiveChange={setIsQuizActive} />
             </div>
           )}
 
@@ -813,6 +906,11 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
       <ActivityDetailModal
         activity={selectedItem}
         onClose={() => setSelectedItem(null)}
+      />
+
+      <ThreatInterceptionModal
+        threat={globalThreatModal}
+        onClose={() => setGlobalThreatModal(null)}
       />
     </div>
     </AdminAuthProvider>

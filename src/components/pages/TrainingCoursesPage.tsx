@@ -22,6 +22,7 @@ import { SkillsExplorerView } from '../courses/SkillsExplorerView';
 import { RecommendationsView } from '../courses/RecommendationsView';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../lib/api';
 import {
   BookOpen,
   Trophy,
@@ -38,8 +39,13 @@ import {
 type TabView = 'paths' | 'catalog' | 'skills' | 'recommended' | 'my-learning' | 'certificates' | 'streaks';
 type ActiveMode = TabView | 'detail' | 'lesson' | 'quiz';
 
-export function TrainingCoursesPage() {
+interface TrainingCoursesPageProps {
+  onQuizActiveChange?: (active: boolean) => void;
+}
+
+export function TrainingCoursesPage({ onQuizActiveChange }: TrainingCoursesPageProps = {}) {
   const { user: authUser } = useAuth();
+  const user = authUser;
   const canManageCourses = authUser?.role && ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'].includes(authUser.role);
 
   const [courses] = useState<Course[]>(loadCoursesFromStorage);
@@ -54,6 +60,19 @@ export function TrainingCoursesPage() {
   const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
   const [lessonPos, setLessonPos] = useState<{ mi: number; li: number }>({ mi: 0, li: 0 });
   const [activeCertCourseId, setActiveCertCourseId] = useState<string | null>(null);
+
+  // Question tracking for quiz mode header
+  const [quizQuestionIndex, setQuizQuestionIndex] = useState<number>(0);
+  const [quizTotalQuestions, setQuizTotalQuestions] = useState<number>(0);
+
+  // Synchronize active quiz state with parent layout (hiding sidebar)
+  useEffect(() => {
+    const isQuiz = mode === 'quiz';
+    onQuizActiveChange?.(isQuiz);
+    return () => {
+      onQuizActiveChange?.(false);
+    };
+  }, [mode, onQuizActiveChange]);
 
   // Sync state to LocalStorage
   useEffect(() => {
@@ -111,30 +130,98 @@ export function TrainingCoursesPage() {
     toast.success('Progress updated!');
   };
 
+  // Auto-synchronize certified courses to backend DB so admin registry stays up to date
+  useEffect(() => {
+    Object.entries(progress).forEach(([courseId, p]) => {
+      if (p.certified && p.credId) {
+        const c = courses.find((crs) => crs.id === courseId);
+        api.certifications.claim({
+          courseId,
+          courseTitle: c?.title || courseId,
+          scorePct: p.quizScore || p.finalAssessmentScore || 100,
+          credId: p.credId,
+          userName: user?.displayName,
+          userEmail: user?.email,
+          skills: c?.skillsGained,
+        }).catch(() => {});
+      }
+    });
+  }, [user]);
+
   const handleStartQuiz = () => {
     setMode('quiz');
   };
 
-  const handleQuizPassed = (scorePct: number, _integrityMetrics?: any) => {
+  const handleQuizPassed = async (scorePct: number, integrityMetrics?: any) => {
     if (!activeCourse) return;
-    const credId = `CG-CERT-${activeCourse.id.toUpperCase()}-${Math.floor(
+    const credId = `CG-CERT-${activeCourse.id.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${Math.floor(
       10000 + Math.random() * 90000
     )}`;
 
-    setProgress((prev) => ({
-      ...prev,
-      [activeCourse.id]: {
-        ...prev[activeCourse.id],
-        quizScore: scorePct,
-        certified: true,
-        certifiedAt: new Date().toISOString(),
-        credId,
-      },
-    }));
+    // Mark all module lessons in this course as completed
+    const allLessonKeys: string[] = [];
+    activeCourse.modules.forEach((m) =>
+      m.lessons.forEach((l) => allLessonKeys.push(m.title + '__' + l.title))
+    );
+
+    const now = new Date().toISOString();
+
+    setProgress((prev) => {
+      const current = prev[activeCourse.id] || {
+        done: new Set(),
+        activitiesDone: new Set(),
+        quizzesPassed: {},
+        timeSpentMinutes: 0,
+      };
+      const updatedDone = new Set(current.done);
+      allLessonKeys.forEach((k) => updatedDone.add(k));
+
+      const updated = {
+        ...prev,
+        [activeCourse.id]: {
+          ...current,
+          done: updatedDone,
+          quizScore: scorePct,
+          finalAssessmentScore: scorePct,
+          certified: true,
+          certifiedAt: now,
+          credId,
+        },
+      };
+      saveProgress(updated);
+      return updated;
+    });
 
     toast.success('Course Certified! 🎉');
     setActiveCertCourseId(activeCourse.id);
     setMode('detail');
+
+    // Claim on backend to update PostgreSQL certifications, course_enrollments, course_progress, and users XP
+    try {
+      await api.certifications.claim({
+        courseId: activeCourse.id,
+        courseTitle: activeCourse.title,
+        scorePct,
+        credId,
+        userName: user?.displayName,
+        userEmail: user?.email,
+        skills: activeCourse.skillsGained,
+      });
+    } catch (err) {
+      console.warn('[TrainingCoursesPage] Failed to claim cert on server:', err);
+    }
+
+    // Record activity timeline
+    try {
+      await api.activity.record({
+        activityType: 'CERTIFICATION_EARNED',
+        label: `Earned Certificate: ${activeCourse.title}`,
+        detail: `Scored ${scorePct}% on proctored final assessment. Credential ID: ${credId}`,
+        category: 'Training',
+        iconType: 'award',
+        metadata: { courseId: activeCourse.id, scorePct, credId, integrityMetrics },
+      });
+    } catch (e) {}
   };
 
   const handleQuizFailed = () => {
@@ -148,66 +235,105 @@ export function TrainingCoursesPage() {
 
   return (
     <div className="w-full flex-1 flex flex-col space-y-6">
-      {/* Top Navbar & Header Strip */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
-          {[
-            { id: 'paths', label: 'Learning Paths', icon: Compass },
-            { id: 'catalog', label: 'Course Catalog (50+)', icon: BookOpen },
-            { id: 'skills', label: 'Skills Explorer', icon: Target },
-            { id: 'recommended', label: 'Recommended', icon: Zap },
-            { id: 'my-learning', label: 'My Dashboard', icon: Layers },
-            { id: 'certificates', label: 'Credentials', icon: Trophy },
-            { id: 'streaks', label: 'Streaks & XP', icon: Flame },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = currentTab === tab.id && (mode === tab.id || mode === 'paths');
-            return (
-              <button
-                key={tab.id}
-                onClick={() => switchTab(tab.id as TabView)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${isActive
-                    ? 'bg-purple-600/15 text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm'
-                    : 'hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
-                  }`}
-                style={{ color: isActive ? undefined : 'var(--text-secondary)' }}
+      {/* Top Navbar & Header Strip: When in Quiz, remove courses & learning paths tabs; show course name & question progress */}
+      {mode === 'quiz' ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 shrink-0">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                Assessment In Progress
+              </div>
+              <h1 className="text-lg sm:text-xl font-extrabold text-primary tracking-tight">
+                {activeCourse?.title || 'Course Assessment'}
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-secondary">
+              <span className="text-muted">Total Questions:</span>
+              <span className="font-bold text-primary font-mono text-sm">
+                {quizTotalQuestions || activeCourse?.quiz?.length || 0}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-purple-600/20 border border-purple-500/40 text-xs font-bold text-purple-300 shadow-sm">
+              <Target className="w-4 h-4 text-purple-400" />
+              <span>Attending Question:</span>
+              <span className="text-white font-mono text-sm px-2 py-0.5 rounded bg-purple-600">
+                {quizQuestionIndex + 1}
+              </span>
+              <span className="text-purple-300 font-mono">
+                / {quizTotalQuestions || activeCourse?.quiz?.length || 0}
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          {/* Navigation Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
+            {[
+              { id: 'paths', label: 'Learning Paths', icon: Compass },
+              { id: 'catalog', label: 'Course Catalog (50+)', icon: BookOpen },
+              { id: 'skills', label: 'Skills Explorer', icon: Target },
+              { id: 'recommended', label: 'Recommended', icon: Zap },
+              { id: 'my-learning', label: 'My Dashboard', icon: Layers },
+              { id: 'certificates', label: 'Credentials', icon: Trophy },
+              { id: 'streaks', label: 'Streaks & XP', icon: Flame },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = currentTab === tab.id && (mode === tab.id || mode === 'paths');
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => switchTab(tab.id as TabView)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all whitespace-nowrap ${isActive
+                      ? 'bg-purple-600/15 text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm'
+                      : 'hover:bg-black/5 dark:hover:bg-white/5 border border-transparent'
+                    }`}
+                  style={{ color: isActive ? undefined : 'var(--text-secondary)' }}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Streak, XP Badges & Admin Authoring Action */}
+          <div className="flex items-center gap-3 shrink-0">
+            {canManageCourses && (
+              <a
+                href="http://localhost:5174"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 transition-all border border-indigo-400/40"
               >
-                <Icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>+ Author Course</span>
+              </a>
+            )}
 
-        {/* Streak, XP Badges & Admin Authoring Action */}
-        <div className="flex items-center gap-3 shrink-0">
-          {canManageCourses && (
-            <a
-              href="http://localhost:5174"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-lg shadow-indigo-600/20 transition-all border border-indigo-400/40"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>+ Author Course</span>
-            </a>
-          )}
+            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold shadow-sm">
+              <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span>{streak.current} Day Streak</span>
+            </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold shadow-sm">
-            <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span>{streak.current} Day Streak</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-bold shadow-sm">
-            <Sparkles className="w-4 h-4 text-purple-400" />
-            <span>{calculatedXP} XP</span>
+            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-bold shadow-sm">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span>{calculatedXP} XP</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Course Administrator Banner */}
-      {canManageCourses && (
+      {canManageCourses && mode !== 'quiz' && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-200">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300">
@@ -308,6 +434,10 @@ export function TrainingCoursesPage() {
             onBack={() => setMode('detail')}
             onPassed={handleQuizPassed}
             onFailed={handleQuizFailed}
+            onQuestionChange={(current, total) => {
+              setQuizQuestionIndex(current);
+              setQuizTotalQuestions(total);
+            }}
           />
         )}
       </div>
