@@ -37,39 +37,44 @@ const defaultSettings: UserSettings = {
 };
 
 interface CyberStore {
+  userId?: string;
   profile: UserProfile;
   completedList: SimulationResult[];
   achievements: Achievement[];
   settings: UserSettings;
   isHydrated: boolean;
 
-  hydrate: () => void;
+  hydrate: (userId?: string) => void;
   completeSimulation: (result: SimulationResult) => void;
   addXp: (amount: number) => void;
   updateUsername: (name: string) => void;
   updateAvatar: (avatar: string) => void;
   updateSettings: (settings: Partial<UserSettings>) => void;
-  resetProgress: () => void;
+  resetProgress: (userId?: string) => void;
   isSimCompleted: (simId: string) => boolean;
 }
 
+const getPrefix = (uid?: string) => (uid ? `selab_${uid}_` : 'selab_guest_');
+
 export const useCyberStore = create<CyberStore>((set, get) => ({
+  userId: undefined,
   profile: defaultProfile,
   completedList: [],
   achievements: achievementsData.map(a => ({ ...a, unlocked: false })),
   settings: defaultSettings,
   isHydrated: false,
 
-  hydrate: () => {
-    const profile = loadFromStorage('selab_profile', defaultProfile);
-    const rawCompleted = loadFromStorage<SimulationResult[]>('selab_completed', []);
+  hydrate: (userId?: string) => {
+    const prefix = getPrefix(userId);
+    const profile = loadFromStorage(`${prefix}profile`, defaultProfile);
+    const rawCompleted = loadFromStorage<SimulationResult[]>(`${prefix}completed`, []);
     // Normalize any legacy 200-scale scores to standard 100-mark single course/lab scale
     const completedList = rawCompleted.map(c => ({
       ...c,
       score: c.score > 100 ? Math.min(100, Math.round(c.score / 2)) : c.score,
     }));
-    const settings = loadFromStorage('selab_settings', defaultSettings);
-    const savedAchievements = loadFromStorage<Achievement[]>('selab_achievements', []);
+    const settings = loadFromStorage(`${prefix}settings`, defaultSettings);
+    const savedAchievements = loadFromStorage<Achievement[]>(`${prefix}achievements`, []);
 
     const achievements = achievementsData.map(base => {
       const saved = savedAchievements.find(s => s.id === base.id);
@@ -77,11 +82,12 @@ export const useCyberStore = create<CyberStore>((set, get) => ({
     });
 
     profile.level = Math.floor(profile.xp / 500) + 1;
-    set({ profile, completedList, achievements, settings, isHydrated: true });
+    set({ userId, profile, completedList, achievements, settings, isHydrated: true });
   },
 
   completeSimulation: (result) => {
     const state = get();
+    const prefix = getPrefix(state.userId);
     const existing = state.completedList.find(c => c.id === result.id);
     let newCompleted: SimulationResult[];
     if (existing) {
@@ -118,45 +124,51 @@ export const useCyberStore = create<CyberStore>((set, get) => ({
     });
 
     set({ profile: newProfile, completedList: newCompleted, achievements: newAchievements });
-    saveToStorage('selab_profile', newProfile);
-    saveToStorage('selab_completed', newCompleted);
-    saveToStorage('selab_achievements', newAchievements);
+    saveToStorage(`${prefix}profile`, newProfile);
+    saveToStorage(`${prefix}completed`, newCompleted);
+    saveToStorage(`${prefix}achievements`, newAchievements);
   },
 
   addXp: (amount) => {
     const state = get();
+    const prefix = getPrefix(state.userId);
     const newXp = state.profile.xp + amount;
     const newProfile = { ...state.profile, xp: newXp, totalXp: state.profile.totalXp + amount, level: Math.floor(newXp / 500) + 1 };
     set({ profile: newProfile });
-    saveToStorage('selab_profile', newProfile);
+    saveToStorage(`${prefix}profile`, newProfile);
   },
 
   updateUsername: (name) => {
     const state = get();
+    const prefix = getPrefix(state.userId);
     const newProfile = { ...state.profile, username: name };
     set({ profile: newProfile });
-    saveToStorage('selab_profile', newProfile);
+    saveToStorage(`${prefix}profile`, newProfile);
   },
 
   updateAvatar: (avatar) => {
     const state = get();
+    const prefix = getPrefix(state.userId);
     const newProfile = { ...state.profile, avatar };
     set({ profile: newProfile });
-    saveToStorage('selab_profile', newProfile);
+    saveToStorage(`${prefix}profile`, newProfile);
   },
 
   updateSettings: (partial) => {
     const state = get();
+    const prefix = getPrefix(state.userId);
     const newSettings = { ...state.settings, ...partial };
     set({ settings: newSettings });
-    saveToStorage('selab_settings', newSettings);
+    saveToStorage(`${prefix}settings`, newSettings);
   },
 
-  resetProgress: () => {
+  resetProgress: (userId?: string) => {
     const resetAchievements = achievementsData.map(a => ({ ...a, unlocked: false }));
-    set({ profile: defaultProfile, completedList: [], achievements: resetAchievements });
+    set({ userId: undefined, profile: defaultProfile, completedList: [], achievements: resetAchievements });
     if (typeof window !== 'undefined') {
-      ['selab_profile','selab_completed','selab_achievements'].forEach(k => localStorage.removeItem(k));
+      const uid = userId || get().userId;
+      const prefix = getPrefix(uid);
+      ['selab_profile', 'selab_completed', 'selab_achievements', `${prefix}profile`, `${prefix}completed`, `${prefix}achievements`].forEach(k => localStorage.removeItem(k));
     }
   },
 

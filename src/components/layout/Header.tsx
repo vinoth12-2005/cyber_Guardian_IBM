@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { UserProfile, NotificationItem } from '../../types/dashboard';
 import { NotificationsPopover } from './NotificationsPopover';
 import {
@@ -60,9 +60,23 @@ export const Header: React.FC<HeaderProps> = ({
     navigate("/login");
   };
 
-  const displayName = authUser?.displayName || defaultUserProps.name;
+  const displayName = authUser?.displayName || defaultUserProps.name || 'User';
   const displayEmail = authUser?.email || "alex.vance@cyberguardian.io";
   const avatarUrl = authUser?.avatarUrl || defaultUserProps.avatarUrl;
+
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [avatarUrl]);
+
+  const initials = (displayName || 'User')
+    .split(' ')
+    .filter(Boolean)
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'U';
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -416,12 +430,25 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              className="w-6 h-6 rounded-lg object-cover"
-              style={{ border: '1px solid var(--border-medium)' }}
-            />
+            {avatarUrl && !avatarLoadError ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                onError={() => setAvatarLoadError(true)}
+                className="w-6 h-6 rounded-lg object-cover bg-slate-800 shrink-0"
+                style={{ border: '1px solid var(--border-medium)' }}
+              />
+            ) : (
+              <div
+                className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[10px] select-none text-white shadow-sm shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+                  border: '1px solid rgba(99, 102, 241, 0.4)',
+                }}
+              >
+                {initials}
+              </div>
+            )}
             <div className="hidden sm:block text-left">
               <span
                 className="block text-[12px] font-semibold leading-tight"
@@ -448,15 +475,36 @@ export const Header: React.FC<HeaderProps> = ({
               }}
             >
               <div
-                className="px-3 py-3 mb-1"
+                className="px-3 py-3 mb-1 flex items-center gap-2.5"
                 style={{ borderBottom: '1px solid var(--border-subtle)' }}
               >
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {displayName}
-                </p>
-                <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
-                  {displayEmail}
-                </p>
+                {avatarUrl && !avatarLoadError ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    onError={() => setAvatarLoadError(true)}
+                    className="w-8 h-8 rounded-xl object-cover bg-slate-800 shrink-0"
+                    style={{ border: '1px solid var(--border-medium)' }}
+                  />
+                ) : (
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs select-none text-white shadow-sm shrink-0"
+                    style={{
+                      background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+                      border: '1px solid rgba(99, 102, 241, 0.4)',
+                    }}
+                  >
+                    {initials}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                    {displayName}
+                  </p>
+                  <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+                    {displayEmail}
+                  </p>
+                </div>
               </div>
 
               <button

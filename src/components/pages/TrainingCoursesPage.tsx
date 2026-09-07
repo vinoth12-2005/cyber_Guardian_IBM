@@ -50,9 +50,9 @@ export function TrainingCoursesPage({ onQuizActiveChange }: TrainingCoursesPageP
 
   const [courses] = useState<Course[]>(loadCoursesFromStorage);
   const [progress, setProgress] = useState<CourseProgressMap>(() =>
-    buildInitialProgress(courses)
+    buildInitialProgress(courses, authUser?.uid)
   );
-  const [streak] = useState<StreakData>(loadStreak);
+  const [streak, setStreak] = useState<StreakData>(() => loadStreak(authUser?.uid));
 
   const [currentTab, setCurrentTab] = useState<TabView>('paths');
   const [mode, setMode] = useState<ActiveMode>('paths');
@@ -60,6 +60,64 @@ export function TrainingCoursesPage({ onQuizActiveChange }: TrainingCoursesPageP
   const [activeCourseId, setActiveCourseId] = useState<string | null>(null);
   const [lessonPos, setLessonPos] = useState<{ mi: number; li: number }>({ mi: 0, li: 0 });
   const [activeCertCourseId, setActiveCertCourseId] = useState<string | null>(null);
+
+  // Re-synchronize user progress and streak when authenticated user changes
+  useEffect(() => {
+    let isMounted = true;
+    const initialProg = buildInitialProgress(courses, authUser?.uid);
+    setStreak(loadStreak(authUser?.uid));
+
+    if (authUser?.uid) {
+      api.certifications.getMy().then((res) => {
+        if (!isMounted) return;
+        const certs = (res.success && Array.isArray(res.data)) ? res.data : [];
+        const certMap = new Map<string, any>();
+        certs.forEach((c: any) => {
+          if (c.courseId) certMap.set(c.courseId, c);
+        });
+
+        setProgress(() => {
+          const updated: CourseProgressMap = { ...initialProg };
+          courses.forEach((c) => {
+            const serverCert = certMap.get(c.id);
+            if (serverCert) {
+              const cur = updated[c.id] || { done: new Set() };
+              const allDone = new Set(cur.done);
+              c.modules.forEach((m) =>
+                m.lessons.forEach((l) => allDone.add(m.title + '__' + l.title))
+              );
+              updated[c.id] = {
+                ...cur,
+                done: allDone,
+                certified: true,
+                credId: serverCert.credId,
+                quizScore: serverCert.score || 100,
+                finalAssessmentScore: serverCert.score || 100,
+                certifiedAt: serverCert.issueDate,
+              };
+            } else if (updated[c.id]) {
+              // Ensure courses not certified on server are not falsely shown as certified
+              updated[c.id] = {
+                ...updated[c.id],
+                certified: false,
+                credId: undefined,
+              };
+            }
+          });
+          saveProgress(updated, authUser.uid);
+          return updated;
+        });
+      }).catch(() => {
+        if (isMounted) setProgress(initialProg);
+      });
+    } else {
+      setProgress(initialProg);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authUser?.uid, courses]);
 
   // Question tracking for quiz mode header
   const [quizQuestionIndex, setQuizQuestionIndex] = useState<number>(0);
@@ -80,14 +138,14 @@ export function TrainingCoursesPage({ onQuizActiveChange }: TrainingCoursesPageP
   }, [courses]);
 
   useEffect(() => {
-    saveProgress(progress);
-  }, [progress]);
+    saveProgress(progress, authUser?.uid);
+  }, [progress, authUser?.uid]);
 
   useEffect(() => {
-    saveStreak(streak);
-  }, [streak]);
+    saveStreak(streak, authUser?.uid);
+  }, [streak, authUser?.uid]);
 
-  // Realtime calculation of total XP & completed items (NO fake static data)
+  // Realtime calculation of total XP & completed items
   const totalCompletedLessons = Object.values(progress).reduce((acc, p) => acc + (p?.done?.size || 0), 0);
   const totalCertificates = Object.values(progress).reduce((acc, p) => acc + (p?.certified ? 1 : 0), 0);
   const calculatedXP = (totalCompletedLessons * 50) + (totalCertificates * 200);
@@ -130,24 +188,6 @@ export function TrainingCoursesPage({ onQuizActiveChange }: TrainingCoursesPageP
     toast.success('Progress updated!');
   };
 
-  // Auto-synchronize certified courses to backend DB so admin registry stays up to date
-  useEffect(() => {
-    Object.entries(progress).forEach(([courseId, p]) => {
-      if (p.certified && p.credId) {
-        const c = courses.find((crs) => crs.id === courseId);
-        api.certifications.claim({
-          courseId,
-          courseTitle: c?.title || courseId,
-          scorePct: p.quizScore || p.finalAssessmentScore || 100,
-          credId: p.credId,
-          userName: user?.displayName,
-          userEmail: user?.email,
-          skills: c?.skillsGained,
-        }).catch(() => {});
-      }
-    });
-  }, [user]);
-
   const handleStartQuiz = () => {
     setMode('quiz');
   };
@@ -188,7 +228,7 @@ export function TrainingCoursesPage({ onQuizActiveChange }: TrainingCoursesPageP
           credId,
         },
       };
-      saveProgress(updated);
+      saveProgress(updated, authUser?.uid);
       return updated;
     });
 

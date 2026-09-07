@@ -5,11 +5,39 @@ export const COURSES_STORAGE_KEY = 'cga_courses';
 export const PROGRESS_STORAGE_KEY = 'cga_progress';
 export const STREAK_STORAGE_KEY = 'cga_streak';
 
-export const INITIAL_STREAK: StreakData = {
-  current: 7,
-  best: 14,
-  week: [true, true, true, true, true, true, false],
+export const getProgressStorageKey = (userId?: string): string => {
+  return userId ? `cga_progress_${userId}` : 'cga_progress_guest';
 };
+
+export const getStreakStorageKey = (userId?: string): string => {
+  return userId ? `cga_streak_${userId}` : 'cga_streak_guest';
+};
+
+export const INITIAL_STREAK: StreakData = {
+  current: 0,
+  best: 0,
+  week: [false, false, false, false, false, false, false],
+};
+
+export function clearLegacyAndUserLocalData(userId?: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    // Purge unpartitioned legacy keys that leak between users
+    localStorage.removeItem('cga_progress');
+    localStorage.removeItem('cga_streak');
+    localStorage.removeItem('cga_uname');
+    localStorage.removeItem('cga_uid');
+    localStorage.removeItem('cyberguard_stats_v2');
+    localStorage.removeItem('flotbot_widget_session_id');
+
+    if (userId) {
+      localStorage.removeItem(getProgressStorageKey(userId));
+      localStorage.removeItem(getStreakStorageKey(userId));
+    }
+  } catch (err) {
+    console.error('Error clearing local storage:', err);
+  }
+}
 
 export function loadCoursesFromStorage(): Course[] {
   try {
@@ -37,13 +65,16 @@ export function saveCoursesToStorage(courses: Course[]): void {
   }
 }
 
-export function buildInitialProgress(courses: Course[]): CourseProgressMap {
+export function buildInitialProgress(courses: Course[], userId?: string): CourseProgressMap {
+  const key = getProgressStorageKey(userId);
   const saved = (() => {
     try {
-      return JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY) || '{}');
+      const raw = localStorage.getItem(key);
+      if (raw) return JSON.parse(raw);
     } catch {
       return {};
     }
+    return {};
   })();
 
   const progress: CourseProgressMap = {};
@@ -74,8 +105,9 @@ export function buildInitialProgress(courses: Course[]): CourseProgressMap {
   return progress;
 }
 
-export function saveProgress(progress: CourseProgressMap): void {
+export function saveProgress(progress: CourseProgressMap, userId?: string): void {
   try {
+    const key = getProgressStorageKey(userId);
     const serializable: Record<string, any> = {};
     Object.entries(progress).forEach(([id, p]) => {
       serializable[id] = {
@@ -90,15 +122,16 @@ export function saveProgress(progress: CourseProgressMap): void {
         timeSpentMinutes: p.timeSpentMinutes || 0,
       };
     });
-    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(serializable));
+    localStorage.setItem(key, JSON.stringify(serializable));
   } catch (err) {
     console.error('Error saving progress:', err);
   }
 }
 
-export function loadStreak(): StreakData {
+export function loadStreak(userId?: string): StreakData {
   try {
-    const raw = localStorage.getItem(STREAK_STORAGE_KEY);
+    const key = getStreakStorageKey(userId);
+    const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw);
   } catch {
     /* ignore */
@@ -106,9 +139,10 @@ export function loadStreak(): StreakData {
   return INITIAL_STREAK;
 }
 
-export function saveStreak(streak: StreakData): void {
+export function saveStreak(streak: StreakData, userId?: string): void {
   try {
-    localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(streak));
+    const key = getStreakStorageKey(userId);
+    localStorage.setItem(key, JSON.stringify(streak));
   } catch (err) {
     console.error('Error saving streak:', err);
   }

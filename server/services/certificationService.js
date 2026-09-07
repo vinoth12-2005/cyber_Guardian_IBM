@@ -17,9 +17,18 @@ class CertificationService {
     const courseRes = await db.query('SELECT title, cat, skills_gained, credential_name FROM courses WHERE id = $1', [courseId]);
     const course = courseRes.rowCount > 0 ? courseRes.rows[0] : null;
 
-    const credId =
-      options.credId ||
-      `CG-CERT-${courseId.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${Math.floor(10000 + Math.random() * 90000)}`;
+    let credId = options.credId;
+    if (credId) {
+      const existingOther = await db.query(
+        'SELECT id FROM certifications WHERE cred_id = $1 AND user_id != $2 LIMIT 1',
+        [credId, userId]
+      );
+      if (existingOther.rowCount > 0) {
+        credId = `CG-CERT-${courseId.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${Math.floor(10000 + Math.random() * 90000)}`;
+      }
+    } else {
+      credId = `CG-CERT-${courseId.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${Math.floor(10000 + Math.random() * 90000)}`;
+    }
     const now = new Date().toISOString();
     const id = 'cert_' + Math.random().toString(36).substring(2, 10);
 

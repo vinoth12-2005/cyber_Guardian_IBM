@@ -273,6 +273,13 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
   };
 
   useEffect(() => {
+    if (!authUser) {
+      setDbDashboard(null);
+      setDbActivities([]);
+      setDbSimulations([]);
+      setDbChats([]);
+      return;
+    }
     loadDatabaseData();
   }, [authUser?.uid]);
 

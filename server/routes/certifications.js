@@ -9,7 +9,7 @@ const certificationService = require('../services/certificationService');
  * POST /api/certifications/claim
  * Claim and issue certificate for completed course
  */
-router.post('/claim', optionalAuth, async (req, res, next) => {
+router.post('/claim', authenticate, async (req, res, next) => {
   try {
     const { courseId, scorePct, credId, courseTitle, skills, userName, userEmail } = req.body;
     if (!courseId) {
@@ -19,40 +19,19 @@ router.post('/claim', optionalAuth, async (req, res, next) => {
       });
     }
 
-    let userId = req.user ? req.user.id : null;
-
-    if (!userId) {
-      if (userEmail || userName) {
-        const uRes = await db.query(
-          'SELECT id FROM users WHERE (email IS NOT NULL AND LOWER(email) = LOWER($1)) OR name = $2 LIMIT 1',
-          [userEmail || '', userName || '']
-        );
-        if (uRes.rowCount > 0) {
-          userId = uRes.rows[0].id;
-        }
-      }
-      if (!userId) {
-        const fallbackRes = await db.query(
-          "SELECT id FROM users WHERE status != 'DELETED' ORDER BY last_login DESC NULLS LAST LIMIT 1"
-        );
-        if (fallbackRes.rowCount > 0) {
-          userId = fallbackRes.rows[0].id;
-        }
-      }
-    }
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        error: { code: 'UNAUTHORIZED', message: 'User could not be identified to issue certificate' },
-      });
-    }
+    const userId = req.user.id;
 
     const cert = await certificationService.issueCertificate(
       userId,
       courseId,
       typeof scorePct === 'number' ? scorePct : 100,
-      { credId, courseTitle, skills, recipientName: userName, userEmail }
+      {
+        credId,
+        courseTitle,
+        skills,
+        recipientName: req.user.name || userName,
+        userEmail: req.user.email || userEmail,
+      }
     );
 
     res.json({

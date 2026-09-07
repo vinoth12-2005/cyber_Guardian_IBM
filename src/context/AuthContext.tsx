@@ -12,6 +12,8 @@ import {
 import type { UserAccount } from '../lib/authService';
 
 import { api } from '../lib/api';
+import { clearLegacyAndUserLocalData } from '../utils/coursesState';
+import { useCyberStore } from '../store/cyber-store';
 
 interface AuthContextType {
   user: UserAccount | null;
@@ -35,6 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // then again on every login / logout / token refresh — real-time.
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // Clear unpartitioned legacy storage to prevent cross-contamination
+        clearLegacyAndUserLocalData();
+        useCyberStore.getState().hydrate(firebaseUser.uid);
+
         const baseAccount = firebaseUserToAccount(firebaseUser);
         setUser(baseAccount);
         // Sync with backend PostgreSQL/SQLite database
@@ -64,6 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.warn('[AuthContext] Backend sync note:', e);
         }
       } else {
+        clearLegacyAndUserLocalData();
+        useCyberStore.getState().resetProgress();
         setUser(null);
       }
       setInitializing(false);
@@ -153,7 +161,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    const currentUid = user?.uid;
     await logoutUser();
+    clearLegacyAndUserLocalData(currentUid);
+    useCyberStore.getState().resetProgress(currentUid);
     setUser(null);
   };
 
