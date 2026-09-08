@@ -603,13 +603,18 @@ class FlotBotService {
   /**
    * List all chat sessions for a user
    */
+  /**
+   * List all chat sessions for a user with last message preview
+   */
   async listChatSessions(userId) {
     if (!userId) return [];
     const res = await db.query(
-      `SELECT id, user_id, title, category, message_count, created_at, updated_at
-       FROM chat_sessions
-       WHERE user_id = $1
-       ORDER BY updated_at DESC`,
+      `SELECT s.id, s.user_id, s.title, s.category, s.message_count, s.created_at, s.updated_at,
+              (SELECT text FROM chat_messages m WHERE m.session_id = s.id AND m.sender = 'flotbot' ORDER BY m.created_at DESC LIMIT 1) as last_reply,
+              (SELECT text FROM chat_messages m WHERE m.session_id = s.id AND m.sender = 'user' ORDER BY m.created_at ASC LIMIT 1) as first_user_query
+       FROM chat_sessions s
+       WHERE s.user_id = $1
+       ORDER BY s.updated_at DESC`,
       [userId]
     );
 
@@ -621,6 +626,8 @@ class FlotBotService {
       messageCount: r.message_count,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
+      lastReply: r.last_reply || '',
+      firstQuery: r.first_user_query || r.title,
     }));
   }
 
@@ -669,19 +676,30 @@ class FlotBotService {
 
     const newId = sessionId || 'sess_' + Math.random().toString(36).substring(2, 11);
     const now = new Date().toISOString();
-    const title = (firstMessageText || 'New Conversation')
-      .replace(/[^\w\s]/gi, '')
-      .split(/\s+/)
-      .slice(0, 6)
-      .join(' ') || 'Security Consultation';
+
+    // Clean, readable title generation
+    const rawQuery = (firstMessageText || 'Security Consultation')
+      .replace(/https?:\/\/[^\s]+/gi, 'URL Inspection')
+      .replace(/[^\w\s-]/gi, '')
+      .trim();
+
+    const words = rawQuery.split(/\s+/).filter(Boolean);
+    let title = words.slice(0, 6).join(' ');
+    if (!title || title.length < 3) {
+      title = 'Security Consultation';
+    } else {
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+    }
+    if (title.length > 50) title = title.substring(0, 47) + '...';
 
     const lower = (firstMessageText || '').toLowerCase();
     let category = 'General';
-    if (lower.includes('phish') || lower.includes('mail')) category = 'Phishing';
-    else if (lower.includes('pass') || lower.includes('mfa') || lower.includes('auth')) category = 'Password';
-    else if (lower.includes('course') || lower.includes('study') || lower.includes('learn')) category = 'Course Study';
-    else if (lower.includes('malware') || lower.includes('virus') || lower.includes('trojan')) category = 'Malware';
-    else if (lower.includes('net') || lower.includes('ip') || lower.includes('port')) category = 'Network';
+    if (lower.includes('phish') || lower.includes('mail') || lower.includes('typo') || lower.includes('lookalike')) category = 'Phishing';
+    else if (lower.includes('pass') || lower.includes('mfa') || lower.includes('auth') || lower.includes('credential')) category = 'Password';
+    else if (lower.includes('course') || lower.includes('study') || lower.includes('learn') || lower.includes('quiz') || lower.includes('lesson')) category = 'Course Study';
+    else if (lower.includes('malware') || lower.includes('virus') || lower.includes('ransomware') || lower.includes('dropper') || lower.includes('payload')) category = 'Malware';
+    else if (lower.includes('net') || lower.includes('ip') || lower.includes('port') || lower.includes('firewall') || lower.includes('wifi') || lower.includes('http')) category = 'Network';
+    else if (lower.includes('sql') || lower.includes('xss') || lower.includes('owasp') || lower.includes('csrf') || lower.includes('injection')) category = 'AppSec';
 
     await db.query(
       `INSERT INTO chat_sessions (id, user_id, title, category, message_count, created_at, updated_at)
@@ -738,7 +756,7 @@ class FlotBotService {
     if (!this._aiFastCache) this._aiFastCache = new Map();
     if (this._aiFastCache.has(cacheKey)) {
       const cached = this._aiFastCache.get(cacheKey);
-      if (Date.now() - cached.ts < 300000) { // 5 min TTL
+      if (Date.now() - cached.ts < 120000) { // 2 min TTL
         return { reply: cached.reply, provider: 'fast-cache', model: cached.model || 'flotbot-cached' };
       }
     }
@@ -768,52 +786,159 @@ class FlotBotService {
       } catch (_) {}
     }
 
-    // 3. Fast Intent Knowledge Engine (< 5ms instant authoritative response)
-    const fastReply = this._getFastIntentReply(trimmedPrompt, context);
-    if (fastReply) {
-      this._aiFastCache.set(cacheKey, { reply: fastReply, model: 'flotbot-knowledge-v2', ts: Date.now() });
-      return { reply: fastReply, provider: 'flotbot-knowledge', model: 'flotbot-knowledge-v2' };
+    // 3. Fast Intent Knowledge for Quick Greetings (< 2ms)
+    const words = trimmedPrompt.split(/\s+/);
+    if (/^(hi|hello|hey|greetings|howdy|sup)\b/i.test(trimmedPrompt) && words.length <= 3) {
+      const greet =
+        "👋 **Hello! I am FlotBot AI, your real-time Cybersecurity Assistant.**\n\n" +
+        "I work directly alongside our **Real-Time Threat Detection Engines** (VirusTotal, Google Safe Browsing, URLEngine, and Endpoint Sensors) and your training courses. I can help you with:\n" +
+        "• 🛡️ **Real-Time Link & URL Inspection:** Paste any link to detect phishing, lookalikes, or plaintext HTTP risks.\n" +
+        "• 🔍 **Threat & Attack Analysis:** Inquire about PowerShell droppers, ransomware, MFA bypasses, or IOCs.\n" +
+        "• 🎓 **Course Mentorship & Quizzing:** Ask for exam tips, quiz scenarios, or lesson explanations!\n\n" +
+        "What security topic or question can I assist you with right now?";
+      this._aiFastCache.set(cacheKey, { reply: greet, model: 'flotbot-ai', ts: Date.now() });
+      return { reply: greet, provider: 'flotbot-ai', model: 'flotbot-fast' };
     }
 
-    // 4. Low-Latency Ollama Query (Strict 2200ms timeout with token limiter)
-    const ollamaHost = config.ai.ollamaHost;
-    const model = config.ai.ollamaModel;
+    // 3.5. Dual-AI Coordinator: Local Ollama is PRIMARY, Gemini Cloud is consulted when needed
+    const ollamaHost = config.ai.ollamaHost || process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+    const ollamaModel = config.ai.ollamaModel || process.env.OLLAMA_MODEL || 'qwen2.5:0.5b';
+    const geminiKey = config.ai.geminiApiKey || process.env.GEMINI_API_KEY;
 
-    try {
-      const resp = await axios.post(
-        `${ollamaHost}/api/generate`,
-        {
-          model,
-          prompt: `You are FlotBot AI, an elite cybersecurity assistant. Answer concisely and professionally in 2-3 sentences:\n\nQuestion: ${trimmedPrompt}`,
-          stream: false,
-          options: {
-            num_predict: 120,
-            temperature: 0.2,
-            num_thread: 4,
+    // Check if query specifically requests online/live cloud data or external search
+    const ONLINE_INTENT_REGEX =
+      /\b(latest news|current news|today's news|new cve|latest vulnerability|live threat feed|weather|stock price|trending|what's happening|search the web|google|browse|lookup ip|lookup domain|virustotal|shodan|whois|public ip|geolocation|real-time web|ask gemini|gemini|cloud ai)\b/i;
+    const explicitlyNeedsCloudAI = ONLINE_INTENT_REGEX.test(trimmedPrompt);
+
+    // Helper: Query Gemini Cloud AI (used only when requested or if local Ollama is offline)
+    const tryGemini = async () => {
+      if (!geminiKey || !geminiKey.startsWith('AIza')) return null;
+      try {
+        const systemInstruction = "You are FlotBot AI, an elite cybersecurity and workforce training analyst for CyberGuardian. Answer thoroughly, accurately, and clearly using markdown formatting. Reference concrete defensive actions, MITRE ATT&CK techniques, or standards (NIST, OWASP) where relevant.";
+        const contents = [];
+        if (Array.isArray(context.conversationHistory) && context.conversationHistory.length > 0) {
+          for (const m of context.conversationHistory.slice(-6)) {
+            contents.push({
+              role: m.sender === 'user' ? 'user' : 'model',
+              parts: [{ text: m.text }]
+            });
+          }
+        }
+        contents.push({
+          role: 'user',
+          parts: [{ text: trimmedPrompt }]
+        });
+
+        const geminiRes = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`,
+          {
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            contents,
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 600,
+            }
           },
-        },
-        { timeout: 2200 }
-      );
+          { timeout: 5000 }
+        );
 
-      if (resp.data && resp.data.response) {
-        const reply = resp.data.response.trim();
-        this._aiFastCache.set(cacheKey, { reply, model, ts: Date.now() });
+        const geminiText = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (geminiText && geminiText.trim().length > 10) {
+          return geminiText.trim();
+        }
+      } catch (geminiErr) {
+        console.warn('[FlotBot Backend] Gemini note:', geminiErr.message);
+      }
+      return null;
+    };
+
+    // Helper: Query Local Ollama LLM (Fast, Private, Offline-First)
+    const tryOllama = async () => {
+      try {
+        const messages = [
+          {
+            role: 'system',
+            content: 'You are FlotBot AI, an elite cybersecurity and enterprise workforce training assistant for the CyberGuardian platform. Answer the user inquiry thoroughly, accurately, and clearly using markdown formatting. Reference concrete defensive actions, MITRE ATT&CK concepts, or industry standards (NIST, OWASP) where relevant.'
+          }
+        ];
+
+        if (Array.isArray(context.conversationHistory) && context.conversationHistory.length > 0) {
+          for (const m of context.conversationHistory.slice(-4)) {
+            messages.push({
+              role: m.sender === 'user' ? 'user' : 'assistant',
+              content: m.text || ''
+            });
+          }
+        }
+
+        messages.push({ role: 'user', content: trimmedPrompt });
+
+        const resp = await axios.post(
+          `${ollamaHost}/api/chat`,
+          {
+            model: ollamaModel,
+            messages,
+            stream: false,
+            keep_alive: '24h',
+            options: {
+              num_predict: 200,
+              temperature: 0.25,
+            },
+          },
+          { timeout: 15000 }
+        );
+
+        const reply = resp.data?.message?.content;
+        if (reply && reply.trim().length > 5) {
+          return reply.trim();
+        }
+      } catch (ollamaErr) {
+        console.warn('[FlotBot] Ollama local query note:', ollamaErr.message);
+      }
+      return null;
+    };
+
+    // 1. If user explicitly requested live cloud intelligence or web data, ask Gemini first
+    if (explicitlyNeedsCloudAI) {
+      const cloudReply = await tryGemini();
+      if (cloudReply) {
+        this._aiFastCache.set(cacheKey, { reply: cloudReply, model: 'gemini-flash-latest', ts: Date.now() });
         return {
-          reply,
-          provider: 'ollama',
-          model,
+          reply: cloudReply,
+          provider: 'Google Gemini',
+          model: 'gemini-flash-latest',
         };
       }
-    } catch (_) {
-      // Ollama timeout or offline -> Instant fallback to rule engine
     }
 
-    // 5. Ultimate Fallback: Rich Rule-Based Cybersecurity Engine (< 1ms)
+    // 2. Default: Local Ollama handles all queries first (instant, private, zero 503 errors)
+    const localReply = await tryOllama();
+    if (localReply) {
+      this._aiFastCache.set(cacheKey, { reply: localReply, model: ollamaModel, ts: Date.now() });
+      return {
+        reply: localReply,
+        provider: 'ollama',
+        model: ollamaModel,
+      };
+    }
+
+    // 3. If local Ollama was unreachable, seamlessly fallback to Gemini Cloud AI
+    const fallbackGemini = await tryGemini();
+    if (fallbackGemini) {
+      this._aiFastCache.set(cacheKey, { reply: fallbackGemini, model: 'gemini-flash-latest', ts: Date.now() });
+      return {
+        reply: fallbackGemini,
+        provider: 'Google Gemini',
+        model: 'gemini-flash-latest',
+      };
+    }
+
+    // 5. Rich Expert Cybersecurity Knowledge Fallback
     const fallbackReply = this._generateRuleBasedAIResponse(trimmedPrompt, context);
-    this._aiFastCache.set(cacheKey, { reply: fallbackReply, model: 'flotbot-expert-v2', ts: Date.now() });
+    this._aiFastCache.set(cacheKey, { reply: fallbackReply, model: 'flotbot-expert-ai', ts: Date.now() });
     return {
       reply: fallbackReply,
-      provider: 'rule-engine-fallback',
+      provider: 'flotbot-expert-ai',
       model: 'flotbot-expert-v2',
     };
   }

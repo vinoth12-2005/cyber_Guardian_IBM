@@ -432,13 +432,54 @@ class UserService {
     const certCount = parseInt(certRes.rows[0]?.total || 0, 10);
 
     // 4. Awareness score calculation based on real accomplishments
-    const phishingDefense = Math.min(100, 60 + completedSimsCount * 5);
-    const passwordHygiene = Math.min(100, 70 + completedCoursesCount * 6);
-    const networkSecurity = Math.min(100, 65 + certCount * 10);
-    const threatDetection = Math.min(100, 60 + completedSimsCount * 4 + completedCoursesCount * 3);
-    const overallScore = Math.round((phishingDefense + passwordHygiene + networkSecurity + threatDetection) / 4);
+    let phishingDefense = 0;
+    let passwordHygiene = 0;
+    let networkSecurity = 0;
+    let threatDetection = 0;
 
-    const awarenessLevel = overallScore >= 90 ? 'Expert' : overallScore >= 75 ? 'Advanced' : overallScore >= 50 ? 'Intermediate' : 'Beginner';
+    if (completedCoursesCount > 0 || completedSimsCount > 0 || certCount > 0) {
+      // Phishing Defense: Driven by simulations completed and sim scores
+      phishingDefense = completedSimsCount > 0
+        ? Math.min(100, Math.round((avgSimScore * 0.6) + (completedSimsCount * 12)))
+        : (enrolledCount > 0 ? 25 : 0);
+
+      // Password Hygiene: Driven by course completions & enrolled progress
+      passwordHygiene = completedCoursesCount > 0
+        ? Math.min(100, Math.round(35 + (completedCoursesCount * 22)))
+        : (enrolledCount > 0 ? 20 : 0);
+
+      // Network Security: Driven by verified certificates & completed advanced modules
+      networkSecurity = certCount > 0
+        ? Math.min(100, Math.round(40 + (certCount * 20)))
+        : (completedCoursesCount > 0 ? 30 : 0);
+
+      // Threat Detection: Driven by simulations, courses, and certifications
+      threatDetection = Math.min(
+        100,
+        Math.round(
+          (completedSimsCount > 0 ? avgSimScore * 0.4 : 0) +
+          (completedCoursesCount * 15) +
+          (certCount * 15)
+        )
+      );
+    } else if (enrolledCount > 0) {
+      // Enrolled but not yet finished: show entry learner score
+      phishingDefense = 15;
+      passwordHygiene = 15;
+      networkSecurity = 10;
+      threatDetection = 10;
+    }
+
+    const overallScore = Math.round((phishingDefense + passwordHygiene + networkSecurity + threatDetection) / 4);
+    const awarenessLevel = overallScore >= 85 ? 'Expert' : overallScore >= 70 ? 'Advanced' : overallScore >= 40 ? 'Intermediate' : 'Beginner';
+
+    // Query recent activity for weekly progress calculation
+    const recentActRes = await db.query(
+      `SELECT COUNT(*) as count FROM user_activity WHERE user_id = $1 AND timestamp >= NOW() - INTERVAL '7 days'`,
+      [userId]
+    ).catch(() => ({ rows: [{ count: 0 }] }));
+    const recentCount = parseInt(recentActRes.rows[0]?.count || 0, 10);
+    const weeklyProgress = Math.min(25, Math.max(0, recentCount * 3 + (completedCoursesCount > 0 ? 5 : 0)));
 
     return {
       profile: {
@@ -465,6 +506,7 @@ class UserService {
         overallScore,
         maxScore: 100,
         level: awarenessLevel,
+        weeklyProgress,
         categoryScores: {
           phishingDefense,
           passwordHygiene,

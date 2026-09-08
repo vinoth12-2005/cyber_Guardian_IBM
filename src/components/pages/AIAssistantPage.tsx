@@ -177,9 +177,8 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
         setSessionList(sessions);
         setStudyContext(res.data.studyContext || null);
 
-        const targetId = preferSessionId || activeSessionId || sessions[0]?.id;
-        if (targetId) {
-          loadSessionMessages(targetId);
+        if (preferSessionId) {
+          loadSessionMessages(preferSessionId);
         }
       }
     } catch (err) {
@@ -218,6 +217,7 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
         timestamp: 'Just now',
       },
     ]);
+    loadChatSessions();
     toast.success('Started a fresh conversation session');
   };
 
@@ -264,7 +264,7 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
         setMessages((prev) => [...prev, botMsg]);
         setIsSendingChat(false);
 
-        // Refresh session list in background
+        // Refresh session list in background to update history tab immediately
         api.flotbot.listChats().then((cRes) => {
           if (cRes.success && cRes.data?.sessions) {
             setSessionList(cRes.data.sessions);
@@ -273,10 +273,10 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
         return;
       }
     } catch (e) {
-      console.log('Chat API fallback triggered');
+      console.warn('Chat API error, attempting client heuristic fallback:', e);
     }
 
-    // Comprehensive client-side AI response generator
+    // Fallback if backend API is temporarily unreachable
     setTimeout(() => {
       let botReply = '';
       const q = query.toLowerCase();
@@ -306,7 +306,7 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
           "2. **AI Threat Explanation:** I analyze the threat telemetry (VirusTotal, Google Safe Browsing, typosquatting) and trigger an interactive Security Alert explaining the risk in plain English.\n" +
           "3. **Human-in-the-Loop Gate:** You must review the danger and choose to either return to safety (recommended) or provide an explicit acknowledgment before the activity can proceed.\n" +
           "4. **Admin Audit Logging:** Every alert trigger and user decision is permanently logged in the Admin Panel under your User Inspection profile.";
-      } else if (q.includes('pause') || q.includes('how does') || q.includes('how') && q.includes('engine')) {
+      } else if (q.includes('pause') || q.includes('how does') || (q.includes('how') && q.includes('engine'))) {
         botReply =
           "🛡️ **How the Threat Detection Engine Pauses Activity:**\n\n" +
           "1. **Pre-Navigation Interception:** Before your browser loads any destination, the request is intercepted by our Detection Engine.\n" +
@@ -326,7 +326,10 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
           "Security administrators can inspect each user's **Security Posture Score**, see which threats were triggered, and verify who safely avoided vs. bypassed warnings.";
       } else {
         botReply =
-          "🛡️ **FlotBot AI Security Assistant:** I am actively connected to our Threat Detection Engines (VirusTotal, Google Safe Browsing, Hybrid Analysis, and URLEngine). You can ask me any cybersecurity question or test links and files in the Sandbox on the right!";
+          `🛡️ **FlotBot Security Analysis:** Regarding "${query}":\n\n` +
+          `• **Recommended Action:** Ensure multi-factor authentication (MFA) is active across all endpoints and review your enrolled cybersecurity training modules.\n` +
+          `• **Detection Controls:** Keep local endpoint heuristics active to quarantine unauthorized PowerShell commands, suspicious double extensions, and unencrypted HTTP destinations.\n` +
+          `• **Course Catalog:** Check out our interactive training modules in the Courses tab to earn verified completion credentials!`;
       }
 
       setMessages((prev) => [
@@ -339,7 +342,7 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
         },
       ]);
       setIsSendingChat(false);
-    }, 300);
+    }, 250);
   };
 
   const handleRunUrlInterception = async (urlToTest: string) => {
@@ -689,6 +692,33 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
                 </div>
               </div>
             ))}
+
+            {isSendingChat && (
+              <div className="flex gap-3 justify-start animate-fade-in">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                  style={{
+                    background: 'var(--accent-ai-faint)',
+                    border: '1px solid var(--accent-ai-border)',
+                    color: 'var(--accent-ai)',
+                  }}
+                >
+                  <Bot className="w-4 h-4 animate-pulse" />
+                </div>
+                <div
+                  className="rounded-2xl px-4 py-2.5 text-xs flex items-center gap-2"
+                  style={{
+                    background: 'var(--surface-1)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-default)',
+                    borderTopLeftRadius: '0px',
+                  }}
+                >
+                  <Sparkles className="w-3.5 h-3.5 animate-spin text-indigo-400 shrink-0" />
+                  <span>FlotBot AI is reasoning and preparing defense analysis...</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick Prompts Chips */}
@@ -971,9 +1001,11 @@ export const AIAssistantPage: React.FC<AIAssistantPageProps> = ({ chats, onConti
           sessionList.length > 0
             ? sessionList.map((s: any) => ({
                 id: s.id,
-                date: s.updatedAt ? new Date(s.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Saved',
+                date: s.updatedAt ? new Date(s.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Saved',
                 question: s.title,
-                aiSummary: `Persistent conversation session with ${s.messageCount || 0} messages saved in database.`,
+                aiSummary: s.lastReply
+                  ? (s.lastReply.length > 140 ? s.lastReply.substring(0, 137) + '...' : s.lastReply)
+                  : `Security consultation session with ${s.messageCount || 0} interaction exchanges.`,
                 category: (s.category as any) || 'General',
                 messageCount: s.messageCount || 0,
               }))

@@ -120,7 +120,7 @@ class OllamaProvider {
      * @returns {Promise<{text: string, model: string, provider: string}>}
      */
     async generate(input, options = {}) {
-        if (!this.ready) return this._mock.generate(input, options);
+        if (!this.ready) return { text: "", error: "Ollama server offline or unconfigured", provider: "ollama-offline" };
 
         const useStreaming = (options.stream !== false) && typeof options.onToken === "function";
 
@@ -326,8 +326,8 @@ class OllamaProvider {
                 await this._sleep(delay);
                 return this._generateBlocking(input, options, retries - 1);
             }
-            console.warn(`[Ollama] generate() error: ${err.message} — using mock fallback.`);
-            return this._mock.generate(input, options);
+            console.warn(`[Ollama] generate() error: ${err.message} — signaling error to coordinator.`);
+            return { text: "", error: err.message, provider: "ollama-error" };
         }
     }
 

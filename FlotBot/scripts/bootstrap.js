@@ -6,8 +6,17 @@ const http = require("http");
 const ROOT_DIR = path.resolve(__dirname, "..");
 const MAIN_ROOT_DIR = path.resolve(ROOT_DIR, "..");
 const ENV_FILE = path.join(ROOT_DIR, ".env");
+const MAIN_ENV_FILE = path.join(MAIN_ROOT_DIR, ".env");
 const ENV_EXAMPLE = path.join(ROOT_DIR, ".env.example");
 const IS_WIN = process.platform === "win32";
+
+// Load environment variables early so child processes inherit all keys
+try {
+    const dotenv = require("dotenv");
+    dotenv.config({ path: ENV_FILE });
+    dotenv.config({ path: MAIN_ENV_FILE });
+    dotenv.config();
+} catch (e) {}
 
 console.log("\n=======================================================");
 console.log(" 🛡️  FlotBot Cross-Platform Automated Setup & Launcher");
@@ -168,11 +177,12 @@ async function main() {
     if (httpStatus.online) {
         console.log("  ✔ Ollama local server is active (http://127.0.0.1:11434)");
         const installedModels = httpStatus.models.map(m => m.name);
-        
         if (installedModels.length > 0) {
-            // Find preferred model or default to first installed model
-            let selectedModel = installedModels.find(m => m.includes("llama3")) ||
+            // Find preferred model or default to first installed model (prioritize high-speed models)
+            let selectedModel = installedModels.find(m => m.includes("0.5b")) ||
+                                installedModels.find(m => m.includes("1b")) ||
                                 installedModels.find(m => m.includes("qwen")) ||
+                                installedModels.find(m => m.includes("llama")) ||
                                 installedModels[0];
             
             console.log(`  ✔ Found installed local model: "${selectedModel}" (Skipping download!)`);

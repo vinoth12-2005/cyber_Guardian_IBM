@@ -17,7 +17,7 @@ class GeminiProvider {
 
     constructor(config = {}) {
         this.apiKey  = config.apiKey || process.env.GEMINI_API_KEY;
-        this.model   = config.model  || process.env.GEMINI_MODEL || "gemini-2.0-flash";
+        this.model   = config.model  || process.env.GEMINI_MODEL || "gemini-flash-latest";
         this.baseUrl = "https://generativelanguage.googleapis.com/v1beta";
         this.ready   = false;
         this._mock   = new MockProvider();
@@ -38,17 +38,41 @@ class GeminiProvider {
 
     async initialize() {
         if (!this.apiKey || this.apiKey.trim().length < 10) {
-            console.warn("[Gemini] No GEMINI_API_KEY found — provider will use local Ollama fallback.");
+            console.log("[Gemini] No GEMINI_API_KEY set — running seamlessly with Local Ollama.");
             this.ready = false;
             return;
         }
+
+        if (this.apiKey.startsWith("AQ.") || !this.apiKey.startsWith("AIza")) {
+            console.warn("[Gemini] Notice: The GEMINI_API_KEY in .env is not a Google AI Studio API key (valid keys begin with 'AIzaSy').");
+            console.warn("[Gemini] To enable Gemini, generate a free API key at https://aistudio.google.com/app/apikey. Running with Local Ollama.");
+            this.ready = false;
+            return;
+        }
+
         try {
-            const ok = await this.healthCheck();
-            this.ready = ok;
-            if (ok) {
-                console.log(`[Gemini] Provider ready → model=${this.model} (API key verified)`);
+            const models = await this.listModels();
+            if (models.length > 0) {
+                this.ready = true;
+                // If currently configured model is not available or deprecated (e.g. gemini-2.0-flash, gemini-1.5), auto-select best
+                if (!models.includes(this.model)) {
+                    const preferred = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-pro-latest"];
+                    const match = preferred.find(p => models.includes(p)) || models[0];
+                    console.log(`[Gemini] Model "${this.model}" not in available list. Auto-selecting: "${match}"`);
+                    this.model = match;
+                }
+                console.log(`[Gemini] Provider ready → model=${this.model} (API key verified, ${models.length} models available)`);
             } else {
-                console.warn(`[Gemini] GEMINI_API_KEY provided is unauthenticated — seamless fallback to Local Ollama enabled.`);
+                const ok = await this.healthCheck();
+                this.ready = ok;
+                if (ok) {
+                    if (this.model.includes("2.0-flash") || this.model.includes("1.5-flash")) {
+                        this.model = "gemini-flash-latest";
+                    }
+                    console.log(`[Gemini] Provider ready → model=${this.model} (API key verified)`);
+                } else {
+                    console.warn(`[Gemini] GEMINI_API_KEY was rejected by Google (HTTP 401 UNAUTHENTICATED). Please verify your key at https://aistudio.google.com/app/apikey. Running with Local Ollama.`);
+                }
             }
         } catch {
             this.ready = false;
@@ -59,6 +83,22 @@ class GeminiProvider {
         if (modelName && typeof modelName === "string") {
             this.model = modelName.trim();
             console.log(`[Gemini] Switched active model to: ${this.model}`);
+        }
+    }
+
+    async listModels() {
+        if (!this.apiKey || this.apiKey.trim().length < 10) return [];
+        try {
+            const url = `${this.baseUrl}/models?key=${this.apiKey}`;
+            const res = await axios.get(url, { timeout: 6000 });
+            if (res.data?.models && Array.isArray(res.data.models)) {
+                return res.data.models
+                    .map(m => m.name ? m.name.replace(/^models\//, "") : "")
+                    .filter(n => n && (n.includes("flash") || n.includes("pro") || n.includes("gemini")));
+            }
+            return ["gemini-flash-latest", "gemini-3.6-flash"];
+        } catch {
+            return [];
         }
     }
 
@@ -97,7 +137,7 @@ class GeminiProvider {
      */
     async generate(input, options = {}) {
         if (!this.ready || !this.apiKey) {
-            return this._mock.generate(input, options);
+            return { text: "", error: "Gemini provider not ready or unconfigured", provider: "gemini-offline" };
         }
 
         // Cache lookup (only when no vision image attached)
@@ -253,14 +293,20 @@ class GeminiProvider {
                 return { text: "", model: this.model, provider: "gemini", aborted: true };
             }
             const status = err.response?.status;
+            // If model is not found (404) and we are not yet on gemini-3.6-flash, switch and retry
+            if (status === 404 && this.model !== "gemini-3.6-flash") {
+                console.warn(`[Gemini] Model "${this.model}" returned 404. Auto-switching to "gemini-3.6-flash"...`);
+                this.model = "gemini-3.6-flash";
+                return this._generateBlocking(input, options, retries);
+            }
             if (retries > 0 && (status === 503 || status === 429)) {
-                const delay = status === 429 ? 1500 : 500;
+                const delay = status === 429 ? 1500 : 600;
                 console.warn(`[Gemini] HTTP ${status} — retrying in ${delay}ms (${retries} left)`);
                 await this._sleep(delay);
                 return this._generateBlocking(input, options, retries - 1);
             }
-            console.warn("[Gemini] generate() error:", err.message, "— using mock fallback.");
-            return this._mock.generate(input, options);
+            console.warn("[Gemini] generate() error:", err.message, "— signaling error to coordinator.");
+            return { text: "", error: err.message, provider: "gemini-error" };
         }
     }
 

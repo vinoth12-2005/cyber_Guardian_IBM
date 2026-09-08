@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { CheckCircle2, AlertTriangle, ShieldAlert, Activity } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle2, AlertTriangle, ShieldAlert, Activity, RefreshCw } from 'lucide-react';
+import { api } from '../../lib/api';
 
-interface ActivityEntry {
+export interface ActivityEntry {
   id: string;
   icon: 'success' | 'warning' | 'danger';
   label: string;
@@ -10,20 +11,9 @@ interface ActivityEntry {
   category: string;
 }
 
-const allActivities: ActivityEntry[] = [
-  { id: '1',  icon: 'success', label: 'URL analysis completed',      detail: 'google.com',             time: '2 min ago',    category: 'Analysis' },
-  { id: '2',  icon: 'success', label: 'Simulation completed',         detail: 'Phishing Awareness',     time: '18 min ago',   category: 'Simulation' },
-  { id: '3',  icon: 'success', label: 'Course completed',              detail: 'Password Security',      time: '1 hour ago',   category: 'Learning' },
-  { id: '4',  icon: 'warning', label: 'Suspicious email detected',    detail: 'invoice_2307.pdf',       time: '3 hours ago',  category: 'Threat' },
-  { id: '5',  icon: 'danger',  label: 'Malware link blocked',         detail: 'auth-verify-login.net',  time: '5 hours ago',  category: 'Threat' },
-  { id: '6',  icon: 'success', label: 'Email header scan passed',     detail: 'noreply@github.com',     time: '6 hours ago',  category: 'Analysis' },
-  { id: '7',  icon: 'warning', label: 'Weak password detected',       detail: 'LinkedIn account',       time: '1 day ago',    category: 'Threat' },
-  { id: '8',  icon: 'success', label: 'Two-factor auth enabled',      detail: 'Google account',         time: '1 day ago',    category: 'Settings' },
-  { id: '9',  icon: 'danger',  label: 'Phishing attempt blocked',     detail: 'secure-bank-login.ru',   time: '2 days ago',   category: 'Threat' },
-  { id: '10', icon: 'success', label: 'Security report generated',    detail: 'Weekly Summary',         time: '2 days ago',   category: 'Reports' },
-  { id: '11', icon: 'success', label: 'Simulation completed',         detail: 'Ransomware Scenario',    time: '3 days ago',   category: 'Simulation' },
-  { id: '12', icon: 'warning', label: 'Unknown device login attempt', detail: '192.168.12.44',          time: '4 days ago',   category: 'Threat' },
-];
+interface ActivityPageProps {
+  activities?: any[];
+}
 
 const iconConfig = {
   success: { icon: CheckCircle2, color: 'var(--accent-success)', bg: 'var(--accent-success-faint)', border: 'var(--accent-success-border)' },
@@ -31,36 +21,154 @@ const iconConfig = {
   danger:  { icon: ShieldAlert,   color: 'var(--accent-danger)',  bg: 'var(--accent-danger-faint)',  border: 'var(--accent-danger-border)' },
 };
 
-const categories = ['All', 'Analysis', 'Simulation', 'Learning', 'Threat', 'Settings', 'Reports'];
+function formatRelativeTime(dateStr?: string): string {
+  if (!dateStr) return 'Just now';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'Recently';
+  const diffMs = Date.now() - d.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return 'Just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
 
-export const ActivityPage: React.FC = () => {
+function mapRawActivity(raw: any, index: number): ActivityEntry {
+  let icon: 'success' | 'warning' | 'danger' = 'success';
+  const rawIcon = (raw.icon || raw.icon_type || '').toLowerCase();
+  const type = (raw.activity_type || raw.activityType || '').toLowerCase();
+
+  if (rawIcon === 'danger' || type.includes('block') || type.includes('danger') || type.includes('critical')) {
+    icon = 'danger';
+  } else if (rawIcon === 'warning' || type.includes('threat') || type.includes('warn') || type.includes('intercept')) {
+    icon = 'warning';
+  } else {
+    icon = 'success';
+  }
+
+  let cat = raw.category || 'Security';
+  if (cat.toLowerCase() === 'administrative') cat = 'Admin';
+  if (cat.toLowerCase() === 'security alert') cat = 'Threat';
+  if (cat.toLowerCase() === 'security awareness') cat = 'Awareness';
+
+  return {
+    id: raw.id || `act-${index}`,
+    icon,
+    label: raw.label || raw.activity_type || 'User Security Activity',
+    detail: raw.detail || (raw.metadata ? JSON.stringify(raw.metadata) : 'Logged security telemetry event'),
+    time: formatRelativeTime(raw.timestamp || raw.time || raw.created_at),
+    category: cat,
+  };
+}
+
+const DEFAULT_ONBOARDING_ACTIVITIES: ActivityEntry[] = [
+  {
+    id: 'init-1',
+    icon: 'success',
+    label: 'CyberGuardian Workspace Initialized',
+    detail: 'Cryptographic profile and local security baseline generated successfully.',
+    time: 'Today',
+    category: 'Setup',
+  },
+  {
+    id: 'init-2',
+    icon: 'success',
+    label: 'FlotBot AI Shield Active',
+    detail: 'Real-time proactive URL & malicious file interception online.',
+    time: 'Today',
+    category: 'Security',
+  },
+  {
+    id: 'init-3',
+    icon: 'warning',
+    label: 'Zero Trust Monitoring Engaged',
+    detail: 'Continuous behavioral telemetry enabled for proactive phishing defense.',
+    time: 'Today',
+    category: 'Threat',
+  },
+];
+
+export const ActivityPage: React.FC<ActivityPageProps> = ({ activities: propActivities }) => {
   const [filter, setFilter] = useState<string>('All');
+  const [loadedActivities, setLoadedActivities] = useState<ActivityEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const syncActivities = async () => {
+    if (Array.isArray(propActivities) && propActivities.length > 0) {
+      setLoadedActivities(propActivities.map(mapRawActivity));
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.activity.list();
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setLoadedActivities(res.data.map(mapRawActivity));
+      } else {
+        setLoadedActivities(DEFAULT_ONBOARDING_ACTIVITIES);
+      }
+    } catch (err) {
+      console.warn('[ActivityPage] Load notice:', err);
+      setLoadedActivities(DEFAULT_ONBOARDING_ACTIVITIES);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    syncActivities();
+  }, [propActivities]);
+
+  const displayList = loadedActivities.length > 0 ? loadedActivities : DEFAULT_ONBOARDING_ACTIVITIES;
+
+  // Extract unique categories
+  const categories = ['All', ...Array.from(new Set(displayList.map((a) => a.category)))];
 
   const filtered = filter === 'All'
-    ? allActivities
-    : allActivities.filter((a) => a.category === filter);
+    ? displayList
+    : displayList.filter((a) => a.category.toLowerCase() === filter.toLowerCase());
 
   return (
     <div className="space-y-4">
       {/* Page header */}
       <div
-        className="glass-card rounded-2xl p-5 flex items-center gap-3"
+        className="glass-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
         style={{ borderColor: 'var(--border-default)' }}
       >
-        <div
-          className="p-2.5 rounded-xl"
-          style={{ background: 'var(--accent-activity-faint)', border: '1px solid var(--accent-activity-border)' }}
+        <div className="flex items-center gap-3">
+          <div
+            className="p-2.5 rounded-xl flex-shrink-0"
+            style={{ background: 'var(--accent-primary-faint)', border: '1px solid var(--accent-primary-border)' }}
+          >
+            <Activity className="w-5 h-5" style={{ color: 'var(--accent-primary)' }} />
+          </div>
+          <div>
+            <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              Real-Time Security Activity
+            </h2>
+            <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              Live audit trail of threat detections, simulation completions, and platform security events
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={syncActivities}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold self-start sm:self-auto transition-colors"
+          style={{
+            background: 'var(--surface-1)',
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--border-default)',
+          }}
         >
-          <Activity className="w-5 h-5" style={{ color: 'var(--accent-activity)' }} />
-        </div>
-        <div>
-          <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
-            Recent Activity
-          </h2>
-          <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Full timeline of your security events and actions
-          </p>
-        </div>
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
+        </button>
       </div>
 
       {/* Filter pills */}
@@ -69,9 +177,9 @@ export const ActivityPage: React.FC = () => {
           <button
             key={cat}
             onClick={() => setFilter(cat)}
-            className="px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all duration-200"
+            className="px-3 py-1.5 rounded-xl text-[12px] font-medium transition-all duration-200 capitalize"
             style={
-              filter === cat
+              filter.toLowerCase() === cat.toLowerCase()
                 ? { background: 'var(--accent-primary)', color: '#fff' }
                 : { background: 'var(--surface-1)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }
             }
@@ -84,7 +192,7 @@ export const ActivityPage: React.FC = () => {
       {/* Activity list */}
       <div className="glass-card rounded-2xl overflow-hidden" style={{ borderColor: 'var(--border-default)' }}>
         {filtered.map((entry, idx) => {
-          const cfg = iconConfig[entry.icon];
+          const cfg = iconConfig[entry.icon] || iconConfig.success;
           const Icon = cfg.icon;
           return (
             <div
@@ -129,7 +237,7 @@ export const ActivityPage: React.FC = () => {
 
         {filtered.length === 0 && (
           <div className="p-10 text-center">
-            <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>No activity for this filter.</p>
+            <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>No activities recorded for this filter category.</p>
           </div>
         )}
       </div>

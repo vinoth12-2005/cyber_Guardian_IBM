@@ -1,7 +1,7 @@
 import React from 'react';
 import type { WeeklyReportData } from '../../types/dashboard';
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 import { BarChart3, CheckCircle2, AlertOctagon } from 'lucide-react';
@@ -138,32 +138,40 @@ export const WeeklyCyberReport: React.FC<WeeklyCyberReportProps> = ({ report }) 
           </div>
         </div>
 
-        {/* Line chart */}
+        {/* Area chart */}
         <div
           className="p-4 rounded-xl flex flex-col"
           style={{ background: 'var(--surface-1)', border: '1px solid var(--border-default)' }}
         >
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
-              Score Trend
+              Awareness Trend (Area Distribution)
             </h4>
           </div>
           <div className="h-44 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={report.lineChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <AreaChart data={report.lineChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="scoreAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.45} />
+                    <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
                 <XAxis dataKey="week" stroke={axisColor} fontSize={9} tickLine={false} axisLine={false} />
-                <YAxis domain={[60, 100]} stroke={axisColor} fontSize={9} tickLine={false} axisLine={false} />
+                <YAxis domain={[50, 100]} stroke={axisColor} fontSize={9} tickLine={false} axisLine={false} />
                 <Tooltip {...tooltipStyle} />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="score"
                   stroke="var(--accent-primary)"
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: 'var(--accent-info)', strokeWidth: 0 }}
-                  activeDot={{ r: 4, fill: 'var(--accent-primary)' }}
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#scoreAreaGradient)"
+                  dot={{ r: 3.5, fill: 'var(--accent-info)', strokeWidth: 1.5, stroke: 'var(--accent-primary)' }}
+                  activeDot={{ r: 5, fill: 'var(--accent-primary)' }}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>

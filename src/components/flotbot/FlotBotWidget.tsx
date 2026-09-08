@@ -60,22 +60,8 @@ export const FlotBotWidget: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    // Restore persistent session from PostgreSQL if available
-    const savedSessionId = localStorage.getItem('flotbot_widget_session_id');
-    if (savedSessionId) {
-      api.flotbot.getChat(savedSessionId).then((res) => {
-        if (res.success && res.data?.messages?.length > 0) {
-          setMessages(
-            res.data.messages.map((m: any) => ({
-              sender: m.sender,
-              text: m.text,
-            }))
-          );
-        }
-      }).catch((err) => console.log('Widget history load notice:', err));
-    }
-  }, []);
+  // Keep current active session in memory only (no reloading old history on app open)
+  const [currentWidgetSessionId, setCurrentWidgetSessionId] = useState<string | undefined>(undefined);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,14 +99,12 @@ export const FlotBotWidget: React.FC = () => {
       }
     }
 
-    const widgetSessionId = localStorage.getItem('flotbot_widget_session_id') || undefined;
-
-    // Persist and query via backend API
+    // Persist to PostgreSQL database (accessible in Chat Page History) but don't reload into widget on reopen
     try {
-      const res = await api.flotbot.chatAI(userText, widgetSessionId, { alertsCount: alerts.length });
+      const res = await api.flotbot.chatAI(userText, currentWidgetSessionId, { alertsCount: alerts.length });
       if (res.success && res.data?.reply) {
-        if (res.data.sessionId) {
-          localStorage.setItem('flotbot_widget_session_id', res.data.sessionId);
+        if (res.data.sessionId && res.data.sessionId !== currentWidgetSessionId) {
+          setCurrentWidgetSessionId(res.data.sessionId);
         }
         setMessages((prev) => [...prev, { sender: 'flotbot', text: res.data.reply }]);
         setIsTyping(false);

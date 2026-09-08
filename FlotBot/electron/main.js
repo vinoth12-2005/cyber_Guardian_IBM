@@ -4,6 +4,8 @@ const fs = require("fs");
 const dotenv = require("dotenv");
 
 // Load environment variables
+dotenv.config({ path: path.join(__dirname, "../.env") });
+dotenv.config({ path: path.join(__dirname, "../../.env") });
 dotenv.config();
 
 // FlotBot Core Imports
@@ -143,7 +145,7 @@ async function initBackend() {
     // Cloud Chat Provider: Google Gemini
     const geminiProvider = new GeminiProvider({
         apiKey: process.env.GEMINI_API_KEY,
-        model: process.env.GEMINI_MODEL || "gemini-2.0-flash"
+        model: process.env.GEMINI_MODEL || "gemini-flash-latest"
     });
 
     // Read stored AI mode (defaults to "auto" hybrid mode)

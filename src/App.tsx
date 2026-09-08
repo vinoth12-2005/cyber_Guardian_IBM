@@ -59,6 +59,7 @@ import { TrendsPage } from './components/pages/TrendsPage';
 import { AIInsightPage } from './components/pages/AIInsightPage';
 import { ActivityPage } from './components/pages/ActivityPage';
 import { TrainingCoursesPage } from './components/pages/TrainingCoursesPage';
+import { NotificationsPage } from './components/pages/NotificationsPage';
 import { SettingsPage } from './components/pages/SettingsPage';
 import SimulationProgressPage from './components/pages/SimulationProgressPage';
 import AchievementsPage from './components/pages/AchievementsPage';
@@ -238,6 +239,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
   const [dbSimulations, setDbSimulations] = useState<any[]>([]);
   const [dbChats, setDbChats] = useState<any[]>([]);
   const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
+  const [deletedNotifIds, setDeletedNotifIds] = useState<Set<string>>(new Set());
 
   // Load real data from backend
   const loadDatabaseData = async () => {
@@ -356,15 +358,15 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
   ];
 
   const awarenessScore: AwarenessScoreData = dbDashboard?.awarenessScore || {
-    overallScore: 60,
+    overallScore: 0,
     maxScore: 100,
-    level: 'Intermediate',
+    level: 'Beginner',
     weeklyProgress: 0,
     categoryScores: {
-      phishingDefense: 60,
-      passwordHygiene: 60,
-      networkSecurity: 60,
-      threatDetection: 60,
+      phishingDefense: 0,
+      passwordHygiene: 0,
+      networkSecurity: 0,
+      threatDetection: 0,
     },
   };
 
@@ -433,16 +435,48 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
     };
   });
 
-  const notifications: NotificationItem[] = dbAlerts
-    .filter((a: any) => !readNotifIds.has(`notif-${a.id}`))
-    .map((a: any) => ({
-      id: `notif-${a.id}`,
-      title: a.title,
-      description: a.description || a.title,
-      type: (a.severity === 'CRITICAL' || a.severity === 'HIGH' ? 'alert' : 'warning') as any,
-      timestamp: a.timestamp ? new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
-      read: false,
-    }));
+  const notifications: NotificationItem[] = [
+    ...dbAlerts.map((a: any) => ({
+      id: `alert-${a.id}`,
+      title: a.title || 'Security Threat Flagged',
+      description: a.description || a.title || 'Suspicious network or access activity flagged by CyberGuardian telemetry.',
+      type: (a.severity === 'CRITICAL' || a.severity === 'HIGH' ? 'alert' : 'simulation') as any,
+      timestamp: a.timestamp ? new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : 'Recent',
+      read: readNotifIds.has(`alert-${a.id}`),
+    })),
+    ...(awarenessScore.overallScore ? [{
+      id: 'notif-score',
+      title: 'Cyber Awareness Posture Calculated',
+      description: `Your dynamic security score is currently ${awarenessScore.overallScore}%. Complete training simulations to maintain top tier.`,
+      type: 'score' as const,
+      timestamp: 'Today',
+      read: readNotifIds.has('notif-score'),
+    }] : []),
+    ...(dbSimulations.length > 0 ? [{
+      id: 'notif-sim',
+      title: 'Phishing Simulation Active',
+      description: `You have participated in ${dbSimulations.length} interactive simulation exercise${dbSimulations.length > 1 ? 's' : ''}. Check reports for telemetry.`,
+      type: 'simulation' as const,
+      timestamp: 'Active',
+      read: readNotifIds.has('notif-sim'),
+    }] : []),
+    {
+      id: 'notif-system-defense',
+      title: 'FlotBot Defense Engine Active',
+      description: 'Local AI threat analysis and multi-turn security assistant are online and protecting your sessions.',
+      type: 'recommendation' as const,
+      timestamp: 'System',
+      read: readNotifIds.has('notif-system-defense'),
+    },
+    {
+      id: 'notif-telemetry-online',
+      title: 'Real-Time Endpoint Telemetry Online',
+      description: 'Proactive URL interception and endpoint threat checks are running smoothly across all workspaces.',
+      type: 'report' as const,
+      timestamp: 'Online',
+      read: readNotifIds.has('notif-telemetry-online'),
+    }
+  ].filter((n) => !deletedNotifIds.has(n.id));
 
   const weeklyReport: WeeklyReportData = {
     scoreChange: 0,
@@ -524,6 +558,14 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
 
   const handleMarkAllAsRead = () => {
     setReadNotifIds(new Set(notifications.map((n) => n.id)));
+  };
+
+  const handleMarkRead = (id: string) => {
+    setReadNotifIds((prev) => new Set(prev).add(id));
+  };
+
+  const handleDeleteNotif = (id: string) => {
+    setDeletedNotifIds((prev) => new Set(prev).add(id));
   };
 
   const handleExecuteRecommendation = (item: AIRecommendationItem) => {
@@ -753,7 +795,7 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
 
           {activeTab === 'activity' && (
             <div className="animate-fade-in-up">
-              <ActivityPage />
+              <ActivityPage activities={dbActivities} />
             </div>
           )}
 
@@ -890,18 +932,14 @@ function DashboardView({ defaultTab = 'dashboard' }: { defaultTab?: string }) {
             </div>
           )}
 
-          {/* Placeholder for tabs not yet implemented */}
           {activeTab === 'notifications' && (
-            <div
-              className="glass-card rounded-2xl p-12 text-center animate-fade-in-up"
-              style={{ borderColor: 'var(--border-default)' }}
-            >
-              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                {pageTitle} — coming soon
-              </p>
-              <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                This module is under construction.
-              </p>
+            <div className="animate-fade-in-up">
+              <NotificationsPage
+                notifications={notifications}
+                onMarkAllAsRead={handleMarkAllAsRead}
+                onMarkRead={handleMarkRead}
+                onDelete={handleDeleteNotif}
+              />
             </div>
           )}
 

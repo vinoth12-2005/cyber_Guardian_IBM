@@ -100,7 +100,15 @@ class AIEngine {
     // ═══════════════════════════════════════════════════════════
 
     async initialize() {
-        console.log("[AIEngine] Initializing AI providers in parallel...");
+        console.log("[AIEngine] Initializing AI providers...");
+        if (this.mode === "offline") {
+            await this.analysisProvider.initialize();
+            const analysisInfo = this.analysisProvider.getProviderInfo();
+            console.log(`[AIEngine] AI Mode:                   OFFLINE (Local Ollama active)`);
+            console.log(`[AIEngine] Offline/Analysis Provider: ${analysisInfo.provider} (${analysisInfo.model}) ready=${analysisInfo.ready}`);
+            return;
+        }
+
         await Promise.allSettled([
             this.chatProvider.initialize(),
             this.analysisProvider.initialize()
@@ -159,10 +167,10 @@ class AIEngine {
             this.chatProvider.listModels ? this.chatProvider.listModels() : [],
             this.analysisProvider.listModels ? this.analysisProvider.listModels() : []
         ]);
-        const gList = Array.isArray(geminiModels) && geminiModels.length > 0 ? geminiModels : ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+        const gList = Array.isArray(geminiModels) && geminiModels.length > 0 ? geminiModels : ["gemini-flash-latest", "gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash"];
         return {
             gemini: {
-                active: this.chatProvider.model || "gemini-2.0-flash",
+                active: this.chatProvider.model || "gemini-flash-latest",
                 models: gList
             },
             ollama: {
@@ -282,12 +290,22 @@ class AIEngine {
                 return { success: false, reply: "", aborted: true };
             }
 
-            // If primary provider produced an empty response, fallback gracefully
-            if (!response.text || response.text.trim().length === 0) {
-                console.warn("[AIEngine] Primary provider empty response, trying alternate fallback...");
+            // If primary provider produced an empty response or error/offline status, fallback seamlessly to alternate provider
+            const isFailed = !response.text || response.text.trim().length === 0 ||
+                response.provider?.includes("error") || response.provider?.includes("offline") ||
+                response.text.includes("AI providers are offline");
+
+            if (isFailed) {
                 const fallbackProvider = (provider === this.chatProvider) ? this.analysisProvider : this.chatProvider;
                 if (fallbackProvider && fallbackProvider !== provider) {
-                    response = await fallbackProvider.generate(messages, genOpts);
+                    console.warn(`[AIEngine] Primary provider failed or offline. Seamlessly routing to alternate provider...`);
+                    const fbRes = await fallbackProvider.generate(messages, genOpts);
+                    if (fbRes && fbRes.text && fbRes.text.trim().length > 0 && !fbRes.text.includes("AI providers are offline")) {
+                        response = fbRes;
+                    }
+                }
+                if (!response.text || response.text.trim().length === 0 || response.provider?.includes("error")) {
+                    response = this._mock.generate(messages, genOpts);
                 }
             }
 
@@ -438,15 +456,29 @@ class AIEngine {
                 { role: "user",   content: prompt }
             ];
 
-            const provider = (this.mode === "offline" || !this.chatProvider.ready)
-                ? this.analysisProvider
-                : this.chatProvider;
+            const provider = (this.mode === "online" && this.chatProvider.ready)
+                ? this.chatProvider
+                : (this.analysisProvider.ready ? this.analysisProvider : this.chatProvider);
 
-            const response = await provider.generate(messages, {
+            let response = await provider.generate(messages, {
                 temperature: 0.2,
                 maxTokens:   350,
                 onToken:     options.onToken || null
             });
+
+            if (!response.text || response.provider?.includes("error") || response.provider?.includes("offline") || response.text.includes("AI providers are offline")) {
+                const fallback = (provider === this.chatProvider) ? this.analysisProvider : this.chatProvider;
+                if (fallback && fallback !== provider && fallback.ready) {
+                    console.log("[AIEngine] Primary provider failed for alert explanation, routing to fallback...");
+                    const fbRes = await fallback.generate(messages, {
+                        temperature: 0.2,
+                        maxTokens:   350,
+                        onToken:     options.onToken || null
+                    });
+                    if (fbRes && fbRes.text && !fbRes.text.includes("AI providers are offline")) response = fbRes;
+                }
+                if (!response.text || response.text.trim().length === 0) response = this._mock.generate(messages, options);
+            }
 
             this.explainCache.set(cacheKey, { explanation: response.text, ts: Date.now() });
 
@@ -501,12 +533,22 @@ class AIEngine {
             const prompt = this._buildThreatPrompt(alerts, context);
             const provider = (this.mode === "online" && this.chatProvider.ready)
                 ? this.chatProvider
-                : this.analysisProvider;
+                : (this.analysisProvider.ready ? this.analysisProvider : (this.chatProvider.ready ? this.chatProvider : this._mock));
 
-            const response = await provider.generate(prompt, {
+            let response = await provider.generate(prompt, {
                 temperature: 0.2,
                 maxTokens:   600
             });
+
+            if (!response.text || response.provider?.includes("error") || response.provider?.includes("offline") || response.text.includes("AI providers are offline")) {
+                const fallback = (provider === this.chatProvider) ? this.analysisProvider : this.chatProvider;
+                if (fallback && fallback !== provider && fallback.ready) {
+                    console.log("[AIEngine] Primary provider failed for threat analysis, routing to fallback...");
+                    const fbRes = await fallback.generate(prompt, { temperature: 0.2, maxTokens: 600 });
+                    if (fbRes && fbRes.text && !fbRes.text.includes("AI providers are offline")) response = fbRes;
+                }
+                if (!response.text || response.text.trim().length === 0) response = this._mock.generate(prompt);
+            }
 
             const latencyMs = Date.now() - t0;
             this._recordLatency("analysis/" + response.provider, latencyMs);
@@ -532,30 +574,31 @@ class AIEngine {
     _routeChat(message, context, options = {}) {
         const lowerMsg = (message || "").toLowerCase();
 
-        // 1. Explicit Offline Mode: Always use Ollama
+        // 1. Explicit Offline Mode: Always use Ollama if ready, otherwise fallback to Gemini
         if (this.mode === "offline") {
-            return this.analysisProvider;
+            return this.analysisProvider.ready ? this.analysisProvider : (this.chatProvider.ready ? this.chatProvider : this.analysisProvider);
         }
 
-        // 2. Explicit Online Mode: Always use Gemini
+        // 2. Explicit Online Mode: Always use Gemini if ready, otherwise fallback to Ollama
         if (this.mode === "online") {
-            return this.chatProvider.ready ? this.chatProvider : this.analysisProvider;
+            return this.chatProvider.ready ? this.chatProvider : (this.analysisProvider.ready ? this.analysisProvider : this.chatProvider);
         }
 
         // 3. Auto Smart Hybrid Mode:
         if (options.image || options.imageBase64) {
-            return this.chatProvider.ready ? this.chatProvider : this.analysisProvider;
+            return this.chatProvider.ready ? this.chatProvider : (this.analysisProvider.ready ? this.analysisProvider : this.chatProvider);
         }
 
         if (ONLINE_INTENT_REGEX.test(lowerMsg)) {
-            return this.chatProvider.ready ? this.chatProvider : this.analysisProvider;
+            return this.chatProvider.ready ? this.chatProvider : (this.analysisProvider.ready ? this.analysisProvider : this.chatProvider);
         }
 
         if (ANALYSIS_INTENT_REGEX.test(lowerMsg)) {
-            return this.analysisProvider;
+            return this.analysisProvider.ready ? this.analysisProvider : (this.chatProvider.ready ? this.chatProvider : this.analysisProvider);
         }
 
-        return this.chatProvider.ready ? this.chatProvider : this.analysisProvider;
+        // Default for all general queries: Local Ollama is primary (fast, private, reliable)
+        return this.analysisProvider.ready ? this.analysisProvider : (this.chatProvider.ready ? this.chatProvider : this.analysisProvider);
     }
 
     // ═══════════════════════════════════════════════════════════
