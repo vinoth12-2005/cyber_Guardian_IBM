@@ -16,6 +16,10 @@ import {
   Lock,
   Play,
   Award,
+  HelpCircle,
+  XCircle,
+  RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 import { InteractiveFlipCard } from './InteractiveFlipCard';
 
@@ -28,6 +32,158 @@ interface LessonViewProps {
   onNavigate: (moduleIndex: number, lessonIndex: number) => void;
   onStartQuiz: () => void;
 }
+
+interface LessonKnowledgeCheckProps {
+  questions: any[];
+  lessonKey: string;
+}
+
+const LessonKnowledgeCheckSection: React.FC<LessonKnowledgeCheckProps> = ({ questions, lessonKey }) => {
+  const [selectedAnswers, setSelectedAnswers] = React.useState<{ [qIdx: number]: number }>({});
+  const [showExplanations, setShowExplanations] = React.useState<{ [qIdx: number]: boolean }>({});
+
+  React.useEffect(() => {
+    setSelectedAnswers({});
+    setShowExplanations({});
+  }, [lessonKey]);
+
+  const handleSelectOption = (qIdx: number, oIdx: number) => {
+    setSelectedAnswers((prev) => ({ ...prev, [qIdx]: oIdx }));
+    setShowExplanations((prev) => ({ ...prev, [qIdx]: true }));
+  };
+
+  const handleRetry = (qIdx: number) => {
+    setSelectedAnswers((prev) => {
+      const copy = { ...prev };
+      delete copy[qIdx];
+      return copy;
+    });
+    setShowExplanations((prev) => {
+      const copy = { ...prev };
+      delete copy[qIdx];
+      return copy;
+    });
+  };
+
+  if (!questions || questions.length === 0) return null;
+
+  return (
+    <div className="p-5 rounded-2xl glass-card border border-[var(--accent-primary-border)] space-y-4 bg-[var(--surface-1)] shadow-xl animate-fade-in">
+      <div className="flex items-center justify-between text-xs font-bold text-[var(--accent-primary)] border-b border-white/5 pb-2.5">
+        <span className="flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Topic Quick Knowledge Check
+        </span>
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--accent-primary-faint)] text-[var(--accent-primary)] border border-[var(--accent-primary-border)]">
+          Interactive Scenario
+        </span>
+      </div>
+
+      {questions.map((kc, kIdx) => {
+        const questionText = kc.q || kc.question;
+        const selected = selectedAnswers[kIdx];
+        const isAnswered = selected !== undefined;
+        const isCorrect = selected === kc.answer;
+        const explanation = kc.explanation || '';
+
+        return (
+          <div key={kIdx} className="space-y-3 pt-1">
+            <div className="flex items-start gap-2">
+              <span className="w-5 h-5 rounded-md bg-[var(--accent-primary-faint)] text-[var(--accent-primary)] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                {kIdx + 1}
+              </span>
+              <p className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] leading-relaxed">
+                {questionText}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              {(kc.options || []).map((opt: string, oIdx: number) => {
+                const isThisSelected = selected === oIdx;
+                const isThisCorrect = oIdx === kc.answer;
+
+                let btnStyle = 'border-[var(--border-default)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)]';
+
+                if (isAnswered) {
+                  if (isThisSelected && isCorrect) {
+                    btnStyle = 'border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 font-semibold';
+                  } else if (isThisSelected && !isCorrect) {
+                    btnStyle = 'border-rose-500 bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/40 font-semibold';
+                  } else if (isThisCorrect && !isCorrect) {
+                    btnStyle = 'border-emerald-500/50 bg-emerald-500/5 text-emerald-400/80';
+                  } else {
+                    btnStyle = 'border-[var(--border-default)] opacity-40 bg-[var(--surface-2)] text-[var(--text-muted)]';
+                  }
+                }
+
+                return (
+                  <button
+                    key={oIdx}
+                    type="button"
+                    onClick={() => handleSelectOption(kIdx, oIdx)}
+                    className={`p-3 rounded-xl border text-left text-xs transition-all flex items-start gap-2.5 cursor-pointer group ${btnStyle}`}
+                  >
+                    <span className="w-5 h-5 rounded-lg border border-white/10 bg-black/20 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {String.fromCharCode(65 + oIdx)}
+                    </span>
+                    <span className="flex-1 leading-relaxed">{opt}</span>
+                    {isAnswered && isThisSelected && (
+                      isCorrect ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                      )
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Inline Explanation Banner */}
+            {isAnswered && showExplanations[kIdx] && (
+              <div
+                className={`p-3 rounded-xl border text-xs leading-relaxed space-y-1 animate-fade-in ${
+                  isCorrect
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-200'
+                }`}
+              >
+                <div className="font-bold flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    {isCorrect ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>Correct! Mastered concept.</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-4 h-4 text-rose-400" />
+                        <span>Incorrect. Review the lesson and try again.</span>
+                      </>
+                    )}
+                  </span>
+                  {!isCorrect && (
+                    <button
+                      type="button"
+                      onClick={() => handleRetry(kIdx)}
+                      className="text-[10px] px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-white flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Retry
+                    </button>
+                  )}
+                </div>
+                {explanation && (
+                  <p className="text-[11px] opacity-90 pl-5">
+                    💡 {explanation}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export const LessonView: React.FC<LessonViewProps> = ({
   course,
@@ -251,28 +407,10 @@ export const LessonView: React.FC<LessonViewProps> = ({
 
               {/* Inline Interactive Knowledge Check Question */}
               {lesson.knowledgeCheck && lesson.knowledgeCheck.length > 0 && (
-                <div className="p-5 rounded-xl glass-card border border-[var(--accent-primary-border)] space-y-3 bg-[var(--surface-1)]">
-                  <div className="flex items-center justify-between text-xs font-bold text-[var(--accent-primary)]">
-                    <span>💡 Module Quick Knowledge Check</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--accent-primary-faint)]">Interactive</span>
-                  </div>
-                  {lesson.knowledgeCheck.map((kc, kIdx) => (
-                    <div key={kIdx} className="space-y-2">
-                      <p className="text-xs font-bold text-[var(--text-primary)]">{kc.q}</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {kc.options.map((opt, oIdx) => (
-                          <button
-                            key={oIdx}
-                            onClick={() => alert(oIdx === kc.answer ? "Correct! " + (kc.explanation || "") : "Incorrect. Try again!")}
-                            className="p-2.5 rounded-lg border border-[var(--border-default)] bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-left text-xs text-[var(--text-secondary)] transition-all font-medium"
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <LessonKnowledgeCheckSection
+                  questions={lesson.knowledgeCheck}
+                  lessonKey={`${mi}-${li}`}
+                />
               )}
 
               <div className="pt-4">

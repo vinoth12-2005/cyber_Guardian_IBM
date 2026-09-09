@@ -390,7 +390,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
                         ) : (
                           <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
                         )}
-                        <span>Q{i + 1}: {qItem.q}</span>
+                        <span>Q{i + 1}: {qItem.q || (qItem as any).question}</span>
                       </div>
                       <div className="text-xs text-muted pl-6">
                         Your answer: <span className={isCorrect ? 'text-emerald-300 font-semibold' : 'text-rose-300 font-semibold'}>{chosen !== null && chosen !== undefined ? qItem.options[chosen] : 'Unanswered'}</span> | Correct: <span className="text-emerald-300 font-semibold">{qItem.options[qItem.answer]}</span>
@@ -524,7 +524,7 @@ export const QuizView: React.FC<QuizViewProps> = ({
             <span className="text-[11px] text-slate-400 font-mono">Anti-Cheat: Active</span>
           </div>
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary leading-relaxed">
-            {currentQ.q}
+            {currentQ?.q || (currentQ as any)?.question}
           </h2>
         </div>
 

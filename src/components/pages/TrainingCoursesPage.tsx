@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Course, CourseProgressMap, StreakData } from '../../types/courses';
 import { SYSTEM_SKILLS, LEARNING_PATHS } from '../../data/learningPathsData';
+import { COURSES_DEFAULT } from '../../data/coursesData';
 import {
   loadCoursesFromStorage,
   saveCoursesToStorage,
@@ -34,6 +35,7 @@ import {
   Target,
   Shield,
   PlusCircle,
+  RefreshCw,
 } from 'lucide-react';
 
 type TabView = 'paths' | 'catalog' | 'skills' | 'recommended' | 'my-learning' | 'certificates' | 'streaks';
@@ -48,11 +50,88 @@ export function TrainingCoursesPage({ onQuizActiveChange }: TrainingCoursesPageP
   const user = authUser;
   const canManageCourses = authUser?.role && ['SUPER_ADMIN', 'PLATFORM_ADMIN', 'COURSE_ADMIN'].includes(authUser.role);
 
-  const [courses] = useState<Course[]>(loadCoursesFromStorage);
+  const [courses, setCourses] = useState<Course[]>(loadCoursesFromStorage);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [progress, setProgress] = useState<CourseProgressMap>(() =>
     buildInitialProgress(courses, authUser?.uid)
   );
   const [streak, setStreak] = useState<StreakData>(() => loadStreak(authUser?.uid));
+
+  // Sync courses with backend PostgreSQL/SQLite database to include newly published courses
+  const syncCoursesWithServer = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await api.courses.list({ status: 'published' });
+      if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const courseMap = new Map<string, Course>();
+        // Seed with default static courses
+        COURSES_DEFAULT.forEach((c) => courseMap.set(c.id, c));
+        // Seed with local storage
+        loadCoursesFromStorage().forEach((c) => courseMap.set(c.id, c));
+
+        // Merge with all server courses
+        res.data.forEach((serverCourse: any) => {
+          if (serverCourse && serverCourse.id) {
+            const existing = courseMap.get(serverCourse.id);
+            const mergedCourse: Course = {
+              id: serverCourse.id,
+              title: serverCourse.title || existing?.title || 'Untitled Course',
+              cat: serverCourse.cat || existing?.cat || 'Incident Response',
+              icon: serverCourse.icon || existing?.icon || 'Shield',
+              color1: serverCourse.color1 || existing?.color1 || '#7C3AED',
+              color2: serverCourse.color2 || existing?.color2 || '#38BDF8',
+              level: serverCourse.level || existing?.level || 'Beginner',
+              desc: serverCourse.desc || serverCourse.desc_text || existing?.desc || '',
+              duration: serverCourse.duration || existing?.duration || '4-6 hours',
+              provider: serverCourse.provider || existing?.provider || 'CyberGuardian Institute',
+              objectives: Array.isArray(serverCourse.objectives)
+                ? serverCourse.objectives
+                : existing?.objectives || [],
+              skillsGained: Array.isArray(serverCourse.skillsGained)
+                ? serverCourse.skillsGained
+                : existing?.skillsGained || [],
+              prerequisites: Array.isArray(serverCourse.prerequisites)
+                ? serverCourse.prerequisites
+                : existing?.prerequisites || [],
+              bannerImage: serverCourse.bannerImage ?? existing?.bannerImage,
+              introVideo: serverCourse.introVideo ?? existing?.introVideo,
+              status: serverCourse.status || 'published',
+              modules: Array.isArray(serverCourse.modules) && serverCourse.modules.length > 0
+                ? serverCourse.modules
+                : existing?.modules || [],
+              quiz: Array.isArray(serverCourse.quiz) && serverCourse.quiz.length > 0
+                ? serverCourse.quiz
+                : existing?.quiz || [],
+              credentialEligible: serverCourse.credentialEligible ?? true,
+              credentialName: serverCourse.credentialName || `${serverCourse.title} Specialist`,
+            };
+            courseMap.set(serverCourse.id, mergedCourse);
+          }
+        });
+
+        const merged = Array.from(courseMap.values());
+        setCourses(merged);
+        saveCoursesToStorage(merged);
+      }
+    } catch (err) {
+      console.warn('[TrainingCoursesPage] Notice during courses synchronization:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    syncCoursesWithServer();
+
+    // Auto-sync when window regains focus (e.g., admin tab just published course)
+    const onWindowFocus = () => {
+      syncCoursesWithServer();
+    };
+    window.addEventListener('focus', onWindowFocus);
+    return () => {
+      window.removeEventListener('focus', onWindowFocus);
+    };
+  }, []);
 
   const [currentTab, setCurrentTab] = useState<TabView>('paths');
   const [mode, setMode] = useState<ActiveMode>('paths');
@@ -406,6 +485,8 @@ export function TrainingCoursesPage({ onQuizActiveChange }: TrainingCoursesPageP
             courses={courses}
             progress={progress}
             onOpenCourse={handleOpenCourse}
+            onRefresh={syncCoursesWithServer}
+            isRefreshing={isRefreshing}
           />
         )}
 

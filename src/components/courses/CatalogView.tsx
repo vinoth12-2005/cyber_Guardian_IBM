@@ -8,18 +8,23 @@ import {
   Trophy,
   Search,
   Layers,
+  RefreshCw,
 } from 'lucide-react';
 
 interface CatalogViewProps {
   courses: Course[];
   progress: CourseProgressMap;
   onOpenCourse: (courseId: string) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const CatalogView: React.FC<CatalogViewProps> = ({
   courses,
   progress,
   onOpenCourse,
+  onRefresh,
+  isRefreshing,
 }) => {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
@@ -56,9 +61,20 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
             Training & Cybersecurity Courses
           </h1>
           <p className="text-sm text-secondary mt-1">
-            Interactive courses with quizzes, certification, and hands-on scenarios — 50+ modules available.
+            Interactive courses with quizzes, certification, and hands-on scenarios — {courses.length} courses available.
           </p>
         </div>
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-primary border border-[var(--border-subtle)] bg-[var(--bg-glass-heavy)] hover:bg-[var(--bg-glass-active)] transition-all cursor-pointer disabled:opacity-50"
+            title="Sync latest published courses from server"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-cyan-400' : 'text-secondary'}`} />
+            <span>{isRefreshing ? 'Syncing Courses...' : 'Sync Latest'}</span>
+          </button>
+        )}
       </div>
 
       {/* Quick stats strip */}

@@ -19,6 +19,10 @@ import {
   FileText,
   Send,
   Radio,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
+  Award,
 } from 'lucide-react';
 
 interface CourseFormModalProps {
@@ -54,6 +58,12 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
   const [bannerImage, setBannerImage] = useState(course?.bannerImage || '');
   const [status, setStatus] = useState<'draft' | 'published'>(course?.status || 'published');
   const [sourceDocName, setSourceDocName] = useState(course?.sourceDocName || '');
+  const [credentialEligible, setCredentialEligible] = useState<boolean>(
+    course?.credentialEligible !== false
+  );
+  const [credentialName, setCredentialName] = useState<string>(
+    course?.credentialName || (course?.title ? `${course.title} Specialist Certification` : 'Cybersecurity Specialist Certification')
+  );
 
   // PDF Generation State
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -67,6 +77,11 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
 
   // Active flip card preview states: { [lessonKey]: boolean }
   const [previewFlipped, setPreviewFlipped] = useState<{ [key: string]: boolean }>({});
+
+  // Accordion expansion states for clean, organized navigation
+  const [expandedModules, setExpandedModules] = useState<{ [mi: number]: boolean }>({ 0: true });
+  const [expandedLessons, setExpandedLessons] = useState<{ [key: string]: boolean }>({ '0-0': true });
+  const [pdfSynthesisSuccess, setPdfSynthesisSuccess] = useState(false);
 
   // Modules & Lessons
   const [modules, setModules] = useState<any[]>(
@@ -164,6 +179,8 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
           if (courseBlueprint.objectives) setObjectives(courseBlueprint.objectives.join('\n'));
           if (courseBlueprint.skillsGained) setSkillsGained(courseBlueprint.skillsGained.join('\n'));
           if (courseBlueprint.bannerImage) setBannerImage(courseBlueprint.bannerImage);
+          if (courseBlueprint.credentialName) setCredentialName(courseBlueprint.credentialName);
+          if (courseBlueprint.credentialEligible !== undefined) setCredentialEligible(!!courseBlueprint.credentialEligible);
           if (Array.isArray(courseBlueprint.modules)) setModules(courseBlueprint.modules);
           if (Array.isArray(courseBlueprint.quiz)) setQuiz(courseBlueprint.quiz);
           setSourceDocName(res.data.sourceDocName || pdfFile.name);
@@ -177,7 +194,9 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
           setPdfStats(stats);
         }
 
-        setActiveTab('curriculum');
+        setPdfSynthesisSuccess(true);
+        setExpandedModules({ 0: true });
+        setExpandedLessons({ '0-0': true });
       } else {
         setError(res.error?.message || 'Failed to synthesize course from PDF');
       }
@@ -305,6 +324,8 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
       objectives: objectives.split('\n').map((o) => o.trim()).filter(Boolean),
       skillsGained: skillsGained.split('\n').map((s) => s.trim()).filter(Boolean),
       bannerImage: bannerImage.trim() || null,
+      credentialEligible,
+      credentialName: credentialName.trim() || `${title.trim()} Specialist Certification`,
       status: finalStatus,
       sourceDocName: sourceDocName || (pdfFile ? pdfFile.name : null),
       modules,
@@ -574,6 +595,72 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
                   )}
                 </div>
               )}
+
+              {/* PDF Synthesis Success Card */}
+              {pdfSynthesisSuccess && (
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/50 via-slate-900 to-indigo-950/50 border border-emerald-500/40 space-y-4 shadow-xl shadow-emerald-950/20 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                          <span>🎉 Curriculum Synthesized Successfully!</span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-normal">
+                            Ready to Deploy
+                          </span>
+                        </h4>
+                        <p className="text-xs text-slate-300 mt-0.5">
+                          FlotBot analyzed your PDF and generated {modules.length} comprehensive modules with {modules.flatMap((m) => m.lessons || []).length} lessons, 3D flip cards, and proctored assessment questions.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs font-mono">
+                    <div>
+                      <span className="text-slate-500 text-[10px] block uppercase">COURSE TITLE</span>
+                      <span className="text-white font-bold truncate block">{title || 'Cybersecurity Course'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[10px] block uppercase">CATEGORY & LEVEL</span>
+                      <span className="text-cyan-400 font-semibold">{cat} · {level}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[10px] block uppercase">MODULES & LESSONS</span>
+                      <span className="text-indigo-400 font-semibold">{modules.length} Mods ({modules.flatMap((m) => m.lessons || []).length} Lessons)</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[10px] block uppercase">PROCTORED QUIZ</span>
+                      <span className="text-amber-400 font-semibold">{quiz.length} Questions</span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('curriculum')}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-all cursor-pointer"
+                    >
+                      <span>✏️ Review & Edit Curriculum</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={(e) => handleSubmit(e, 'published')}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{saving ? 'Publishing...' : '🚀 Publish Live to Students Now'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -738,6 +825,39 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Verified Credential & Certification Settings */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-indigo-400">
+                    <Award className="w-4 h-4 text-amber-400" />
+                    <span>Verified Professional Credential & Certification</span>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={credentialEligible}
+                      onChange={(e) => setCredentialEligible(e.target.checked)}
+                      className="accent-indigo-500 rounded"
+                    />
+                    <span>Eligible for Certificate</span>
+                  </label>
+                </div>
+                {credentialEligible && (
+                  <div>
+                    <label className="block text-[11px] font-mono text-slate-400 mb-1">
+                      Certificate Credential Title (Awarded upon 100% completion & passing final assessment)
+                    </label>
+                    <input
+                      type="text"
+                      value={credentialName}
+                      onChange={(e) => setCredentialName(e.target.value)}
+                      placeholder="e.g. Zero-Trust Architecture Specialist Certification"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-amber-300 font-medium focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -758,92 +878,157 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
                 </button>
               </div>
 
-              {modules.map((mod, mi) => (
-                <div key={mi} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                    <div className="flex items-center gap-2 flex-1 mr-4">
-                      <span className="h-6 w-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-mono text-xs">
-                        {mi + 1}
-                      </span>
-                      <input
-                        type="text"
-                        value={mod.title}
-                        onChange={(e) => {
-                          const updated = [...modules];
-                          updated[mi].title = e.target.value;
-                          setModules(updated);
-                        }}
-                        placeholder="Module Title"
-                        className="bg-transparent border-b border-slate-700 text-xs font-bold text-white px-1 py-0.5 w-full focus:outline-none focus:border-indigo-500"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (modules.length <= 1) return;
-                        setModules(modules.filter((_, idx) => idx !== mi));
-                      }}
-                      className="text-rose-400 hover:text-rose-300 p-1"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-
-                  {/* Lessons in Module */}
-                  <div className="pl-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-mono text-slate-400">Lessons ({mod.lessons?.length || 0})</span>
-                      <button
-                        type="button"
-                        onClick={() => handleAddLesson(mi)}
-                        className="text-[11px] text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1 font-mono cursor-pointer"
-                      >
-                        <Plus className="h-3 w-3" /> Add Lesson
-                      </button>
-                    </div>
-
-                    {mod.lessons?.map((les: any, li: number) => {
-                      const lessonKey = `${mi}-${li}`;
-                      return (
-                        <div
-                          key={li}
-                          className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-3 shadow-inner"
+              {modules.map((mod, mi) => {
+                const isModExpanded = expandedModules[mi] !== false;
+                return (
+                  <div key={mi} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-4 transition-all">
+                    <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 gap-2">
+                      <div className="flex items-center gap-2 flex-1 mr-2">
+                        <span className="h-6 w-6 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-mono text-xs font-bold shrink-0">
+                          {mi + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={mod.title}
+                          onChange={(e) => {
+                            const updated = [...modules];
+                            updated[mi].title = e.target.value;
+                            setModules(updated);
+                          }}
+                          placeholder="Module Title"
+                          className="bg-transparent border-b border-slate-700 text-xs font-bold text-white px-1 py-0.5 w-full focus:outline-none focus:border-indigo-500"
+                        />
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 whitespace-nowrap hidden sm:inline shrink-0">
+                          {mod.lessons?.length || 0} Lessons
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setExpandedModules((prev) => ({
+                              ...prev,
+                              [mi]: !isModExpanded,
+                            }));
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono flex items-center gap-1 transition-colors cursor-pointer"
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <input
-                              type="text"
-                              value={les.title}
-                              onChange={(e) => {
-                                const updated = [...modules];
-                                updated[mi].lessons[li].title = e.target.value;
-                                setModules(updated);
-                              }}
-                              placeholder="Lesson Title"
-                              className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-xs font-semibold text-slate-100 flex-1"
-                            />
-                            <input
-                              type="text"
-                              value={les.dur || '5 min'}
-                              onChange={(e) => {
-                                const updated = [...modules];
-                                updated[mi].lessons[li].dur = e.target.value;
-                                setModules(updated);
-                              }}
-                              placeholder="Duration"
-                              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-400 w-20 font-mono text-center"
-                            />
+                          {isModExpanded ? (
+                            <>
+                              <ChevronUp className="h-3.5 w-3.5" />
+                              <span className="text-[10px]">Collapse</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-3.5 w-3.5" />
+                              <span className="text-[10px]">Expand</span>
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (modules.length <= 1) return;
+                            setModules(modules.filter((_, idx) => idx !== mi));
+                          }}
+                          className="text-rose-400 hover:text-rose-300 p-1.5 rounded hover:bg-rose-950/40"
+                          title="Delete Module"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {isModExpanded && (
+                      <div className="space-y-4 animate-fade-in">
+                        {/* Lessons in Module */}
+                        <div className="pl-2 sm:pl-4 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-mono text-slate-400">Lessons ({mod.lessons?.length || 0})</span>
                             <button
                               type="button"
-                              onClick={() => {
-                                const updated = [...modules];
-                                updated[mi].lessons = updated[mi].lessons.filter((_: any, idx: number) => idx !== li);
-                                setModules(updated);
-                              }}
-                              className="text-slate-500 hover:text-rose-400 p-1"
+                              onClick={() => handleAddLesson(mi)}
+                              className="text-[11px] text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1 font-mono cursor-pointer"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Plus className="h-3 w-3" /> Add Lesson
                             </button>
                           </div>
+
+                          {mod.lessons?.map((les: any, li: number) => {
+                            const lessonKey = `${mi}-${li}`;
+                            const isLesExpanded = expandedLessons[lessonKey] !== false;
+                            return (
+                              <div
+                                key={li}
+                                className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-3 shadow-inner"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0">
+                                      L{li + 1}
+                                    </span>
+                                    <input
+                                      type="text"
+                                      value={les.title}
+                                      onChange={(e) => {
+                                        const updated = [...modules];
+                                        updated[mi].lessons[li].title = e.target.value;
+                                        setModules(updated);
+                                      }}
+                                      placeholder="Lesson Title"
+                                      className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-xs font-semibold text-slate-100 flex-1 focus:outline-none focus:border-indigo-500"
+                                    />
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={les.dur || '5 min'}
+                                    onChange={(e) => {
+                                      const updated = [...modules];
+                                      updated[mi].lessons[li].dur = e.target.value;
+                                      setModules(updated);
+                                    }}
+                                    placeholder="Duration"
+                                    className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-400 w-20 font-mono text-center shrink-0"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setExpandedLessons((prev) => ({
+                                        ...prev,
+                                        [lessonKey]: !isLesExpanded,
+                                      }));
+                                    }}
+                                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs flex items-center gap-1 font-mono transition-colors cursor-pointer shrink-0"
+                                    title={isLesExpanded ? 'Collapse Lesson' : 'Edit Details'}
+                                  >
+                                    {isLesExpanded ? (
+                                      <>
+                                        <ChevronUp className="h-3 w-3" />
+                                        <span className="hidden sm:inline text-[10px]">Collapse</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ChevronDown className="h-3 w-3" />
+                                        <span className="hidden sm:inline text-[10px]">Edit Details</span>
+                                      </>
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...modules];
+                                      updated[mi].lessons = updated[mi].lessons.filter((_: any, idx: number) => idx !== li);
+                                      setModules(updated);
+                                    }}
+                                    className="text-slate-500 hover:text-rose-400 p-1 shrink-0"
+                                    title="Delete Lesson"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+
+                                {isLesExpanded && (
+                                  <div className="space-y-3 pt-2 border-t border-slate-800/80 animate-fade-in">
 
                           {/* Lesson Main Body */}
                           <div>
@@ -1074,12 +1259,129 @@ export const CourseFormModal: React.FC<CourseFormModalProps> = ({
                               />
                             </div>
                           </div>
+
+                          {/* Topic Knowledge Check Question Editor */}
+                          <div className="p-3 rounded-xl bg-slate-950 border border-cyan-500/20 space-y-3 mt-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-400">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                <span>Lesson Quick Knowledge Check</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...modules];
+                                  if (!Array.isArray(updated[mi].lessons[li].knowledgeCheck)) {
+                                    updated[mi].lessons[li].knowledgeCheck = [];
+                                  }
+                                  updated[mi].lessons[li].knowledgeCheck.push({
+                                    q: 'Question on this lesson topic...',
+                                    question: 'Question on this lesson topic...',
+                                    options: ['Option A', 'Option B', 'Option C', 'Option D'],
+                                    answer: 0,
+                                    explanation: 'Explanation of correct answer.',
+                                  });
+                                  setModules(updated);
+                                }}
+                                className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/30 flex items-center gap-1 cursor-pointer"
+                              >
+                                <Plus className="w-2.5 h-2.5" /> Add Question
+                              </button>
+                            </div>
+
+                            {(!les.knowledgeCheck || les.knowledgeCheck.length === 0) ? (
+                              <p className="text-[11px] text-slate-500 italic">
+                                No knowledge check for this lesson yet. Click "Add Question" to include an interactive check.
+                              </p>
+                            ) : (
+                              les.knowledgeCheck.map((kc: any, kci: number) => (
+                                <div key={kci} className="border border-slate-800 rounded-lg p-3 bg-slate-900/60 space-y-2.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[11px] font-mono font-bold text-cyan-400">KC Q{kci + 1}.</span>
+                                    <input
+                                      type="text"
+                                      value={kc.q || kc.question || ''}
+                                      onChange={(e) => {
+                                        const updated = [...modules];
+                                        updated[mi].lessons[li].knowledgeCheck[kci].q = e.target.value;
+                                        updated[mi].lessons[li].knowledgeCheck[kci].question = e.target.value;
+                                        setModules(updated);
+                                      }}
+                                      placeholder="Interactive scenario question prompt..."
+                                      className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-xs text-slate-100"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = [...modules];
+                                        updated[mi].lessons[li].knowledgeCheck = updated[mi].lessons[li].knowledgeCheck.filter((_: any, idx: number) => idx !== kci);
+                                        setModules(updated);
+                                      }}
+                                      className="text-slate-500 hover:text-rose-400 p-1"
+                                      title="Remove Knowledge Check"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+
+                                  {/* Options with radio button for answer */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-4">
+                                    {(kc.options || []).map((opt: string, oi: number) => (
+                                      <div key={oi} className="flex items-center gap-1.5">
+                                        <input
+                                          type="radio"
+                                          name={`kc-answer-${mi}-${li}-${kci}`}
+                                          checked={kc.answer === oi}
+                                          onChange={() => {
+                                            const updated = [...modules];
+                                            updated[mi].lessons[li].knowledgeCheck[kci].answer = oi;
+                                            setModules(updated);
+                                          }}
+                                          className="accent-cyan-500"
+                                        />
+                                        <input
+                                          type="text"
+                                          value={opt}
+                                          onChange={(e) => {
+                                            const updated = [...modules];
+                                            updated[mi].lessons[li].knowledgeCheck[kci].options[oi] = e.target.value;
+                                            setModules(updated);
+                                          }}
+                                          placeholder={`Option ${oi + 1}`}
+                                          className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-0.5 text-xs text-slate-300"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <div className="pl-4">
+                                    <input
+                                      type="text"
+                                      value={kc.explanation || ''}
+                                      onChange={(e) => {
+                                        const updated = [...modules];
+                                        updated[mi].lessons[li].knowledgeCheck[kci].explanation = e.target.value;
+                                        setModules(updated);
+                                      }}
+                                      placeholder="Explanation of the correct answer and remediation protocol..."
+                                      className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-0.5 text-[11px] text-slate-400 font-mono"
+                                    />
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    })}
             </div>
           )}
 

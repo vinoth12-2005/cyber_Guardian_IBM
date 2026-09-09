@@ -39,6 +39,64 @@ class CourseService {
 
     const courses = res.rows.map(this._formatCourse);
 
+    // Populate modules, lessons, and quizzes for all returned courses
+    if (courses.length > 0) {
+      try {
+        const modRes = await db.query('SELECT * FROM course_modules ORDER BY module_order ASC');
+        const lesRes = await db.query('SELECT * FROM lessons ORDER BY lesson_order ASC');
+        const quizRes = await db.query('SELECT * FROM course_quizzes ORDER BY question_order ASC');
+
+        const lessonsByModule = new Map();
+        for (const l of lesRes.rows) {
+          if (!lessonsByModule.has(l.module_id)) {
+            lessonsByModule.set(l.module_id, []);
+          }
+          lessonsByModule.get(l.module_id).push(this._formatLesson(l));
+        }
+
+        const modulesByCourse = new Map();
+        for (const m of modRes.rows) {
+          if (!modulesByCourse.has(m.course_id)) {
+            modulesByCourse.set(m.course_id, []);
+          }
+          modulesByCourse.get(m.course_id).push({
+            id: m.id,
+            title: m.title,
+            desc: m.desc_text,
+            duration: m.duration,
+            objectives: JSON.parse(m.objectives || '[]'),
+            lessons: lessonsByModule.get(m.id) || [],
+          });
+        }
+
+        const quizzesByCourse = new Map();
+        for (const q of quizRes.rows) {
+          if (!quizzesByCourse.has(q.course_id)) {
+            quizzesByCourse.set(q.course_id, []);
+          }
+          quizzesByCourse.get(q.course_id).push({
+            id: q.id,
+            q: q.question,
+            question: q.question,
+            options: JSON.parse(q.options || '[]'),
+            answer: q.answer,
+            explanation: q.explanation || '',
+          });
+        }
+
+        for (const c of courses) {
+          c.modules = modulesByCourse.get(c.id) || [];
+          c.quiz = quizzesByCourse.get(c.id) || [];
+        }
+      } catch (subErr) {
+        console.warn('[CourseService] Notice during module/quiz population:', subErr.message);
+        for (const c of courses) {
+          if (!c.modules) c.modules = [];
+          if (!c.quiz) c.quiz = [];
+        }
+      }
+    }
+
     // If userId provided, attach enrollment and progress
     if (userId && courses.length > 0) {
       const progRes = await db.query(
@@ -115,6 +173,7 @@ class CourseService {
     course.quiz = quizRes.rows.map((q) => ({
       id: q.id,
       q: q.question,
+      question: q.question,
       options: JSON.parse(q.options || '[]'),
       answer: q.answer,
       explanation: q.explanation || '',
@@ -617,6 +676,14 @@ class CourseService {
   }
 
   _formatLesson(row) {
+    let kcList = [];
+    try {
+      kcList = JSON.parse(row.knowledge_check || '[]');
+      if (!Array.isArray(kcList)) kcList = [];
+    } catch (e) {
+      kcList = [];
+    }
+
     return {
       id: row.id,
       title: row.title,
@@ -630,7 +697,13 @@ class CourseService {
       realTimeExample: row.real_time_example,
       points: JSON.parse(row.points || '[]'),
       activities: JSON.parse(row.activities || '[]'),
-      knowledgeCheck: JSON.parse(row.knowledge_check || '[]'),
+      knowledgeCheck: kcList.map((kc) => ({
+        q: kc.q || kc.question || '',
+        question: kc.q || kc.question || '',
+        options: kc.options || [],
+        answer: kc.answer ?? 0,
+        explanation: kc.explanation || '',
+      })),
     };
   }
 }
